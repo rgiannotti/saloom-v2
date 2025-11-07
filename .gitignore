@@ -1,24 +1,28 @@
-# Nestjs specific
-/dist
-/node_modules
-/build
-/tmp
+# Dependencias
+node_modules/
+package-lock.json
+yarn.lock
 
-# Logs
-logs
-*.log
-npm-debug.log*
-pnpm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-lerna-debug.log*
+# Builds y caches
+dist/
+.turbo/
+.next/
+coverage/
+web-build/
+**/*.tsbuildinfo
 
-# dotenv environment variable files
+# Expo
+.expo/
+.expo-shared/
+apps/*/.expo/
+apps/*/.expo-shared/
+
+# Cachés de bundlers
+apps/*/.expo/web/cache/
+
+# Configuración local
 .env
-.env.development
-.env.test
-.env.production
-
-# temp directory
-.temp
-.tmp
+.env.*
+.DS_Store
+*.log
+pnpm-debug.log

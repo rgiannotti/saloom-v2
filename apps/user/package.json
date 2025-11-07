@@ -1,0 +1,48 @@
+{
+  "name": "@saloom/user",
+  "version": "0.1.0",
+  "private": true,
+  "main": "index.js",
+  "scripts": {
+    "dev": "expo start --clear",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
+    "web": "expo start --web",
+    "build": "expo export",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "lint": "eslint \"src/**/*.{ts,tsx}\"",
+    "test": "jest --config ./jest.config.cjs --runInBand"
+  },
+  "dependencies": {
+    "@babel/runtime": "^7.28.4",
+    "@expo/webpack-config": "^18.0.1",
+    "create-react-class": "^15.7.0",
+    "css-in-js-utils": "^3.1.0",
+    "expo": "48.0.21",
+    "expo-constants": "^18.0.10",
+    "expo-keep-awake": "^15.0.7",
+    "expo-modules-core": "^3.0.24",
+    "expo-status-bar": "1.4.4",
+    "fbjs": "^3.0.5",
+    "hyphenate-style-name": "^1.1.0",
+    "inline-style-prefixer": "6.0.1",
+    "invariant": "^2.2.4",
+    "normalize-css-color": "^1.0.2",
+    "object-assign": "^4.1.1",
+    "postcss-value-parser": "^4.2.0",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "react-native": "0.71.8",
+    "react-native-web": "~0.18.10",
+    "react-test-renderer": "18.2.0",
+    "scheduler": "^0.27.0",
+    "styleq": "0.1.1"
+  },
+  "devDependencies": {
+    "@testing-library/jest-native": "^5.4.3",
+    "@testing-library/react-native": "^13.3.3",
+    "@types/react": "^19.2.2",
+    "@types/react-native": "^0.73.0",
+    "jest-expo": "48.0.2"
+  }
+}

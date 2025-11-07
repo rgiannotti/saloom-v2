@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "es2020",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "types": ["node", "jest"],
+    "paths": {
+      "@saloom/ui/*": ["packages/ui/src/*"],
+      "@saloom/config/*": ["packages/config/*"]
+    }
+  }
+}
