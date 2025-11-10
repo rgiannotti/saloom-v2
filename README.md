@@ -29,3 +29,14 @@ Este repositorio usa una estructura de monorepo pensada para alojar múltiples a
 - `pnpm format`: aplica Prettier a todo el repo.
 - Sólo app client (Expo): `pnpm --filter @saloom/client dev`.
 - Sólo app user (Expo): `pnpm --filter @saloom/user dev`.
+- Sólo backoffice (Vite web, protegida con login): `pnpm --filter @saloom/backoffice dev`.
+
+### Variables de entorno
+
+Cada paquete maneja sus propias variables. Para el backoffice crea los archivos `.env.development`, `.env.staging` y `.env.production` (basados en `apps/backoffice/.env.example`) con al menos:
+
+```
+VITE_API_BASE_URL=https://api.saloom.dev
+```
+
+Vite cargará automáticamente el archivo correcto según el modo (`pnpm --filter @saloom/backoffice dev` usa `.env.development`). Ajusta las URLs para `staging`/`prod` según tus despliegues.

@@ -1,12 +1,25 @@
+import React from "react";
 import { render, screen } from "@testing-library/react";
 
 import { App } from "./App";
 
-describe("App", () => {
-  it("renders the headline and status", () => {
-    render(<App />);
+jest.mock("./auth/AuthProvider", () => {
+  const actual = jest.requireActual("./auth/AuthProvider");
+  return {
+    ...(actual as object),
+    AuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+    useAuth: () => ({
+      isAuthenticated: false,
+      login: jest.fn(),
+      logout: jest.fn(),
+      token: null
+    })
+  };
+});
 
-    expect(screen.getByRole("heading", { name: /saloom backoffice/i })).toBeVisible();
-    expect(screen.getByText(/en construcción/i)).toBeVisible();
+describe("App routing", () => {
+  it("shows login page by default", () => {
+    render(<App />);
+    expect(screen.getByRole("heading", { name: /backoffice saloom/i })).toBeInTheDocument();
   });
 });

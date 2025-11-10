@@ -1,0 +1,185 @@
+.backoffice-users {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.backoffice-users__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.backoffice-users__content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.backoffice-users__table {
+  background: var(--color-card);
+  border: 1px solid var(--color-card-border);
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.25);
+}
+
+.backoffice-users__table .table-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.backoffice-users__form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.backoffice-users__form label {
+  font-size: 0.85rem;
+  color: var(--color-muted);
+}
+
+.backoffice-users__form input,
+.backoffice-users__form select {
+  border-radius: 10px;
+  border: 1px solid var(--color-border);
+  padding: 0.65rem 0.75rem;
+  background: transparent;
+  color: var(--color-text);
+}
+
+.backoffice-users__form select {
+  appearance: none;
+}
+
+.backoffice-users__form input:focus,
+.backoffice-users__form select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.3);
+}
+
+.form-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.form-actions button[type="submit"] {
+  flex: 1;
+  border: none;
+  border-radius: 10px;
+  padding: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: linear-gradient(135deg, var(--color-primary), #60a5fa);
+  color: #0f172a;
+}
+
+.form-actions .ghost-button {
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.backoffice-users__table table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+
+.backoffice-users__table th,
+.backoffice-users__table td {
+  text-align: left;
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.backoffice-users__table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.backoffice-users__table .ghost-button + .ghost-button {
+  margin-left: 0.5rem;
+}
+
+.backoffice-users__table .table-empty {
+  text-align: center;
+  color: var(--color-muted);
+  padding: 2rem 0;
+}
+
+.table-actions {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.icon-button {
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text);
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.icon-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.icon-button:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.backoffice-users .error {
+  margin: 0.25rem 0 0;
+  font-size: 0.85rem;
+  color: #f87171;
+}
+
+.backoffice-users .success {
+  margin: 0.25rem 0 0;
+  font-size: 0.85rem;
+  color: #34d399;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 9, 21, 0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  z-index: 20;
+}
+
+.modal {
+  width: min(480px, 100%);
+  background: var(--color-card);
+  border: 1px solid var(--color-card-border);
+  border-radius: 20px;
+  padding: 1.75rem;
+  box-shadow: 0 35px 80px rgba(5, 9, 21, 0.45);
+}
+
+.modal__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.modal__subtitle {
+  margin: 0.25rem 0 0;
+  color: var(--color-muted);
+}

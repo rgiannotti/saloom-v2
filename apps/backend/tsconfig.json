@@ -1,6 +1,7 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
+    "strictPropertyInitialization": false,
     "outDir": "dist"
   },
   "include": [
