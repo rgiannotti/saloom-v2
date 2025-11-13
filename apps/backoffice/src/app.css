@@ -1,16 +1,16 @@
 :root {
   font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --color-bg: #050915;
-  --color-surface: rgba(15, 23, 42, 0.9);
-  --color-border: rgba(255, 255, 255, 0.08);
-  --color-text: #f8fafc;
-  --color-muted: #94a3b8;
+  --color-bg: #101113;
+  --color-surface: #1a1b1f;
+  --color-border: rgba(255, 255, 255, 0.04);
+  --color-text: #f3f3f1;
+  --color-muted: #a5a5a5;
   --color-primary: #ff3636;
   --color-secondary: #c6a1f8;
-  --color-sidebar: #0f172a;
-  --color-sidebar-border: rgba(255, 255, 255, 0.06);
-  --color-card: rgba(15, 23, 42, 0.85);
-  --color-card-border: rgba(255, 255, 255, 0.08);
+  --color-sidebar: #1c1d21;
+  --color-sidebar-border: rgba(255, 255, 255, 0.04);
+  --color-card: #1f2024;
+  --color-card-border: rgba(255, 255, 255, 0.04);
 }
 
 :root[data-theme="light"] {
@@ -33,6 +33,7 @@ body {
   background: var(--color-bg);
   color: var(--color-text);
   transition: background 0.3s ease, color 0.3s ease;
+  font-size: 16px;
 }
 
 button {
@@ -56,6 +57,19 @@ button {
   border-radius: 8px;
   cursor: pointer;
   font-weight: 600;
+}
+
+.mobile-menu-button {
+  display: none;
+  width: 38px;
+  height: 38px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+}
+
+.sidebar-backdrop {
+  display: none;
 }
 
 .dashboard-layout {
@@ -85,6 +99,19 @@ button {
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  gap: 0.5rem;
+}
+
+.sidebar__logo {
+  height: 32px;
+  max-width: 150px;
+  width: auto;
+  object-fit: contain;
+  flex-shrink: 1;
+}
+
+.sidebar__logo--collapsed {
+  max-width: 70px;
 }
 
 .sidebar__nav {
@@ -113,8 +140,7 @@ button {
 
 .sidebar__link--active {
   border-color: var(--color-primary);
-  background: rgba(198, 161, 248, 0.16);
-  box-shadow: 0 8px 20px rgba(198, 161, 248, 0.3);
+  background: rgba(198, 161, 248, 0.12);
   color: var(--color-primary);
 }
 
@@ -148,10 +174,113 @@ button {
   gap: 0.75rem;
 }
 
+.topbar__actions .icon-button {
+  width: 38px;
+  height: 38px;
+}
+
 .dashboard-layout__main main {
   padding: 2rem;
   background: var(--color-bg);
   flex: 1;
+}
+
+@media (max-width: 1024px) {
+  .dashboard-layout {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--color-sidebar-border);
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .sidebar__nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .dashboard-layout__main main {
+    padding: 1.5rem;
+  }
+
+  .topbar {
+    justify-content: space-between;
+    padding: 0 1rem;
+  }
+}
+
+@media (max-width: 720px) {
+  body {
+    font-size: 15px;
+  }
+
+  .dashboard-layout {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 64px;
+    left: 0;
+    height: calc(100vh - 64px);
+    width: 80%;
+    max-width: 280px;
+    padding: 1.25rem 1rem;
+    transform: translateX(-110%);
+    transition: transform 0.3s ease;
+    flex-direction: column;
+    gap: 1rem;
+    border-bottom: none;
+    border-right: 1px solid var(--color-sidebar-border);
+    z-index: 30;
+  }
+
+.sidebar--mobile-open {
+  transform: translateX(0);
+  box-shadow: 0 14px 35px rgba(5, 9, 21, 0.25);
+}
+
+  .sidebar--mobile-closed {
+    transform: translateX(-110%);
+  }
+
+  .sidebar__collapse-button {
+    display: none;
+  }
+
+  .sidebar__link {
+    flex: 1 1 100%;
+    justify-content: flex-start;
+  }
+
+  .dashboard-layout__main main {
+    padding: 1rem;
+  }
+
+  .cards-grid {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+  }
+
+  .mobile-menu-button {
+    display: inline-flex;
+  }
+
+  .sidebar-backdrop {
+    display: block;
+    position: fixed;
+    top: 64px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(5, 9, 21, 0.65);
+    z-index: 20;
+  }
 }
 
 .cards-grid {
@@ -168,7 +297,7 @@ button {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  box-shadow: 0 15px 30px rgba(15, 23, 42, 0.25);
+  box-shadow: 0 10px 18px rgba(15, 23, 42, 0.18);
 }
 
 .module-card__icon {
@@ -182,11 +311,16 @@ button {
 
 .module-card button {
   align-self: flex-start;
-  background: linear-gradient(135deg, var(--color-secondary), var(--color-primary));
+  background: var(--color-primary);
   border: none;
-  color: #0f172a;
+  color: #fff;
   padding: 0.45rem 0.9rem;
   border-radius: 999px;
   cursor: pointer;
   font-weight: 600;
+}
+
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
 }

@@ -10,6 +10,14 @@
   align-items: flex-end;
 }
 
+@media (max-width: 720px) {
+  .backoffice-users__header {
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: stretch;
+  }
+}
+
 .backoffice-users__content {
   display: flex;
   flex-direction: column;
@@ -21,7 +29,12 @@
   border: 1px solid var(--color-card-border);
   border-radius: 16px;
   padding: 1.5rem;
-  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.25);
+  box-shadow: 0 12px 25px rgba(15, 23, 42, 0.18);
+}
+
+.backoffice-users__table .table-scroll {
+  margin-top: 1rem;
+  overflow-x: auto;
 }
 
 .backoffice-users__table .table-header {
@@ -59,7 +72,7 @@
 .backoffice-users__form select:focus {
   outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.3);
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.18);
 }
 
 .form-actions {
@@ -74,8 +87,8 @@
   padding: 0.75rem;
   font-weight: 600;
   cursor: pointer;
-  background: linear-gradient(135deg, var(--color-primary), #60a5fa);
-  color: #0f172a;
+  background: var(--color-primary);
+  color: #fff;
 }
 
 .form-actions .ghost-button {
@@ -86,7 +99,6 @@
 .backoffice-users__table table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 1rem;
 }
 
 .backoffice-users__table th,
@@ -110,9 +122,16 @@
   padding: 2rem 0;
 }
 
+.backoffice-users__table td.table-actions {
+  min-width: 150px;
+  padding-right: 0;
+}
+
 .table-actions {
-  display: flex;
+  /* display: flex;
   gap: 0.35rem;
+  justify-content: flex-end;
+  flex-wrap: nowrap; */
 }
 
 .icon-button {
@@ -137,6 +156,16 @@
 .icon-button:hover:not(:disabled) {
   border-color: var(--color-primary);
   color: var(--color-primary);
+}
+
+.icon-button--ghost {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.icon-button--danger {
+  border-color: rgba(248, 113, 113, 0.55);
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.08);
 }
 
 .backoffice-users .error {
@@ -168,7 +197,7 @@
   border: 1px solid var(--color-card-border);
   border-radius: 20px;
   padding: 1.75rem;
-  box-shadow: 0 35px 80px rgba(5, 9, 21, 0.45);
+  box-shadow: 0 22px 55px rgba(5, 9, 21, 0.25);
 }
 
 .modal__header {

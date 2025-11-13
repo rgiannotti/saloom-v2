@@ -15,7 +15,7 @@
   border: 1px solid var(--color-card-border);
   border-radius: 16px;
   padding: 2.25rem;
-  box-shadow: 0 25px 60px rgba(15, 23, 42, 0.35);
+  box-shadow: 0 15px 35px rgba(15, 23, 42, 0.22);
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
@@ -44,7 +44,7 @@
 .login-card input:focus {
   border-color: var(--color-primary);
   outline: none;
-  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.35);
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
 }
 
 .login-card button {
@@ -52,8 +52,8 @@
   padding: 0.9rem;
   border: none;
   border-radius: 10px;
-  background: linear-gradient(135deg, var(--color-primary), #60a5fa);
-  color: #0f172a;
+  background: var(--color-primary);
+  color: #fff;
   font-weight: 600;
   cursor: pointer;
   transition: opacity 0.2s ease;

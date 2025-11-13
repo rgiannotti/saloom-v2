@@ -3,6 +3,7 @@ import {
   IsArray,
   IsEmail,
   IsEnum,
+  IsMongoId,
   IsOptional,
   IsString,
   MinLength
@@ -31,4 +32,8 @@ export class CreateUserDto {
   @ArrayNotEmpty()
   @IsEnum(UserRole, { each: true })
   roles?: UserRole[];
+
+  @IsOptional()
+  @IsMongoId()
+  client?: string;
 }

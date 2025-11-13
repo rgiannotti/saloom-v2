@@ -50,8 +50,11 @@ export class UsersService {
   }
 
   async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
-    const { password, ...rest } = updateUserDto;
-    const updateData: Partial<User> & { passwordHash?: string } = { ...rest };
+    const { password, client, ...rest } = updateUserDto;
+    const updateData: Partial<User> & { passwordHash?: string } = {
+      ...rest,
+      ...(client ? { client: new Types.ObjectId(client) } : {})
+    };
     if (password) {
       updateData.passwordHash = await bcrypt.hash(password, this.saltRounds);
     }

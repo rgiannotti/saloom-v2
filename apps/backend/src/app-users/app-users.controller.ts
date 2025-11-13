@@ -6,13 +6,15 @@ import {
   NotFoundException,
   Param,
   Patch,
-  Post
+  Post,
+  Query
 } from "@nestjs/common";
+import { FilterQuery, Types } from "mongoose";
 
 import { Roles } from "../auth/decorators/roles.decorator";
 import { CreateUserDto } from "../users/dto/create-user.dto";
 import { UpdateUserDto } from "../users/dto/update-user.dto";
-import { User, UserRole } from "../users/schemas/user.schema";
+import { User, UserDocument, UserRole } from "../users/schemas/user.schema";
 import { UsersService } from "../users/users.service";
 
 const APP_ROLES = [UserRole.USER, UserRole.PRO, UserRole.OWNER];
@@ -23,8 +25,14 @@ export class AppUsersController {
 
   @Get()
   @Roles(UserRole.ADMIN, UserRole.STAFF)
-  findAll() {
-    return this.usersService.findAll({ roles: { $in: APP_ROLES } });
+  findAll(@Query("clientId") clientId?: string) {
+    const filter: FilterQuery<UserDocument> = { roles: { $in: APP_ROLES } };
+    if (clientId && Types.ObjectId.isValid(clientId)) {
+      filter.$or = [{ client: null }, { client: clientId }];
+    } else {
+      filter.client = null;
+    }
+    return this.usersService.findAll(filter);
   }
 
   @Get(":id")

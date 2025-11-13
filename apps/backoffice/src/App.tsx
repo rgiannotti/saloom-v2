@@ -8,6 +8,8 @@ import { LoginPage } from "./pages/LoginPage";
 import { ThemeProvider } from "./theme/ThemeProvider";
 import { BackofficeShell } from "./components/BackofficeShell";
 import { BackofficeUsersPage } from "./pages/BackofficeUsersPage";
+import { ServicesPage } from "./pages/ServicesPage";
+import { ClientsPage } from "./pages/ClientsPage";
 
 export const App = () => {
   return (
@@ -26,6 +28,8 @@ export const App = () => {
             >
               <Route index element={<DashboardPage />} />
               <Route path="backoffice/users" element={<BackofficeUsersPage />} />
+              <Route path="services" element={<ServicesPage />} />
+              <Route path="clients" element={<ClientsPage />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />

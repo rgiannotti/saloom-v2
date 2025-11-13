@@ -10,6 +10,8 @@ import { AuthModule } from "./auth/auth.module";
 import { JwtAuthGuard } from "./auth/guards/jwt-auth.guard";
 import { RolesGuard } from "./auth/guards/roles.guard";
 import { BackofficeUsersModule } from "./backoffice-users/backoffice-users.module";
+import { ClientsModule } from "./clients/clients.module";
+import { ServicesModule } from "./services/services.module";
 import { UsersModule } from "./users/users.module";
 
 @Module({
@@ -21,6 +23,8 @@ import { UsersModule } from "./users/users.module";
     UsersModule,
     BackofficeUsersModule,
     AppUsersModule,
+    ClientsModule,
+    ServicesModule,
     AuthModule
   ],
   controllers: [AppController],

@@ -45,7 +45,7 @@ export class AuthService {
     }
     const userId = this.extractUserId(userDoc as UserWithId);
     const user = await this.usersService.findOne(userId);
-    this.ensureAudiencePermission(user.roles, audience);
+    this.ensureAudiencePermission(user, audience);
     return this.issueTokens(user, audience);
   }
 
@@ -70,7 +70,7 @@ export class AuthService {
     if (!isValid) {
       throw new UnauthorizedException("Refresh token invalid");
     }
-    this.ensureAudiencePermission(userDoc.roles, payload.aud);
+    this.ensureAudiencePermission(userDoc, payload.aud);
     return this.issueTokens(userDoc, payload.aud);
   }
 
@@ -120,11 +120,14 @@ export class AuthService {
     }
   }
 
-  private ensureAudiencePermission(userRoles: UserRole[], audience: AppAudience) {
+  private ensureAudiencePermission(user: User, audience: AppAudience) {
     const required = this.rolesForAudience(audience);
-    const hasRole = required.some((role) => userRoles.includes(role));
+    const hasRole = required.some((role) => user.roles.includes(role));
     if (!hasRole) {
       throw new ForbiddenException("Insufficient permissions for this audience");
+    }
+    if (audience === AppAudience.CLIENT && !user.client) {
+      throw new ForbiddenException("Client app requires an assigned client");
     }
   }
 

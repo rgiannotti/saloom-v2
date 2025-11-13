@@ -261,16 +261,23 @@ export const BackofficeUsersPage = () => {
                 </p>
               ) : null}
             </div>
-            <button type="button" className="ghost-button" onClick={fetchUsers} disabled={loading}>
-              {loading ? "Actualizando..." : "Refrescar"}
+            <button
+              type="button"
+              className="icon-button icon-button--ghost"
+              onClick={fetchUsers}
+              disabled={loading}
+              aria-label="Refrescar lista de usuarios"
+            >
+              {loading ? "…" : "⟳"}
             </button>
           </div>
-          <table>
-            <thead>
-              <tr>
-                <th>Nombre</th>
-                <th>Email</th>
-                <th>Teléfono</th>
+          <div className="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Email</th>
+                  <th>Teléfono</th>
                 <th>Rol</th>
                 <th></th>
               </tr>
@@ -289,42 +296,40 @@ export const BackofficeUsersPage = () => {
                     <td>{user.email}</td>
                     <td>{user.phone}</td>
                     <td>{user.roles?.join(", ")}</td>
-                    <td>
-                      <div className="table-actions">
-                        <button
-                          type="button"
-                          className="icon-button"
-                          onClick={() => openEditModal(user)}
-                          title="Editar"
-                          aria-label={`Editar ${user.name}`}
-                        >
-                          ✏️
-                        </button>
-                        <button
-                          type="button"
-                          className="icon-button"
-                          onClick={() => openResetModal(user)}
-                          title="Resetear contraseña"
-                          aria-label={`Resetear contraseña de ${user.name}`}
-                        >
-                          🔑
-                        </button>
-                        <button
-                          type="button"
-                          className="icon-button"
-                          onClick={() => handleDelete(user._id)}
-                          title="Eliminar"
-                          aria-label={`Eliminar ${user.name}`}
-                        >
-                          🗑️
-                        </button>
-                      </div>
+                    <td className="table-actions">
+                      <button
+                        type="button"
+                        className="icon-button icon-button--ghost"
+                        onClick={() => openEditModal(user)}
+                        aria-label={`Editar ${user.name}`}
+                      >
+                        ✏️
+                      </button>
+                      <button
+                        type="button"
+                        className="icon-button"
+                        onClick={() => openResetModal(user)}
+                        title="Resetear contraseña"
+                        aria-label={`Resetear contraseña de ${user.name}`}
+                      >
+                        🔑
+                      </button>
+                      <button
+                        type="button"
+                        className="icon-button icon-button--danger"
+                        onClick={() => handleDelete(user._id)}
+                        title="Eliminar"
+                        aria-label={`Eliminar ${user.name}`}
+                      >
+                        🗑️
+                      </button>
                     </td>
                   </tr>
                 ))
               )}
             </tbody>
-          </table>
+            </table>
+          </div>
         </section>
       </div>
 

@@ -1,21 +1,33 @@
 const DEFAULT_API_BASE = "https://api.saloom.local";
 
-const fromViteEnv = (): string | undefined => {
+const getViteEnv = () => {
   try {
     if (typeof import.meta !== "undefined" && import.meta.env) {
-      return import.meta.env.VITE_API_BASE_URL as string | undefined;
+      return import.meta.env as Record<string, string | undefined>;
     }
   } catch {
-    // ignored: running in environments (e.g., Jest) where import.meta is not defined
+    // ignored
   }
-  return undefined;
+  return {};
 };
 
-const fromProcessEnv = (): string | undefined => {
+const getProcessEnv = () => {
   if (typeof process !== "undefined" && process.env) {
-    return process.env.VITE_API_BASE_URL;
+    return process.env as Record<string, string | undefined>;
   }
-  return undefined;
+  return {};
 };
 
-export const API_BASE_URL = fromViteEnv() ?? fromProcessEnv() ?? DEFAULT_API_BASE;
+const viteEnv = getViteEnv();
+const processEnv = getProcessEnv();
+
+export const API_BASE_URL =
+  viteEnv.VITE_API_BASE_URL ?? processEnv.VITE_API_BASE_URL ?? DEFAULT_API_BASE;
+
+export const GOOGLE_MAPS_API_KEY =
+  viteEnv.VITE_GOOGLE_MAPS_API_KEY ?? processEnv.VITE_GOOGLE_MAPS_API_KEY ?? "";
+
+const countryCode =
+  viteEnv.VITE_GOOGLE_MAPS_COUNTRY ?? processEnv.VITE_GOOGLE_MAPS_COUNTRY ?? "VE";
+
+export const GOOGLE_MAPS_COUNTRY = countryCode.toUpperCase();

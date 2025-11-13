@@ -15,16 +15,13 @@ const getPreferredTheme = (): ThemeMode => {
   if (stored) {
     return stored;
   }
-  if (window.matchMedia("(prefers-color-scheme: light)").matches) {
-    return "light";
-  }
-  return "dark";
+  return "light";
 };
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   const [theme, setTheme] = useState<ThemeMode>(() => {
     if (typeof window === "undefined") {
-      return "dark";
+      return "light";
     }
     return getPreferredTheme();
   });
