@@ -13,6 +13,7 @@ import { BackofficeUsersModule } from "./backoffice-users/backoffice-users.modul
 import { ClientsModule } from "./clients/clients.module";
 import { ServicesModule } from "./services/services.module";
 import { UsersModule } from "./users/users.module";
+import { AppointmentsModule } from "./appointments/appointments.module";
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { UsersModule } from "./users/users.module";
     BackofficeUsersModule,
     AppUsersModule,
     ClientsModule,
+    AppointmentsModule,
     ServicesModule,
     AuthModule
   ],

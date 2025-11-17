@@ -22,10 +22,10 @@ type NavItem = {
 
 const navItems: NavItem[] = [
   { label: "Dashboard", icon: "🏠", to: "/" },
-  { label: "Usuarios Backoffice", icon: "👥", to: "/backoffice/users" },
+  { label: "Profesionales", icon: "🏢", to: "/clients" },
   { label: "Servicios", icon: "💈", to: "/services" },
-  { label: "Clientes", icon: "🏢", to: "/clients" },
-  { label: "Profesionales", icon: "🧑‍⚕️" },
+  { label: "Usuarios", icon: "🧑‍🤝‍🧑", to: "/app/users" },
+  { label: "Usuarios Saloom", icon: "👥", to: "/backoffice/users" },
   { label: "Reportes", icon: "📊" },
   { label: "Configuración", icon: "⚙️" }
 ];

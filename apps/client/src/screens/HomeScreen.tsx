@@ -4,6 +4,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useAuth } from "../auth/AuthContext";
 import { DashboardLayout } from "../components/DashboardLayout";
 import type { SidebarItem } from "../components/Sidebar";
+import { AppointmentsScreen } from "./AppointmentsScreen";
 
 const modules: SidebarItem[] = [
   { key: "appointments", label: "Agenda", icon: "📅" },
@@ -15,8 +16,6 @@ const modules: SidebarItem[] = [
 ];
 
 const moduleDescriptions: Record<string, string> = {
-  appointments:
-    "Gestiona tu agenda diaria, confirma reservas entrantes y sincroniza con tu calendario personal.",
   overview:
     "Consulta indicadores rápidos de tu operación diaria y tareas pendientes para el cliente asignado.",
   clients:
@@ -32,11 +31,6 @@ export const HomeScreen = () => {
   const { session, logout } = useAuth();
   const [activeModule, setActiveModule] = useState("appointments");
 
-  const description = useMemo(
-    () => moduleDescriptions[activeModule] ?? moduleDescriptions.overview,
-    [activeModule]
-  );
-
   if (!session) {
     return null;
   }
@@ -50,24 +44,34 @@ export const HomeScreen = () => {
       activeItem={activeModule}
       onSelectItem={setActiveModule}
     >
-      <View style={styles.moduleHeader}>
-        <Text style={styles.badge}>Saloom Client</Text>
-        <Text style={styles.moduleTitle}>{modules.find((m) => m.key === activeModule)?.label}</Text>
-        <Text style={styles.moduleDescription}>{description}</Text>
-        <View style={styles.metaRow}>
-          <View style={styles.metaCard}>
-            <Text style={styles.metaLabel}>Cliente asignado</Text>
-            <Text style={styles.metaValue}>{user.client ?? "Por confirmar"}</Text>
+      {activeModule === "appointments" ? (
+        <AppointmentsScreen />
+      ) : (
+        <>
+          <View style={styles.moduleHeader}>
+            <Text style={styles.badge}>Saloom Client</Text>
+            <Text style={styles.moduleTitle}>
+              {modules.find((m) => m.key === activeModule)?.label}
+            </Text>
+            <Text style={styles.moduleDescription}>
+              {moduleDescriptions[activeModule] ?? moduleDescriptions.overview}
+            </Text>
+            <View style={styles.metaRow}>
+              <View style={styles.metaCard}>
+                <Text style={styles.metaLabel}>Cliente asignado</Text>
+                <Text style={styles.metaValue}>{user.client ?? "Por confirmar"}</Text>
+              </View>
+              <View style={styles.metaCard}>
+                <Text style={styles.metaLabel}>Rol</Text>
+                <Text style={styles.metaValue}>PRO</Text>
+              </View>
+            </View>
           </View>
-          <View style={styles.metaCard}>
-            <Text style={styles.metaLabel}>Rol</Text>
-            <Text style={styles.metaValue}>PRO</Text>
-          </View>
-        </View>
-      </View>
-      <TouchableOpacity style={styles.logoutButton} onPress={logout}>
-        <Text style={styles.logoutLabel}>Cerrar sesión</Text>
-      </TouchableOpacity>
+          <TouchableOpacity style={styles.logoutButton} onPress={logout}>
+            <Text style={styles.logoutLabel}>Cerrar sesión</Text>
+          </TouchableOpacity>
+        </>
+      )}
     </DashboardLayout>
   );
 };

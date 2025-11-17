@@ -1,0 +1,102 @@
+.app-users {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.app-users__header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+@media (max-width: 720px) {
+  .app-users__header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+.app-users__content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.app-users__table {
+  background: var(--color-card);
+  border: 1px solid var(--color-card-border);
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 12px 25px rgba(15, 23, 42, 0.18);
+}
+
+.app-users__table .table-scroll {
+  margin-top: 1rem;
+  overflow-x: auto;
+}
+
+.app-users__table .table-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.app-users__table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.app-users__table th,
+.app-users__table td {
+  text-align: left;
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.app-users__table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.app-users__table .table-empty {
+  text-align: center;
+  color: var(--color-muted);
+  padding: 2rem 0;
+}
+
+.app-users__table td.table-actions {
+  min-width: 150px;
+  padding-right: 0;
+}
+
+.app-users__form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.app-users__form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  color: var(--color-muted);
+}
+
+.app-users__form input,
+.app-users__form select {
+  border-radius: 10px;
+  border: 1px solid var(--color-border);
+  padding: 0.65rem 0.75rem;
+  background: transparent;
+  color: var(--color-text);
+}
+
+.modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}

@@ -181,12 +181,21 @@ importers:
       '@expo/webpack-config':
         specifier: ^18.0.1
         version: 18.1.4(expo@48.0.21)
+      '@react-native-community/datetimepicker':
+        specifier: ^7.6.2
+        version: 7.6.2
+      calendarize:
+        specifier: ^1.1.1
+        version: 1.1.1
       create-react-class:
         specifier: ^15.7.0
         version: 15.7.0
       css-in-js-utils:
         specifier: ^3.1.0
         version: 3.1.0
+      dayjs:
+        specifier: ^1.11.13
+        version: 1.11.19
       expo:
         specifier: 48.0.21
         version: 48.0.21(@babel/core@7.28.5)
@@ -217,6 +226,9 @@ importers:
       invariant:
         specifier: ^2.2.4
         version: 2.2.4
+      jwt-decode:
+        specifier: ^4.0.0
+        version: 4.0.0
       normalize-css-color:
         specifier: ^1.0.2
         version: 1.0.2
@@ -235,6 +247,12 @@ importers:
       react-native:
         specifier: 0.71.8
         version: 0.71.8(@babel/core@7.28.5)(@babel/preset-env@7.28.5)(react@18.2.0)
+      react-native-big-calendar:
+        specifier: ^4.5.4
+        version: 4.6.0(react-native@0.71.8)(react@18.2.0)
+      react-native-modal-datetime-picker:
+        specifier: ^17.1.0
+        version: 17.1.0(@react-native-community/datetimepicker@7.6.2)(react-native@0.71.8)
       react-native-svg:
         specifier: ^13.9.0
         version: 13.9.0(react-native@0.71.8)(react@18.2.0)
@@ -3396,6 +3414,12 @@ packages:
       - supports-color
       - utf-8-validate
 
+  /@react-native-community/datetimepicker@7.6.2:
+    resolution: {integrity: sha512-ogZnvCmNG/lGHhEQypqz/mPymiIWD5jv6uKczg/l/aWgiKs1RDPQH1abh+R0I26aKoXmgamJJPuXKeC5eRWtZg==}
+    dependencies:
+      invariant: 2.2.4
+    dev: false
+
   /@react-native/assets@1.0.0:
     resolution: {integrity: sha512-KrwSpS1tKI70wuKl68DwJZYEvXktDHdZMG0k2AXD/rJVSlB23/X2CB2cutVR0HwNMJIal9HOUOBB2rVfa6UGtQ==}
 
@@ -5207,6 +5231,11 @@ packages:
       unique-filename: 1.1.1
     transitivePeerDependencies:
       - bluebird
+    dev: false
+
+  /calendarize@1.1.1:
+    resolution: {integrity: sha512-C2JyBAtNp2NG4DX4fA1EILggLt/5PlYzvQR0crHktoAPBc9TlIfdhzg7tWekCbe+pH6+9qoK+FhPbi+vYJJlqw==}
+    engines: {node: '>=8'}
     dev: false
 
   /call-bind-apply-helpers@1.0.2:
@@ -9316,6 +9345,11 @@ packages:
       safe-buffer: 5.2.1
     dev: false
 
+  /jwt-decode@4.0.0:
+    resolution: {integrity: sha512-+KJGIyHgkGuIq3IEBNftfhW/LfWhXUIY6OmyVWjliu5KH1y0fw7VQ8YndE2O4qZdMSd9SqbnC8GOcZEy0Om7sA==}
+    engines: {node: '>=18'}
+    dev: false
+
   /kareem@2.6.3:
     resolution: {integrity: sha512-C3iHfuGUXK2u8/ipq9LfjFfXFxAZMQJJq7vLS45r3D9Y2xQ/m4S8zaR4zMLFWh9AsNPXmcFfUDhTEO8UIC/V6Q==}
     engines: {node: '>=12.0.0'}
@@ -11395,6 +11429,18 @@ packages:
   /react-is@18.3.1:
     resolution: {integrity: sha512-/LLMVyas0ljjAtoYiPqYiL8VWXzUUdThrmU5+n20DZv+a+ClRoevUzw5JxU+Ieh5/c87ytoTBV9G1FiKfNJdmg==}
 
+  /react-native-big-calendar@4.6.0(react-native@0.71.8)(react@18.2.0):
+    resolution: {integrity: sha512-MZNinLLt4I6NllYsh9nSdoACP6FTw9quqzJ893sYMWJ5DCxSIUmaz1OslrX1uB/X952YYweTb6OA9UHgOcLnOg==}
+    peerDependencies:
+      react: '*'
+      react-native: '*'
+    dependencies:
+      calendarize: 1.1.1
+      dayjs: 1.11.19
+      react: 18.2.0
+      react-native: 0.71.8(@babel/core@7.28.5)(@babel/preset-env@7.28.5)(react@18.2.0)
+    dev: false
+
   /react-native-codegen@0.71.6(@babel/preset-env@7.28.5):
     resolution: {integrity: sha512-e5pR4VldIhEaFctfSAEgxbng0uG4gjBQxAHes3EKLdosH/Av90pQfSe9IDVdFIngvNPzt8Y14pNjrtqov/yNIg==}
     dependencies:
@@ -11408,6 +11454,17 @@ packages:
 
   /react-native-gradle-plugin@0.71.19:
     resolution: {integrity: sha512-1dVk9NwhoyKHCSxcrM6vY6cxmojeATsBobDicX0ZKr7DgUF2cBQRTKsimQFvzH8XhOVXyH8p4HyDSZNIFI8OlQ==}
+
+  /react-native-modal-datetime-picker@17.1.0(@react-native-community/datetimepicker@7.6.2)(react-native@0.71.8):
+    resolution: {integrity: sha512-jfTwfaCLtBffYbQ+pOGFLM+J5HmUh3vb9rT0JrrQPjxzecdc8pNYreB1c96+mVuq8bDCvaCdIeuEsslTqLJL0Q==}
+    peerDependencies:
+      '@react-native-community/datetimepicker': '>=6.7.0'
+      react-native: '>=0.65.0'
+    dependencies:
+      '@react-native-community/datetimepicker': 7.6.2
+      prop-types: 15.8.1
+      react-native: 0.71.8(@babel/core@7.28.5)(@babel/preset-env@7.28.5)(react@18.2.0)
+    dev: false
 
   /react-native-svg@13.9.0(react-native@0.71.8)(react@18.2.0):
     resolution: {integrity: sha512-Ey18POH0dA0ob/QiwCBVrxIiwflhYuw0P0hBlOHeY4J5cdbs8ngdKHeWC/Kt9+ryP6fNoEQ1PUgPYw2Bs/rp5Q==}

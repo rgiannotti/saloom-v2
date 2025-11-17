@@ -24,6 +24,7 @@ interface SidebarProps {
   collapsed?: boolean;
   onToggleCollapsed?: () => void;
   showBorder?: boolean;
+  onLogout?: () => void;
 }
 
 export const Sidebar = ({
@@ -32,7 +33,8 @@ export const Sidebar = ({
   onSelect,
   collapsed = false,
   onToggleCollapsed,
-  showBorder = true
+  showBorder = true,
+  onLogout
 }: SidebarProps) => {
   return (
     <View
@@ -82,6 +84,16 @@ export const Sidebar = ({
           );
         })}
       </ScrollView>
+      {onLogout ? (
+        <TouchableOpacity
+          style={[styles.logoutButton, collapsed && styles.logoutButtonCollapsed]}
+          onPress={onLogout}
+        >
+          <Text style={[styles.logoutText, collapsed && styles.logoutTextCollapsed]}>
+            {collapsed ? "⏻" : "Cerrar sesión"}
+          </Text>
+        </TouchableOpacity>
+      ) : null}
     </View>
   );
 };
@@ -155,5 +167,24 @@ const styles = StyleSheet.create({
   },
   menuLabelActive: {
     color: "#be123c"
+  },
+  logoutButton: {
+    marginTop: 12,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: "center"
+  },
+  logoutButtonCollapsed: {
+    paddingVertical: 10,
+    paddingHorizontal: 6
+  },
+  logoutText: {
+    color: "#0f172a",
+    fontWeight: "600"
+  },
+  logoutTextCollapsed: {
+    fontSize: 16
   }
 });

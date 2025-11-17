@@ -6,4 +6,5 @@ export interface JwtPayload {
   email: string;
   roles: UserRole[];
   aud: AppAudience;
+  client?: string | null;
 }

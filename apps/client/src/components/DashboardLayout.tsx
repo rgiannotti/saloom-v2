@@ -11,6 +11,7 @@ import {
 } from "react-native";
 
 import { Sidebar, SidebarItem } from "./Sidebar";
+import { useAuth } from "../auth/AuthContext";
 
 interface DashboardLayoutProps {
   userName: string;
@@ -27,6 +28,7 @@ export const DashboardLayout = ({
   onSelectItem,
   children
 }: DashboardLayoutProps) => {
+  const { logout } = useAuth();
   const { width } = useWindowDimensions();
   const isLargeScreen = width >= 1024;
   const isMediumScreen = width >= 768;
@@ -88,6 +90,7 @@ export const DashboardLayout = ({
             onSelect={onSelectItem}
             collapsed={collapsed}
             onToggleCollapsed={() => setCollapsed((prev) => !prev)}
+            onLogout={logout}
           />
         ) : null}
 
@@ -122,7 +125,12 @@ export const DashboardLayout = ({
       </View>
 
       {!isLargeScreen ? (
-        <Modal transparent visible={drawerVisible} animationType="none" onRequestClose={closeDrawer}>
+        <Modal
+          transparent
+          visible={drawerVisible}
+          animationType="none"
+          onRequestClose={closeDrawer}
+        >
           <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={closeDrawer} />
           <Animated.View
             style={[
@@ -141,6 +149,7 @@ export const DashboardLayout = ({
                 closeDrawer();
               }}
               showBorder={false}
+              onLogout={logout}
             />
           </Animated.View>
         </Modal>
@@ -209,21 +218,16 @@ const styles = StyleSheet.create({
     fontWeight: "700"
   },
   moduleCard: {
-    flex: 1,
-    backgroundColor: "#fff",
-    borderRadius: 20,
-    padding: 24,
-    borderWidth: 1,
-    borderColor: "#e2e8f0"
+    flex: 1
   },
   moduleCardDesktop: {
-    shadowColor: "#0f172a",
-    shadowOpacity: 0.06,
-    shadowRadius: 20,
-    shadowOffset: { width: 0, height: 8 }
+    // shadowColor: "#0f172a",
+    // shadowOpacity: 0.06,
+    // shadowRadius: 20,
+    // shadowOffset: { width: 0, height: 8 }
   },
   moduleCardMobile: {
-    elevation: 3
+    // elevation: 3
   },
   overlay: {
     flex: 1,

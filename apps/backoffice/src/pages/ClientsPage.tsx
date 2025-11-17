@@ -365,6 +365,7 @@ export const ClientsPage = () => {
       setCatalogStatus((prev) => ({ ...prev, loading: true, error: null }));
       try {
         const usersUrl = new URL(`${API_BASE_URL}/app/users`);
+        usersUrl.searchParams.set("roles", "pro");
         if (editingId) {
           usersUrl.searchParams.set("clientId", editingId);
         }
@@ -917,7 +918,7 @@ export const ClientsPage = () => {
       <div className="clients-page">
         <header className="clients-page__header">
           <div>
-            <h1>Clientes</h1>
+            <h1>Profesionales</h1>
             <p>Administra los clientes registrados en la plataforma.</p>
           </div>
           <button type="button" className="primary-button" onClick={() => openEditor()}>

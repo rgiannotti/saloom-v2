@@ -1,4 +1,5 @@
 import * as SecureStore from "expo-secure-store";
+import { jwtDecode } from "jwt-decode";
 import React, {
   ReactNode,
   createContext,
@@ -6,6 +7,7 @@ import React, {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState
 } from "react";
 import { Platform } from "react-native";
@@ -87,6 +89,14 @@ const isProWithClient = (user: AuthSession["user"]) => {
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<AuthSession | null>(null);
   const [initializing, setInitializing] = useState(true);
+  const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const clearRefreshTimeout = useCallback(() => {
+    if (refreshTimeoutRef.current) {
+      clearTimeout(refreshTimeoutRef.current);
+      refreshTimeoutRef.current = null;
+    }
+  }, []);
 
   const persistSession = useCallback(async (value: AuthSession | null) => {
     setSession(value);
@@ -173,10 +183,70 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 
   const logout = useCallback(() => {
+    clearRefreshTimeout();
     persistSession(null).catch(() => {
       setSession(null);
     });
-  }, [persistSession]);
+  }, [persistSession, clearRefreshTimeout]);
+
+  const refreshSession = useCallback(async () => {
+    if (!session?.user?._id || !session.tokens.refreshToken) {
+      return;
+    }
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          userId: session.user._id,
+          refreshToken: session.tokens.refreshToken
+        })
+      });
+      if (!response.ok) {
+        throw new Error("No se pudo refrescar la sesión");
+      }
+      const data = (await response.json()) as LoginResponse;
+      await persistSession({
+        user: data.user,
+        tokens: data.tokens
+      });
+    } catch (err) {
+      console.warn("Error refrescando la sesión:", err);
+      await persistSession(null);
+    }
+  }, [session, persistSession]);
+
+  const scheduleRefresh = useCallback(
+    (current: AuthSession | null) => {
+      clearRefreshTimeout();
+      if (!current) {
+        return;
+      }
+      try {
+        const decoded = jwtDecode<{ exp?: number }>(current.tokens.accessToken);
+        if (!decoded.exp) {
+          return;
+        }
+        const expiresInMs = decoded.exp * 1000 - Date.now();
+        const refreshInMs = Math.max(expiresInMs - 60_000, 5_000);
+        refreshTimeoutRef.current = setTimeout(() => {
+          refreshSession();
+        }, refreshInMs);
+      } catch (err) {
+        console.warn("No se pudo programar el refresco del token:", err);
+      }
+    },
+    [clearRefreshTimeout, refreshSession]
+  );
+
+  useEffect(() => {
+    scheduleRefresh(session);
+    return () => {
+      clearRefreshTimeout();
+    };
+  }, [session, scheduleRefresh, clearRefreshTimeout]);
 
   const value = useMemo<AuthContextValue>(
     () => ({

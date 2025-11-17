@@ -83,7 +83,13 @@ export class AuthService {
       sub: this.extractUserId(user as UserWithId),
       email: user.email,
       roles: user.roles,
-      aud: audience
+      aud: audience,
+      client:
+        typeof user.client === "string"
+          ? user.client
+          : user.client
+            ? (user.client as Types.ObjectId).toHexString()
+            : null
     };
 
     const [accessToken, refreshToken] = await Promise.all([
