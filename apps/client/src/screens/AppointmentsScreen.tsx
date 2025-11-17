@@ -83,6 +83,7 @@ export const AppointmentsScreen = () => {
   const {
     session: { tokens, user }
   } = useAuth();
+  const isWeb = Platform.OS === "web";
   const { width } = useWindowDimensions();
   const isMobile = width < 1024;
   const [viewMode, setViewMode] = useState<"week" | "day" | "month">("week");
@@ -116,6 +117,7 @@ export const AppointmentsScreen = () => {
   const [appointmentError, setAppointmentError] = useState<string | null>(null);
 
   const [datePickerVisible, setDatePickerVisible] = useState(false);
+  const [webDateCursor, setWebDateCursor] = useState(() => dayjs());
   const clientId = user.client;
 
   const clearAppointmentError = useCallback(() => {
@@ -340,11 +342,30 @@ export const AppointmentsScreen = () => {
     resetModalForm();
   };
 
+  const handleOpenDatePicker = () => {
+    clearAppointmentError();
+    if (isWeb) {
+      setWebDateCursor(dayjs(modalDate));
+      setDatePickerVisible(true);
+      return;
+    }
+    setDatePickerVisible(true);
+  };
+
   const buildAvailableTimes = useCallback(
     (professionalId: string | null, date: Date, serviceSlots = 1) => {
       if (!professionalId) {
         return [];
       }
+      const targetDay = dayjs(date);
+      const today = dayjs();
+      if (targetDay.isBefore(today, "day")) {
+        return [];
+      }
+      const nowMinutes =
+        targetDay.isSame(today, "day") && !isNaN(today.diff(today.startOf("day"), "minute"))
+          ? today.diff(today.startOf("day"), "minute")
+          : null;
       const professional = professionals.find((pro) => pro._id === professionalId);
       if (!professional) {
         return [];
@@ -368,6 +389,9 @@ export const AppointmentsScreen = () => {
       return timeOptions.filter((option) => {
         const optionMinutes = timeStringToMinutes(option.value);
         if (optionMinutes === null) {
+          return false;
+        }
+        if (nowMinutes !== null && optionMinutes <= nowMinutes) {
           return false;
         }
         const isWithinSchedule = scheduleEntries.some((entry) => {
@@ -1167,13 +1191,7 @@ export const AppointmentsScreen = () => {
                 >
                   <View style={[styles.modalSection, isMobile && styles.fullWidth]}>
                     <Text style={styles.fieldLabel}>Fecha *</Text>
-                    <TouchableOpacity
-                      style={styles.input}
-                      onPress={() => {
-                        clearAppointmentError();
-                        setDatePickerVisible(true);
-                      }}
-                    >
+                    <TouchableOpacity style={styles.input} onPress={handleOpenDatePicker}>
                       <Text>{dayjs(modalDate).format("DD/MM/YYYY")}</Text>
                     </TouchableOpacity>
                   </View>
@@ -1270,20 +1288,100 @@ export const AppointmentsScreen = () => {
               </ScrollView>
             </View>
           </TouchableWithoutFeedback>
+          {isWeb && datePickerVisible ? (
+            <View style={styles.webDatePickerOverlay} pointerEvents="box-none">
+              <TouchableOpacity
+                style={styles.webDatePickerBackdrop}
+                activeOpacity={1}
+                onPress={() => setDatePickerVisible(false)}
+              >
+                <View style={styles.webDatePickerCard}>
+                  <View style={styles.webDatePickerHeader}>
+                    <TouchableOpacity
+                      onPress={() => setWebDateCursor((prev) => prev.subtract(1, "month"))}
+                      style={styles.webDatePickerNav}
+                    >
+                      <Text style={styles.webDatePickerNavText}>‹</Text>
+                    </TouchableOpacity>
+                    <Text style={styles.webDatePickerTitle}>
+                      {webDateCursor.format("MMMM YYYY")}
+                    </Text>
+                    <TouchableOpacity
+                      onPress={() => setWebDateCursor((prev) => prev.add(1, "month"))}
+                      style={styles.webDatePickerNav}
+                    >
+                      <Text style={styles.webDatePickerNavText}>›</Text>
+                    </TouchableOpacity>
+                  </View>
+                  <View style={styles.webDatePickerWeek}>
+                    {["L", "M", "M", "J", "V", "S", "D"].map((d, idx) => (
+                      <Text key={`weekday-${idx}`} style={styles.webDatePickerWeekday}>
+                        {d}
+                      </Text>
+                    ))}
+                  </View>
+                  <View style={styles.webDatePickerGrid}>
+                    {Array.from({
+                      length: (webDateCursor.startOf("month").day() + 6) % 7
+                    }).map((_, idx) => (
+                      <View key={`empty-${idx}`} style={styles.webDatePickerCell} />
+                    ))}
+                    {Array.from({ length: webDateCursor.daysInMonth() }).map((_, idx) => {
+                      const day = webDateCursor.date(idx + 1);
+                      const isToday = day.isSame(dayjs(), "day");
+                      const isSelected = day.isSame(modalDate, "day");
+                      return (
+                        <TouchableOpacity
+                          key={day.format("YYYY-MM-DD")}
+                          style={[
+                            styles.webDatePickerCell,
+                            isSelected && styles.webDatePickerCellSelected,
+                            isToday && styles.webDatePickerCellToday
+                          ]}
+                          onPress={() => {
+                            setModalDate(day.toDate());
+                            setDatePickerVisible(false);
+                            clearAppointmentError();
+                          }}
+                        >
+                          <Text
+                            style={[
+                              styles.webDatePickerCellText,
+                              isSelected && styles.webDatePickerCellTextSelected
+                            ]}
+                          >
+                            {idx + 1}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                  <TouchableOpacity
+                    style={styles.webDatePickerClose}
+                    onPress={() => setDatePickerVisible(false)}
+                  >
+                    <Text style={styles.webDatePickerCloseText}>Cerrar</Text>
+                  </TouchableOpacity>
+                </View>
+              </TouchableOpacity>
+            </View>
+          ) : null}
         </View>
       </Modal>
 
-      <DateTimePickerModal
-        isVisible={datePickerVisible}
-        mode="date"
-        date={modalDate}
-        onConfirm={(date) => {
-          clearAppointmentError();
-          setModalDate(date);
-          setDatePickerVisible(false);
-        }}
-        onCancel={() => setDatePickerVisible(false)}
-      />
+      {Platform.OS !== "web" ? (
+        <DateTimePickerModal
+          isVisible={datePickerVisible}
+          mode="date"
+          date={modalDate}
+          onConfirm={(date) => {
+            clearAppointmentError();
+            setModalDate(date);
+            setDatePickerVisible(false);
+          }}
+          onCancel={() => setDatePickerVisible(false)}
+        />
+      ) : null}
     </View>
   );
 };
@@ -1738,5 +1836,89 @@ const styles = StyleSheet.create({
   emptyHint: {
     color: "#94a3b8",
     paddingVertical: 8
+  },
+  webDatePickerOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 5000
+  },
+  webDatePickerBackdrop: {
+    width: "100%",
+    height: "100%",
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  webDatePickerCard: {
+    backgroundColor: "#fff",
+    padding: 16,
+    borderRadius: 16,
+    width: 320,
+    elevation: 6,
+    gap: 12,
+    zIndex: 5001
+  },
+  webDatePickerHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between"
+  },
+  webDatePickerTitle: {
+    fontWeight: "700",
+    fontSize: 16,
+    color: "#0f172a"
+  },
+  webDatePickerNav: {
+    padding: 8
+  },
+  webDatePickerNavText: {
+    fontSize: 18,
+    color: "#0f172a"
+  },
+  webDatePickerWeek: {
+    flexDirection: "row",
+    justifyContent: "space-between"
+  },
+  webDatePickerWeekday: {
+    width: 32,
+    textAlign: "center",
+    fontWeight: "700",
+    color: "#475569"
+  },
+  webDatePickerGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 4
+  },
+  webDatePickerCell: {
+    width: 40,
+    height: 40,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 10
+  },
+  webDatePickerCellSelected: {
+    backgroundColor: "#f43f5e"
+  },
+  webDatePickerCellToday: {
+    borderWidth: 1,
+    borderColor: "#e2e8f0"
+  },
+  webDatePickerCellText: {
+    color: "#0f172a",
+    fontWeight: "600"
+  },
+  webDatePickerCellTextSelected: {
+    color: "#fff"
+  },
+  webDatePickerClose: {
+    alignSelf: "flex-end",
+    paddingVertical: 8,
+    paddingHorizontal: 12
+  },
+  webDatePickerCloseText: {
+    color: "#f43f5e",
+    fontWeight: "700"
   }
 });
