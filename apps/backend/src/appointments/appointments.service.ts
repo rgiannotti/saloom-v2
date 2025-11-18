@@ -35,8 +35,9 @@ export class AppointmentsService {
         active: true
       })
       .populate([
-        { path: "user", select: "name" },
-        { path: "services.service", select: "name" }
+        { path: "user", select: "name phone" },
+        { path: "services.service", select: "name price slot" },
+        { path: "professional", select: "name" }
       ])
       .lean()
       .exec()
@@ -44,11 +45,23 @@ export class AppointmentsService {
         appointments.map((appointment: any) => {
           const serviceNames =
             appointment.services?.map((item: any) => item?.service?.name).filter(Boolean) ?? [];
+          const servicePrices =
+            appointment.services?.map((item: any) => item?.price ?? item?.service?.price).filter(
+              (v: any) => v !== undefined
+            ) ?? [];
+          const serviceSlots =
+            appointment.services?.map((item: any) => item?.service?.slot).filter(Boolean) ?? [];
           const clientName = appointment.user?.name ?? undefined;
+          const clientPhone = appointment.user?.phone ?? undefined;
+          const professionalName = appointment.professional?.name ?? undefined;
           return {
             ...appointment,
             serviceNames,
-            clientName
+            servicePrices,
+            serviceSlots,
+            clientName,
+            clientPhone,
+            professionalName
           };
         })
       );
@@ -61,8 +74,9 @@ export class AppointmentsService {
         active: true
       })
       .populate([
-        { path: "user", select: "name" },
-        { path: "services.service", select: "name" }
+        { path: "user", select: "name phone" },
+        { path: "services.service", select: "name price slot" },
+        { path: "professional", select: "name" }
       ])
       .lean()
       .exec();
@@ -71,11 +85,21 @@ export class AppointmentsService {
     }
     const serviceNames =
       (appointment.services as any[])?.map((item) => item?.service?.name).filter(Boolean) ?? [];
+    const servicePrices =
+      (appointment.services as any[])?.map((item) => item?.price ?? item?.service?.price) ?? [];
+    const serviceSlots =
+      (appointment.services as any[])?.map((item) => item?.service?.slot).filter(Boolean) ?? [];
     const clientName = (appointment as any).user?.name ?? undefined;
+    const clientPhone = (appointment as any).user?.phone ?? undefined;
+    const professionalName = (appointment as any).professional?.name ?? undefined;
     return {
       ...(appointment as any),
       serviceNames,
-      clientName
+      servicePrices,
+      serviceSlots,
+      clientName,
+      clientPhone,
+      professionalName
     } as Appointment;
   }
 

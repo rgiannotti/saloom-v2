@@ -33,7 +33,11 @@ type AppointmentApi = {
   notes?: string;
   client: string;
   clientName?: string;
+  clientPhone?: string;
+  professionalName?: string;
   serviceNames?: string[];
+  servicePrices?: (number | null)[];
+  serviceSlots?: (number | null)[];
   professional?: string;
   services: { service: string; price?: number }[];
 };
@@ -41,6 +45,20 @@ type AppointmentApi = {
 const colors = ["#f43f5e", "#0ea5e9", "#10b981", "#f97316", "#8b5cf6", "#14b8a6", "#ec4899"];
 
 const SLOT_MINUTES = 15;
+
+const STATUS_OPTIONS = [
+  { value: "scheduled", label: "Programada" },
+  { value: "confirmed", label: "Confirmada" },
+  { value: "show", label: "Presentado" },
+  { value: "no_show", label: "No Presentado" },
+  { value: "canceled", label: "Cancelada" },
+  { value: "completed", label: "Completada" }
+] as const;
+
+const STATUS_LABELS = STATUS_OPTIONS.reduce<Record<string, string>>((acc, curr) => {
+  acc[curr.value] = curr.label;
+  return acc;
+}, {});
 
 const timeStringToMinutes = (value?: string | null) => {
   if (!value) {
@@ -90,6 +108,7 @@ export const AppointmentsScreen = () => {
   const [calendarDate, setCalendarDate] = useState<Date>(new Date());
   const [professionals, setProfessionals] = useState<ProfessionalOption[]>([]);
   const [appointments, setAppointments] = useState<AppointmentApi[]>([]);
+  const [editingAppointment, setEditingAppointment] = useState<AppointmentApi | null>(null);
   const [clientPlace, setClientPlace] = useState<ClientPlace | null>(null);
   const [selectedProfessional, setSelectedProfessional] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -101,10 +120,12 @@ export const AppointmentsScreen = () => {
   const [modalTime, setModalTime] = useState<string>("");
   const [modalProfessional, setModalProfessional] = useState<string | null>(null);
   const [modalService, setModalService] = useState<string | null>(null);
+  const [modalStatus, setModalStatus] = useState<string>("scheduled");
   const [notes, setNotes] = useState("");
   const [professionalSelectorOpen, setProfessionalSelectorOpen] = useState(false);
   const [serviceSelectorOpen, setServiceSelectorOpen] = useState(false);
   const [timeSelectorOpen, setTimeSelectorOpen] = useState(false);
+  const [statusSelectorOpen, setStatusSelectorOpen] = useState(false);
 
   const [customerQuery, setCustomerQuery] = useState("");
   const [customers, setCustomers] = useState<CustomerOption[]>([]);
@@ -139,11 +160,13 @@ export const AppointmentsScreen = () => {
     setModalProfessional(null);
     setModalService(null);
     setModalTime("");
+    setModalStatus("scheduled");
     setNotes("");
     setAppointmentError(null);
     setCreatingAppointment(false);
     setModalDate(new Date());
     setDatePickerVisible(false);
+    setEditingAppointment(null);
   }, []);
 
   const headers = useMemo(
@@ -159,6 +182,7 @@ export const AppointmentsScreen = () => {
       closeDropdowns();
       setShowNewCustomerForm(false);
       setCustomerDropdownOpen(false);
+      setStatusSelectorOpen(false);
     }
   }, [modalVisible, closeDropdowns]);
 
@@ -276,6 +300,7 @@ export const AppointmentsScreen = () => {
     } else {
       setCustomers([]);
     }
+    setStatusSelectorOpen(false);
   }, [customerQuery, searchCustomers, showNewCustomerForm]);
 
   const events: CalendarEvent<AppointmentApi>[] = useMemo(() => {
@@ -307,6 +332,32 @@ export const AppointmentsScreen = () => {
       });
   }, [appointments, selectedProfessional]);
 
+  const isEditing = Boolean(editingAppointment);
+
+  const handlePressEvent = (event: CalendarEvent<AppointmentApi>) => {
+    const appt = event.data;
+    if (!appt) {
+      return;
+    }
+    clearAppointmentError();
+    setEditingAppointment(appt);
+    setModalDate(new Date(appt.startDate));
+    setModalTime(dayjs(appt.startDate).format("HH:mm"));
+    setModalProfessional(appt.professional ?? null);
+    setModalService(appt.services?.[0]?.service ?? null);
+    setModalStatus(appt.status ?? "scheduled");
+    setNotes(appt.notes ?? "");
+    setSelectedCustomer(null);
+    setCustomerQuery(appt.clientName ?? "");
+    setCustomerDropdownOpen(false);
+    setServiceSelectorOpen(false);
+    setProfessionalSelectorOpen(false);
+    setTimeSelectorOpen(false);
+    setStatusSelectorOpen(false);
+    setShowNewCustomerForm(false);
+    setModalVisible(true);
+  };
+
   const handleSelectProfessional = (professionalId: string | null) => {
     setSelectedProfessional(professionalId);
   };
@@ -316,6 +367,7 @@ export const AppointmentsScreen = () => {
       return;
     }
     clearAppointmentError();
+    setEditingAppointment(null);
     setModalDate(date);
     setModalTime(getNearestTimeValue(date));
     const professionalId = selectedProfessional ?? null;
@@ -324,10 +376,12 @@ export const AppointmentsScreen = () => {
       ? (professionals.find((pro) => pro._id === professionalId)?.services?.[0]?._id ?? null)
       : null;
     setModalService(defaultService);
+    setModalStatus("scheduled");
     setSelectedCustomer(null);
     setCustomerQuery("");
     setCustomerDropdownOpen(false);
     setTimeSelectorOpen(false);
+    setStatusSelectorOpen(false);
     setShowNewCustomerForm(false);
     setNotes("");
     setModalVisible(true);
@@ -359,13 +413,17 @@ export const AppointmentsScreen = () => {
       }
       const targetDay = dayjs(date);
       const today = dayjs();
-      if (targetDay.isBefore(today, "day")) {
+      const skipPastFilter = Boolean(editingAppointment);
+      if (!skipPastFilter && targetDay.isBefore(today, "day")) {
         return [];
       }
       const nowMinutes =
-        targetDay.isSame(today, "day") && !isNaN(today.diff(today.startOf("day"), "minute"))
+        !skipPastFilter &&
+        targetDay.isSame(today, "day") &&
+        !isNaN(today.diff(today.startOf("day"), "minute"))
           ? today.diff(today.startOf("day"), "minute")
           : null;
+      if (professionalId && professionalId?._id) professionalId = professionalId._id;
       const professional = professionals.find((pro) => pro._id === professionalId);
       if (!professional) {
         return [];
@@ -373,10 +431,21 @@ export const AppointmentsScreen = () => {
       const normalizedSlots = Math.max(serviceSlots, 1);
       const slotDurationMinutes = normalizedSlots * SLOT_MINUTES;
       const dayKey = dayjs(date).format("dddd").toLowerCase();
+      const dayKeyEn = [
+        "sunday",
+        "monday",
+        "tuesday",
+        "wednesday",
+        "thursday",
+        "friday",
+        "saturday"
+      ][targetDay.day()];
       const scheduleEntries =
         professional.schedule?.filter(
           (entry) =>
-            entry?.day?.toLowerCase() === dayKey && Boolean(entry?.start) && Boolean(entry?.end)
+            Boolean(entry?.start) &&
+            Boolean(entry?.end) &&
+            (entry?.day?.toLowerCase() === dayKey || entry?.day?.toLowerCase() === dayKeyEn)
         ) ?? [];
       if (!scheduleEntries.length) {
         return [];
@@ -384,7 +453,8 @@ export const AppointmentsScreen = () => {
       const busyAppointments = appointments.filter(
         (appointment) =>
           appointment.professional === professionalId &&
-          dayjs(appointment.startDate).isSame(date, "day")
+          dayjs(appointment.startDate).isSame(date, "day") &&
+          (!editingAppointment || appointment._id !== editingAppointment._id)
       );
       return timeOptions.filter((option) => {
         const optionMinutes = timeStringToMinutes(option.value);
@@ -419,7 +489,7 @@ export const AppointmentsScreen = () => {
         return !overlapsExisting;
       });
     },
-    [appointments, professionals]
+    [appointments, professionals, editingAppointment]
   );
 
   const professionalServices = useMemo(() => {
@@ -436,12 +506,25 @@ export const AppointmentsScreen = () => {
     return professionalServices.find((service) => service._id === modalService) ?? null;
   }, [modalService, professionalServices]);
 
-  const serviceSlotCount = selectedServiceOption?.slot ?? 1;
+  const serviceSlotCount = selectedServiceOption?.slot ?? editingAppointment?.slots ?? 1;
 
-  const availableTimeOptions = useMemo(
-    () => buildAvailableTimes(modalProfessional, modalDate, serviceSlotCount),
-    [buildAvailableTimes, modalProfessional, modalDate, serviceSlotCount]
-  );
+  const availableTimeOptions = useMemo(() => {
+    const base = buildAvailableTimes(modalProfessional, modalDate, serviceSlotCount);
+    if (editingAppointment && modalTime && !base.some((opt) => opt.value === modalTime)) {
+      const match = timeOptions.find((opt) => opt.value === modalTime);
+      if (match) {
+        return [match, ...base];
+      }
+    }
+    return base;
+  }, [
+    buildAvailableTimes,
+    modalProfessional,
+    modalDate,
+    serviceSlotCount,
+    editingAppointment,
+    modalTime
+  ]);
 
   useEffect(() => {
     if (!modalVisible) {
@@ -500,10 +583,9 @@ export const AppointmentsScreen = () => {
   const canSubmitAppointment = useMemo(
     () =>
       Boolean(
-        selectedCustomer &&
-          modalProfessional &&
+        modalProfessional &&
           modalService &&
-          selectedServiceOption &&
+          (isEditing || (selectedCustomer && selectedServiceOption)) &&
           modalTime &&
           availableTimeOptions.length
       ),
@@ -513,7 +595,8 @@ export const AppointmentsScreen = () => {
       modalService,
       modalTime,
       selectedCustomer,
-      selectedServiceOption
+      selectedServiceOption,
+      isEditing
     ]
   );
 
@@ -526,7 +609,7 @@ export const AppointmentsScreen = () => {
       setAppointmentError("No se encontró el cliente asociado.");
       return;
     }
-    if (!selectedCustomer) {
+    if (!isEditing && !selectedCustomer) {
       setAppointmentError("Selecciona un cliente para la cita.");
       return;
     }
@@ -538,7 +621,7 @@ export const AppointmentsScreen = () => {
       setAppointmentError("Selecciona el servicio de la cita.");
       return;
     }
-    if (!selectedServiceOption) {
+    if (!isEditing && !selectedServiceOption) {
       setAppointmentError("Selecciona un servicio válido.");
       return;
     }
@@ -560,7 +643,7 @@ export const AppointmentsScreen = () => {
       setAppointmentError("Configura la ubicación del cliente antes de crear una cita.");
       return;
     }
-    const serviceSlots = Math.max(selectedServiceOption.slot ?? 1, 1);
+    const serviceSlots = Math.max(selectedServiceOption?.slot ?? editingAppointment?.slots ?? 1, 1);
     const slotDurationMinutes = serviceSlots * SLOT_MINUTES;
     const startDate = dayjs(modalDate)
       .hour(Math.floor(startMinutes / 60))
@@ -570,37 +653,51 @@ export const AppointmentsScreen = () => {
     const endDate = startDate.add(slotDurationMinutes, "minute");
     const slotStartIndex = Math.floor(startMinutes / SLOT_MINUTES);
     const slotEndIndex = slotStartIndex + serviceSlots;
-    const payload = {
-      startDate: startDate.toISOString(),
-      endDate: endDate.toISOString(),
-      services: [
-        {
-          service: modalService,
-          price: selectedServiceOption.price
+    const payload = isEditing
+      ? {
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString(),
+          slotStart: slotStartIndex,
+          slotEnd: slotEndIndex,
+          slots: serviceSlots,
+          status: modalStatus,
+          notes: notes.trim() ? notes.trim() : undefined
         }
-      ],
-      slots: serviceSlots,
-      slotStart: slotStartIndex,
-      slotEnd: slotEndIndex,
-      status: "scheduled",
-      amount: selectedServiceOption.price,
-      notes: notes.trim() ? notes.trim() : undefined,
-      client: clientId,
-      professional: modalProfessional,
-      user: selectedCustomer._id,
-      place: {
-        address: clientPlace?.address,
-        location: {
-          type: location.type ?? "Point",
-          coordinates: location.coordinates
-        }
-      },
-      type: clientPlace?.address ? "local" : undefined
-    };
+      : {
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString(),
+          services: [
+            {
+              service: modalService,
+              price: selectedServiceOption?.price
+            }
+          ],
+          slots: serviceSlots,
+          slotStart: slotStartIndex,
+          slotEnd: slotEndIndex,
+          status: modalStatus || "scheduled",
+          amount: selectedServiceOption?.price,
+          notes: notes.trim() ? notes.trim() : undefined,
+          client: clientId,
+          professional: modalProfessional,
+          user: selectedCustomer?._id,
+          place: {
+            address: clientPlace?.address,
+            location: {
+              type: location.type ?? "Point",
+              coordinates: location.coordinates
+            }
+          },
+          type: clientPlace?.address ? "local" : undefined
+        };
     try {
       setCreatingAppointment(true);
-      const response = await fetch(`${API_BASE_URL}/appointments`, {
-        method: "POST",
+      const url = isEditing
+        ? `${API_BASE_URL}/appointments/${editingAppointment?._id}`
+        : `${API_BASE_URL}/appointments`;
+      const method = isEditing ? "PATCH" : "POST";
+      const response = await fetch(url, {
+        method,
         headers,
         body: JSON.stringify(payload)
       });
@@ -619,12 +716,44 @@ export const AppointmentsScreen = () => {
         }
         throw new Error(message);
       }
-      const created = (await response.json()) as AppointmentApi;
-      setAppointments((prev) =>
-        [...prev, created].sort(
-          (a, b) => dayjs(a.startDate).valueOf() - dayjs(b.startDate).valueOf()
-        )
-      );
+      const saved = (await response.json()) as AppointmentApi;
+      if (isEditing) {
+        setAppointments((prev) =>
+          prev
+            .map((appt) => (appt._id === saved._id ? saved : appt))
+            .sort((a, b) => dayjs(a.startDate).valueOf() - dayjs(b.startDate).valueOf())
+        );
+      } else {
+        setAppointments((prev) =>
+          [...prev, saved].sort(
+            (a, b) => dayjs(a.startDate).valueOf() - dayjs(b.startDate).valueOf()
+          )
+        );
+      }
+      setModalVisible(false);
+      closeDropdowns();
+      resetModalForm();
+    } catch (error) {
+      setAppointmentError((error as Error).message);
+    } finally {
+      setCreatingAppointment(false);
+    }
+  };
+
+  const handleDeleteAppointment = async () => {
+    if (!editingAppointment?._id) {
+      return;
+    }
+    try {
+      setCreatingAppointment(true);
+      const response = await fetch(`${API_BASE_URL}/appointments/${editingAppointment._id}`, {
+        method: "DELETE",
+        headers
+      });
+      if (!response.ok) {
+        throw new Error("No se pudo eliminar la cita.");
+      }
+      setAppointments((prev) => prev.filter((appt) => appt._id !== editingAppointment._id));
       setModalVisible(false);
       closeDropdowns();
       resetModalForm();
@@ -848,6 +977,7 @@ export const AppointmentsScreen = () => {
               hourRowHeight={SLOT_MINUTES * 4}
               overlapOffset={8}
               onPressCell={handlePressCell}
+              onPressEvent={handlePressEvent}
               onChangeDate={(range) => {
                 if (Array.isArray(range) && range[0]) {
                   setCalendarDate(dayjs(range[0]).toDate());
@@ -923,369 +1053,620 @@ export const AppointmentsScreen = () => {
                   <Text style={styles.modalClose}>✕</Text>
                 </TouchableOpacity>
               </View>
-              <ScrollView
-                style={styles.modalScroll}
-                contentContainerStyle={styles.modalScrollContent}
-                keyboardShouldPersistTap="handled"
-              >
-                <View style={[styles.modalSectionClient, styles.modalSectionElevated]}>
-                  <Text style={styles.fieldLabel}>Cliente *</Text>
-                  <View style={styles.autocompleteContainer}>
-                    <TextInput
-                      style={styles.input}
-                      placeholder="Buscar por nombre, teléfono o email..."
-                      value={selectedCustomer ? selectedCustomer.name : customerQuery}
-                      editable={!selectedCustomer}
-                      onFocus={() => {
-                        setCustomerDropdownOpen(true);
-                        setShowNewCustomerForm(false);
-                        clearAppointmentError();
-                      }}
-                      onChangeText={(text) => {
-                        setCustomerQuery(text);
-                        setSelectedCustomer(null);
-                        setShowNewCustomerForm(false);
-                        setCustomerDropdownOpen(true);
-                        clearAppointmentError();
-                      }}
-                    />
-                    {!selectedCustomer &&
-                    customerDropdownOpen &&
-                    (customers.length > 0 || !showNewCustomerForm) ? (
-                      <View style={styles.autocompleteDropdown}>
-                        <ScrollView style={styles.dropdownScroll}>
-                          {customers.map((customer) => (
+              {isEditing ? (
+                <ScrollView
+                  style={styles.modalScroll}
+                  contentContainerStyle={styles.modalScrollContent}
+                  keyboardShouldPersistTap="handled"
+                >
+                  <View
+                    style={[
+                      !isMobile ? styles.editHeaderRow : styles.editHeaderRowMobile,
+                      styles.modalRowElevated
+                    ]}
+                  >
+                    <View style={styles.editInfo}>
+                      <Text style={styles.editCustomer}>
+                        {editingAppointment?.clientName ?? "Cliente"}
+                      </Text>
+                      {editingAppointment?.clientPhone ? (
+                        <Text style={styles.editCustomerInfo}>
+                          {editingAppointment.clientPhone}
+                        </Text>
+                      ) : null}
+                      <Text style={styles.editService}>
+                        {editingAppointment?.serviceNames?.[0] ?? "Servicio"}
+                      </Text>
+                      <Text style={styles.editCustomerInfo}>
+                        {serviceSlotCount * SLOT_MINUTES} min
+                        {(() => {
+                          const price =
+                            selectedServiceOption?.price ??
+                            editingAppointment?.servicePrices?.[0] ??
+                            null;
+                          return price ? ` - $${price}` : "";
+                        })()}
+                      </Text>
+                      {editingAppointment?.professionalName ? (
+                        <Text style={styles.editCustomerInfo}>
+                          {editingAppointment.professionalName}
+                        </Text>
+                      ) : null}
+                    </View>
+                    <View style={styles.editDateTime}>
+                      <TouchableOpacity style={styles.input} onPress={handleOpenDatePicker}>
+                        <Text>{dayjs(modalDate).format("DD/MM/YYYY")}</Text>
+                      </TouchableOpacity>
+                      <View style={styles.dropdownField}>
+                        <TouchableOpacity
+                          style={[
+                            styles.dropdownButton,
+                            !modalProfessional && styles.dropdownButtonDisabled
+                          ]}
+                          onPress={() => {
+                            if (!modalProfessional) {
+                              return;
+                            }
+                            setProfessionalSelectorOpen(false);
+                            setServiceSelectorOpen(false);
+                            setCustomerDropdownOpen(false);
+                            setTimeSelectorOpen((prev) => !prev);
+                          }}
+                          disabled={!modalProfessional}
+                        >
+                          <Text style={styles.dropdownButtonText}>{selectedTimeLabel}</Text>
+                          <Text style={styles.dropdownButtonIcon}>
+                            {timeSelectorOpen ? "▲" : "▼"}
+                          </Text>
+                        </TouchableOpacity>
+                        {timeSelectorOpen ? (
+                          <View style={styles.autocompleteDropdown}>
+                            {availableTimeOptions.length ? (
+                              <ScrollView style={styles.dropdownScroll}>
+                                {availableTimeOptions.map((option) => (
+                                  <TouchableOpacity
+                                    key={option.value}
+                                    style={styles.dropdownItemInline}
+                                    onPress={() => {
+                                      setModalTime(option.value);
+                                      setTimeSelectorOpen(false);
+                                      clearAppointmentError();
+                                    }}
+                                  >
+                                    <Text style={styles.dropdownItemText}>{option.label}</Text>
+                                  </TouchableOpacity>
+                                ))}
+                              </ScrollView>
+                            ) : (
+                              <Text style={styles.emptyHint}>Sin horarios disponibles</Text>
+                            )}
+                          </View>
+                        ) : null}
+                      </View>
+                    </View>
+                  </View>
+
+                  <View
+                    style={[
+                      styles.modalSectionNoFlex,
+                      { flexDirection: "row", alignItems: "center", marginBottom: 16 },
+                      isMobile && styles.fullWidth
+                    ]}
+                  >
+                    <Text style={styles.fieldLabel}>Estado actual:</Text>
+                    <View style={styles.statusBadge}>
+                      <Text style={styles.statusBadgeText}>
+                        {STATUS_LABELS[modalStatus] || "Programada"}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View
+                    style={[
+                      styles.modalSectionNoFlex,
+                      styles.modalRowLower,
+                      isMobile && styles.fullWidth
+                    ]}
+                  >
+                    <Text style={styles.fieldLabel}>Estado de la Cita *</Text>
+                    <View
+                      style={[
+                        styles.dropdownField,
+                        statusSelectorOpen && styles.dropdownFieldRaised
+                      ]}
+                    >
+                      <TouchableOpacity
+                        style={styles.dropdownButton}
+                        onPress={() => {
+                          setServiceSelectorOpen(false);
+                          setProfessionalSelectorOpen(false);
+                          setCustomerDropdownOpen(false);
+                          setTimeSelectorOpen(false);
+                          setStatusSelectorOpen((prev) => !prev);
+                        }}
+                      >
+                        <Text style={styles.dropdownButtonText}>
+                          {STATUS_LABELS[modalStatus] ?? "Selecciona estado"}
+                        </Text>
+                        <Text style={styles.dropdownButtonIcon}>
+                          {statusSelectorOpen ? "▲" : "▼"}
+                        </Text>
+                      </TouchableOpacity>
+                      {statusSelectorOpen ? (
+                        <View style={styles.autocompleteDropdown}>
+                          {STATUS_OPTIONS.map((option) => (
                             <TouchableOpacity
-                              key={customer._id}
+                              key={option.value}
                               style={styles.dropdownItemInline}
                               onPress={() => {
-                                setSelectedCustomer(customer);
-                                setCustomerQuery(customer.name);
-                                setCustomerDropdownOpen(false);
-                                setShowNewCustomerForm(false);
-                                clearAppointmentError();
+                                setModalStatus(option.value);
+                                setStatusSelectorOpen(false);
                               }}
                             >
-                              <Text style={styles.dropdownItemText}>{customer.name}</Text>
-                              <Text style={styles.dropdownItemSub}>
-                                {customer.email || customer.phone}
-                              </Text>
+                              <Text style={styles.dropdownItemText}>{option.label}</Text>
                             </TouchableOpacity>
                           ))}
-                        </ScrollView>
-                        <TouchableOpacity
-                          style={styles.dropdownCreateButton}
-                          onPress={() => {
-                            setShowNewCustomerForm(true);
-                            setCustomerDropdownOpen(false);
-                            clearAppointmentError();
-                          }}
-                        >
-                          <Text style={styles.dropdownCreateText}>+ Crear nuevo cliente</Text>
-                        </TouchableOpacity>
-                      </View>
-                    ) : null}
+                        </View>
+                      ) : null}
+                    </View>
                   </View>
-                  {selectedCustomer ? (
-                    <View style={styles.selectedCustomerCard}>
-                      <View>
-                        <Text style={styles.selectedCustomerName}>{selectedCustomer.name}</Text>
-                        <Text style={styles.selectedCustomerContact}>{selectedCustomer.phone}</Text>
-                        <Text style={styles.selectedCustomerContact}>{selectedCustomer.email}</Text>
-                      </View>
+
+                  <View style={styles.modalSection}>
+                    <Text style={styles.fieldLabel}>Notas</Text>
+                    <TextInput
+                      style={[styles.input, styles.notesInput]}
+                      multiline
+                      value={notes}
+                      onChangeText={(value) => {
+                        setNotes(value);
+                        clearAppointmentError();
+                      }}
+                      placeholder="Notas adicionales sobre la cita..."
+                    />
+                  </View>
+
+                  {appointmentError ? (
+                    <Text style={styles.errorText}>{appointmentError}</Text>
+                  ) : null}
+                  <View style={styles.editFooter}>
+                    <TouchableOpacity
+                      style={[
+                        styles.dangerButton,
+                        creatingAppointment && styles.secondaryButtonDisabled
+                      ]}
+                      onPress={handleDeleteAppointment}
+                      disabled={creatingAppointment}
+                    >
+                      <Text style={styles.dangerButtonText}>Eliminar Cita</Text>
+                    </TouchableOpacity>
+                    <View style={styles.editFooterActions}>
                       <TouchableOpacity
-                        onPress={() => {
+                        style={[
+                          styles.secondaryButton,
+                          creatingAppointment && styles.secondaryButtonDisabled
+                        ]}
+                        onPress={handleCloseModal}
+                        disabled={creatingAppointment}
+                      >
+                        <Text style={styles.secondaryButtonText}>Cancelar</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[
+                          styles.primaryButton,
+                          (creatingAppointment || !canSubmitAppointment) &&
+                            styles.primaryButtonDisabled
+                        ]}
+                        onPress={handleSubmitAppointment}
+                        disabled={creatingAppointment || !canSubmitAppointment}
+                      >
+                        <Text style={styles.primaryButtonText}>
+                          {creatingAppointment ? "Guardando..." : "Guardar Cambios"}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </ScrollView>
+              ) : (
+                <ScrollView
+                  style={styles.modalScroll}
+                  contentContainerStyle={styles.modalScrollContent}
+                  keyboardShouldPersistTap="handled"
+                >
+                  <View style={[styles.modalSectionNoFlex, styles.modalSectionElevated]}>
+                    <Text style={styles.fieldLabel}>Cliente *</Text>
+                    <View style={styles.autocompleteContainer}>
+                      <TextInput
+                        style={styles.input}
+                        placeholder="Buscar por nombre, teléfono o email..."
+                        value={selectedCustomer ? selectedCustomer.name : customerQuery}
+                        editable={!selectedCustomer && !isEditing}
+                        onFocus={() => {
+                          if (isEditing) {
+                            return;
+                          }
+                          setCustomerDropdownOpen(true);
+                          setShowNewCustomerForm(false);
+                          clearAppointmentError();
+                        }}
+                        onChangeText={(text) => {
+                          if (isEditing) {
+                            return;
+                          }
+                          setCustomerQuery(text);
                           setSelectedCustomer(null);
                           setShowNewCustomerForm(false);
                           setCustomerDropdownOpen(true);
                           clearAppointmentError();
                         }}
-                      >
-                        <Text style={styles.changeLink}>Cambiar</Text>
-                      </TouchableOpacity>
-                    </View>
-                  ) : (
-                    <>
-                      {showNewCustomerForm ? (
-                        <View style={styles.newCustomerCard}>
-                          <View style={styles.modalRow}>
-                            <Text style={styles.newCustomerTitle}>Nuevo Cliente</Text>
-                            <TouchableOpacity
-                              onPress={() => {
-                                setShowNewCustomerForm(false);
-                                setCustomerDropdownOpen(true);
-                                clearAppointmentError();
-                              }}
-                            >
-                              <Text style={styles.modalClose}>✕</Text>
-                            </TouchableOpacity>
-                          </View>
-                          <TextInput
-                            style={styles.input}
-                            placeholder="Nombre completo"
-                            value={newCustomer.name}
-                            onChangeText={(text) =>
-                              setNewCustomer((prev) => ({ ...prev, name: text }))
-                            }
-                          />
-                          <TextInput
-                            style={styles.input}
-                            placeholder="Teléfono"
-                            value={newCustomer.phone}
-                            onChangeText={(text) =>
-                              setNewCustomer((prev) => ({ ...prev, phone: text }))
-                            }
-                          />
-                          <TextInput
-                            style={styles.input}
-                            placeholder="Email (Opcional)"
-                            value={newCustomer.email}
-                            onChangeText={(text) =>
-                              setNewCustomer((prev) => ({ ...prev, email: text }))
-                            }
-                          />
-                          <TouchableOpacity
-                            style={styles.primaryButton}
-                            onPress={handleCreateCustomer}
-                            disabled={savingCustomer}
-                          >
-                            <Text style={styles.primaryButtonText}>
-                              {savingCustomer ? "Guardando..." : "Crear Cliente"}
-                            </Text>
-                          </TouchableOpacity>
-                        </View>
-                      ) : null}
-                    </>
-                  )}
-                </View>
-
-                <View
-                  style={[styles.modalRow, styles.modalRowElevated, isMobile && styles.modalColumn]}
-                >
-                  <View
-                    style={[
-                      styles.modalSection,
-                      styles.modalRowElevated,
-                      isMobile && styles.fullWidth
-                    ]}
-                  >
-                    <Text style={styles.fieldLabel}>Personal *</Text>
-                    <View
-                      style={[
-                        styles.dropdownField,
-                        professionalSelectorOpen && styles.dropdownFieldRaised
-                      ]}
-                    >
-                      <TouchableOpacity
-                        style={styles.dropdownButton}
-                        onPress={() => {
-                          setServiceSelectorOpen(false);
-                          setCustomerDropdownOpen(false);
-                          setTimeSelectorOpen(false);
-                          setProfessionalSelectorOpen((prev) => !prev);
-                        }}
-                      >
-                        <Text style={styles.dropdownButtonText}>
-                          {modalProfessional
-                            ? (professionals.find((pro) => pro._id === modalProfessional)?.name ??
-                              "Selecciona personal")
-                            : "Selecciona personal"}
-                        </Text>
-                        <Text style={styles.dropdownButtonIcon}>
-                          {professionalSelectorOpen ? "▲" : "▼"}
-                        </Text>
-                      </TouchableOpacity>
-                      {professionalSelectorOpen ? (
+                      />
+                      {!selectedCustomer &&
+                      customerDropdownOpen &&
+                      (customers.length > 0 || !showNewCustomerForm) &&
+                      !isEditing ? (
                         <View style={styles.autocompleteDropdown}>
                           <ScrollView style={styles.dropdownScroll}>
-                            {professionals.map((professional) => (
+                            {customers.map((customer) => (
                               <TouchableOpacity
-                                key={professional._id}
+                                key={customer._id}
                                 style={styles.dropdownItemInline}
                                 onPress={() => {
-                                  setModalProfessional(professional._id);
-                                  setModalService(professional.services?.[0]?._id ?? null);
-                                  setProfessionalSelectorOpen(false);
-                                  setServiceSelectorOpen(false);
-                                  setTimeSelectorOpen(false);
+                                  setSelectedCustomer(customer);
+                                  setCustomerQuery(customer.name);
+                                  setCustomerDropdownOpen(false);
+                                  setShowNewCustomerForm(false);
                                   clearAppointmentError();
                                 }}
                               >
-                                <Text style={styles.dropdownItemText}>{professional.name}</Text>
+                                <Text style={styles.dropdownItemText}>{customer.name}</Text>
                                 <Text style={styles.dropdownItemSub}>
-                                  {professional.services?.length ?? 0} servicios
+                                  {customer.email || customer.phone}
                                 </Text>
                               </TouchableOpacity>
                             ))}
                           </ScrollView>
+                          <TouchableOpacity
+                            style={styles.dropdownCreateButton}
+                            onPress={() => {
+                              setShowNewCustomerForm(true);
+                              setCustomerDropdownOpen(false);
+                              clearAppointmentError();
+                            }}
+                          >
+                            <Text style={styles.dropdownCreateText}>+ Crear nuevo cliente</Text>
+                          </TouchableOpacity>
                         </View>
                       ) : null}
                     </View>
+                    {selectedCustomer ? (
+                      <View style={styles.selectedCustomerCard}>
+                        <View>
+                          <Text style={styles.selectedCustomerName}>{selectedCustomer.name}</Text>
+                          <Text style={styles.selectedCustomerContact}>
+                            {selectedCustomer.phone}
+                          </Text>
+                          <Text style={styles.selectedCustomerContact}>
+                            {selectedCustomer.email}
+                          </Text>
+                        </View>
+                        <TouchableOpacity
+                          onPress={() => {
+                            setSelectedCustomer(null);
+                            setShowNewCustomerForm(false);
+                            setCustomerDropdownOpen(true);
+                            clearAppointmentError();
+                          }}
+                        >
+                          <Text style={styles.changeLink}>Cambiar</Text>
+                        </TouchableOpacity>
+                      </View>
+                    ) : (
+                      <>
+                        {showNewCustomerForm ? (
+                          <View style={styles.newCustomerCard}>
+                            <View style={styles.modalRow}>
+                              <Text style={styles.newCustomerTitle}>Nuevo Cliente</Text>
+                              <TouchableOpacity
+                                onPress={() => {
+                                  setShowNewCustomerForm(false);
+                                  setCustomerDropdownOpen(true);
+                                  clearAppointmentError();
+                                }}
+                              >
+                                <Text style={styles.modalClose}>✕</Text>
+                              </TouchableOpacity>
+                            </View>
+                            <TextInput
+                              style={styles.input}
+                              placeholder="Nombre completo"
+                              value={newCustomer.name}
+                              onChangeText={(text) =>
+                                setNewCustomer((prev) => ({ ...prev, name: text }))
+                              }
+                            />
+                            <TextInput
+                              style={styles.input}
+                              placeholder="Teléfono"
+                              value={newCustomer.phone}
+                              onChangeText={(text) =>
+                                setNewCustomer((prev) => ({ ...prev, phone: text }))
+                              }
+                            />
+                            <TextInput
+                              style={styles.input}
+                              placeholder="Email (Opcional)"
+                              value={newCustomer.email}
+                              onChangeText={(text) =>
+                                setNewCustomer((prev) => ({ ...prev, email: text }))
+                              }
+                            />
+                            <TouchableOpacity
+                              style={styles.primaryButton}
+                              onPress={handleCreateCustomer}
+                              disabled={savingCustomer}
+                            >
+                              <Text style={styles.primaryButtonText}>
+                                {savingCustomer ? "Guardando..." : "Crear Cliente"}
+                              </Text>
+                            </TouchableOpacity>
+                          </View>
+                        ) : null}
+                      </>
+                    )}
                   </View>
+
                   <View
                     style={[
-                      styles.modalSection,
-                      styles.modalRowLower,
-                      isMobile && styles.fullWidth
+                      styles.modalRow,
+                      styles.modalRowElevated,
+                      isMobile && styles.modalColumn
                     ]}
                   >
-                    <Text style={styles.fieldLabel}>Servicio *</Text>
                     <View
                       style={[
-                        styles.dropdownField,
-                        serviceSelectorOpen && styles.dropdownFieldRaised
+                        styles.modalSection,
+                        styles.modalRowElevated,
+                        isMobile && styles.fullWidth
                       ]}
                     >
-                      <TouchableOpacity
-                        style={styles.dropdownButton}
-                        onPress={() => {
-                          setProfessionalSelectorOpen(false);
-                          setCustomerDropdownOpen(false);
-                          setTimeSelectorOpen(false);
-                          setServiceSelectorOpen((prev) => !prev);
-                        }}
-                        disabled={!modalProfessional}
+                      <Text style={styles.fieldLabel}>Personal *</Text>
+                      <View
+                        style={[
+                          styles.dropdownField,
+                          professionalSelectorOpen && styles.dropdownFieldRaised
+                        ]}
                       >
-                        <Text style={styles.dropdownButtonText}>
-                          {modalService
-                            ? (selectedServiceOption?.name ?? "Selecciona servicio")
-                            : "Selecciona servicio"}
-                        </Text>
-                        <Text style={styles.dropdownButtonIcon}>
-                          {serviceSelectorOpen ? "▲" : "▼"}
-                        </Text>
-                      </TouchableOpacity>
-                      {serviceSelectorOpen ? (
-                        professionalServices.length === 0 ? (
-                          <Text style={styles.emptyHint}>Selecciona personal</Text>
-                        ) : (
+                        <TouchableOpacity
+                          style={styles.dropdownButton}
+                          onPress={() => {
+                            if (isEditing) {
+                              return;
+                            }
+                            setServiceSelectorOpen(false);
+                            setCustomerDropdownOpen(false);
+                            setTimeSelectorOpen(false);
+                            setProfessionalSelectorOpen((prev) => !prev);
+                          }}
+                          disabled={isEditing}
+                        >
+                          <Text style={styles.dropdownButtonText}>
+                            {modalProfessional
+                              ? (professionals.find((pro) => pro._id === modalProfessional)?.name ??
+                                "Selecciona personal")
+                              : "Selecciona personal"}
+                          </Text>
+                          <Text style={styles.dropdownButtonIcon}>
+                            {professionalSelectorOpen ? "▲" : "▼"}
+                          </Text>
+                        </TouchableOpacity>
+                        {professionalSelectorOpen ? (
                           <View style={styles.autocompleteDropdown}>
                             <ScrollView style={styles.dropdownScroll}>
-                              {professionalServices.map((service: ProfessionalServiceOption) => (
+                              {professionals.map((professional) => (
                                 <TouchableOpacity
-                                  key={service._id}
+                                  key={professional._id}
                                   style={styles.dropdownItemInline}
                                   onPress={() => {
-                                    setModalService(service._id);
+                                    setModalProfessional(professional._id);
+                                    setModalService(professional.services?.[0]?._id ?? null);
+                                    setProfessionalSelectorOpen(false);
                                     setServiceSelectorOpen(false);
                                     setTimeSelectorOpen(false);
                                     clearAppointmentError();
                                   }}
                                 >
-                                  <Text style={styles.dropdownItemText}>{service.name}</Text>
+                                  <Text style={styles.dropdownItemText}>{professional.name}</Text>
                                   <Text style={styles.dropdownItemSub}>
-                                    {service.price ? `$${service.price}` : ""}
+                                    {professional.services?.length ?? 0} servicios
                                   </Text>
                                 </TouchableOpacity>
                               ))}
                             </ScrollView>
                           </View>
-                        )
-                      ) : null}
+                        ) : null}
+                      </View>
+                    </View>
+                    <View
+                      style={[
+                        styles.modalSection,
+                        styles.modalRowLower,
+                        isMobile && styles.fullWidth
+                      ]}
+                    >
+                      <Text style={styles.fieldLabel}>Servicio *</Text>
+                      <View
+                        style={[
+                          styles.dropdownField,
+                          serviceSelectorOpen && styles.dropdownFieldRaised
+                        ]}
+                      >
+                        <TouchableOpacity
+                          style={styles.dropdownButton}
+                          onPress={() => {
+                            if (isEditing || !modalProfessional) {
+                              return;
+                            }
+                            setProfessionalSelectorOpen(false);
+                            setCustomerDropdownOpen(false);
+                            setTimeSelectorOpen(false);
+                            setServiceSelectorOpen((prev) => !prev);
+                          }}
+                          disabled={!modalProfessional || isEditing}
+                        >
+                          <Text style={styles.dropdownButtonText}>
+                            {modalService
+                              ? (selectedServiceOption?.name ?? "Selecciona servicio")
+                              : "Selecciona servicio"}
+                          </Text>
+                          <Text style={styles.dropdownButtonIcon}>
+                            {serviceSelectorOpen ? "▲" : "▼"}
+                          </Text>
+                        </TouchableOpacity>
+                        {serviceSelectorOpen ? (
+                          professionalServices.length === 0 ? (
+                            <Text style={styles.emptyHint}>Selecciona personal</Text>
+                          ) : (
+                            <View style={styles.autocompleteDropdown}>
+                              <ScrollView style={styles.dropdownScroll}>
+                                {professionalServices.map((service: ProfessionalServiceOption) => (
+                                  <TouchableOpacity
+                                    key={service._id}
+                                    style={styles.dropdownItemInline}
+                                    onPress={() => {
+                                      setModalService(service._id);
+                                      setServiceSelectorOpen(false);
+                                      setTimeSelectorOpen(false);
+                                      clearAppointmentError();
+                                    }}
+                                  >
+                                    <Text style={styles.dropdownItemText}>{service.name}</Text>
+                                    <Text style={styles.dropdownItemSub}>
+                                      {service.price ? `$${service.price}` : ""}
+                                    </Text>
+                                  </TouchableOpacity>
+                                ))}
+                              </ScrollView>
+                            </View>
+                          )
+                        ) : null}
+                      </View>
                     </View>
                   </View>
-                </View>
 
-                <View
-                  style={[styles.modalRow, styles.modalRowLower, isMobile && styles.modalColumn]}
-                >
-                  <View style={[styles.modalSection, isMobile && styles.fullWidth]}>
-                    <Text style={styles.fieldLabel}>Fecha *</Text>
-                    <TouchableOpacity style={styles.input} onPress={handleOpenDatePicker}>
-                      <Text>{dayjs(modalDate).format("DD/MM/YYYY")}</Text>
+                  <View
+                    style={[styles.modalRow, styles.modalRowLower, isMobile && styles.modalColumn]}
+                  >
+                    <View style={[styles.modalSection, isMobile && styles.fullWidth]}>
+                      <Text style={styles.fieldLabel}>Fecha *</Text>
+                      <TouchableOpacity style={styles.input} onPress={handleOpenDatePicker}>
+                        <Text>{dayjs(modalDate).format("DD/MM/YYYY")}</Text>
+                      </TouchableOpacity>
+                    </View>
+                    <View style={[styles.modalSection, isMobile && styles.fullWidth]}>
+                      <Text style={styles.fieldLabel}>Hora *</Text>
+                      <View style={styles.dropdownField}>
+                        <TouchableOpacity
+                          style={[
+                            styles.dropdownButton,
+                            !modalProfessional && styles.dropdownButtonDisabled
+                          ]}
+                          onPress={() => {
+                            if (!modalProfessional) {
+                              return;
+                            }
+                            setProfessionalSelectorOpen(false);
+                            setServiceSelectorOpen(false);
+                            setCustomerDropdownOpen(false);
+                            setTimeSelectorOpen((prev) => !prev);
+                          }}
+                          disabled={!modalProfessional}
+                        >
+                          <Text style={styles.dropdownButtonText}>{selectedTimeLabel}</Text>
+                          <Text style={styles.dropdownButtonIcon}>
+                            {timeSelectorOpen ? "▲" : "▼"}
+                          </Text>
+                        </TouchableOpacity>
+                        {timeSelectorOpen ? (
+                          <View style={styles.autocompleteDropdown}>
+                            {availableTimeOptions.length ? (
+                              <ScrollView style={styles.dropdownScroll}>
+                                {availableTimeOptions.map((option) => (
+                                  <TouchableOpacity
+                                    key={option.value}
+                                    style={styles.dropdownItemInline}
+                                    onPress={() => {
+                                      setModalTime(option.value);
+                                      setTimeSelectorOpen(false);
+                                      clearAppointmentError();
+                                    }}
+                                  >
+                                    <Text style={styles.dropdownItemText}>{option.label}</Text>
+                                  </TouchableOpacity>
+                                ))}
+                              </ScrollView>
+                            ) : (
+                              <Text style={styles.emptyHint}>Sin horarios disponibles</Text>
+                            )}
+                          </View>
+                        ) : null}
+                      </View>
+                    </View>
+                  </View>
+
+                  {isEditing ? (
+                    <View style={[styles.modalSection, isMobile && styles.fullWidth]}>
+                      <Text style={styles.fieldLabel}>Status *</Text>
+                      <TextInput
+                        style={styles.input}
+                        value={modalStatus}
+                        onChangeText={setModalStatus}
+                      />
+                    </View>
+                  ) : null}
+
+                  <View style={styles.modalSection}>
+                    <Text style={styles.fieldLabel}>Notas (Opcional)</Text>
+                    <TextInput
+                      style={[styles.input, styles.notesInput]}
+                      multiline
+                      value={notes}
+                      onChangeText={(value) => {
+                        setNotes(value);
+                        clearAppointmentError();
+                      }}
+                      placeholder="Notas adicionales sobre la cita..."
+                    />
+                  </View>
+
+                  {appointmentError ? (
+                    <Text style={styles.errorText}>{appointmentError}</Text>
+                  ) : null}
+                  <View style={styles.modalFooter}>
+                    <TouchableOpacity
+                      style={[
+                        styles.secondaryButton,
+                        creatingAppointment && styles.secondaryButtonDisabled
+                      ]}
+                      onPress={handleCloseModal}
+                      disabled={creatingAppointment}
+                    >
+                      <Text style={styles.secondaryButtonText}>Cancelar</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[
+                        styles.primaryButton,
+                        (creatingAppointment || !canSubmitAppointment) &&
+                          styles.primaryButtonDisabled
+                      ]}
+                      onPress={handleSubmitAppointment}
+                      disabled={creatingAppointment || !canSubmitAppointment}
+                    >
+                      <Text style={styles.primaryButtonText}>
+                        {creatingAppointment ? "Creando..." : "Crear Cita"}
+                      </Text>
                     </TouchableOpacity>
                   </View>
-                  <View style={[styles.modalSection, isMobile && styles.fullWidth]}>
-                    <Text style={styles.fieldLabel}>Hora *</Text>
-                    <View style={styles.dropdownField}>
-                      <TouchableOpacity
-                        style={[
-                          styles.dropdownButton,
-                          !modalProfessional && styles.dropdownButtonDisabled
-                        ]}
-                        onPress={() => {
-                          if (!modalProfessional) {
-                            return;
-                          }
-                          setProfessionalSelectorOpen(false);
-                          setServiceSelectorOpen(false);
-                          setCustomerDropdownOpen(false);
-                          setTimeSelectorOpen((prev) => !prev);
-                        }}
-                        disabled={!modalProfessional}
-                      >
-                        <Text style={styles.dropdownButtonText}>{selectedTimeLabel}</Text>
-                        <Text style={styles.dropdownButtonIcon}>
-                          {timeSelectorOpen ? "▲" : "▼"}
-                        </Text>
-                      </TouchableOpacity>
-                      {timeSelectorOpen ? (
-                        <View style={styles.autocompleteDropdown}>
-                          {availableTimeOptions.length ? (
-                            <ScrollView style={styles.dropdownScroll}>
-                              {availableTimeOptions.map((option) => (
-                                <TouchableOpacity
-                                  key={option.value}
-                                  style={styles.dropdownItemInline}
-                                  onPress={() => {
-                                    setModalTime(option.value);
-                                    setTimeSelectorOpen(false);
-                                    clearAppointmentError();
-                                  }}
-                                >
-                                  <Text style={styles.dropdownItemText}>{option.label}</Text>
-                                </TouchableOpacity>
-                              ))}
-                            </ScrollView>
-                          ) : (
-                            <Text style={styles.emptyHint}>Sin horarios disponibles</Text>
-                          )}
-                        </View>
-                      ) : null}
-                    </View>
-                  </View>
-                </View>
-
-                <View style={styles.modalSection}>
-                  <Text style={styles.fieldLabel}>Notas (Opcional)</Text>
-                  <TextInput
-                    style={[styles.input, styles.notesInput]}
-                    multiline
-                    value={notes}
-                    onChangeText={(value) => {
-                      setNotes(value);
-                      clearAppointmentError();
-                    }}
-                    placeholder="Notas adicionales sobre la cita..."
-                  />
-                </View>
-
-                {appointmentError ? <Text style={styles.errorText}>{appointmentError}</Text> : null}
-                <View style={styles.modalFooter}>
-                  <TouchableOpacity
-                    style={[
-                      styles.secondaryButton,
-                      creatingAppointment && styles.secondaryButtonDisabled
-                    ]}
-                    onPress={handleCloseModal}
-                    disabled={creatingAppointment}
-                  >
-                    <Text style={styles.secondaryButtonText}>Cancelar</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[
-                      styles.primaryButton,
-                      (creatingAppointment || !canSubmitAppointment) && styles.primaryButtonDisabled
-                    ]}
-                    onPress={handleSubmitAppointment}
-                    disabled={creatingAppointment || !canSubmitAppointment}
-                  >
-                    <Text style={styles.primaryButtonText}>
-                      {creatingAppointment ? "Creando..." : "Crear Cita"}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </ScrollView>
+                </ScrollView>
+              )}
             </View>
           </TouchableWithoutFeedback>
           {isWeb && datePickerVisible ? (
@@ -1503,6 +1884,73 @@ const styles = StyleSheet.create({
     color: "#f43f5e",
     fontWeight: "600"
   },
+  editHeaderRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 8,
+    marginBottom: 12
+  },
+  editHeaderRowMobile: {
+    flexDirection: "column",
+    justifyContent: "flex-start",
+    gap: 8,
+    marginBottom: 12
+  },
+  editInfo: {
+    flex: 1,
+    gap: 4
+  },
+  editCustomer: {
+    fontWeight: "700",
+    fontSize: 16,
+    color: "#0f172a"
+  },
+  editCustomerInfo: {
+    color: "#334155",
+    fontWeight: "600"
+  },
+  editService: {
+    fontWeight: "700",
+    fontSize: 16,
+    color: "#334155"
+  },
+  editDateTime: {
+    width: 240,
+    gap: 10
+  },
+  statusBadge: {
+    alignSelf: "flex-start",
+    backgroundColor: "#e0ecff",
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 999
+  },
+  statusBadgeText: {
+    color: "#1d4ed8",
+    fontWeight: "700",
+    fontSize: 12
+  },
+  editFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 12,
+    marginTop: 12
+  },
+  editFooterActions: {
+    flexDirection: "row",
+    gap: 10
+  },
+  dangerButton: {
+    backgroundColor: "#ef4444",
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 20
+  },
+  dangerButtonText: {
+    color: "#fff",
+    fontWeight: "700"
+  },
   calendarWrapper: {
     flex: 1,
     // maxWidth: 960,
@@ -1672,7 +2120,7 @@ const styles = StyleSheet.create({
   modalClose: {
     fontSize: 18
   },
-  modalSectionClient: {
+  modalSectionNoFlex: {
     gap: 8,
     marginBottom: 8
   },
