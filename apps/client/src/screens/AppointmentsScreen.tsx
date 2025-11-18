@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Modal,
   Platform,
   ScrollView,
@@ -44,6 +45,24 @@ type AppointmentApi = {
 
 const colors = ["#f43f5e", "#0ea5e9", "#10b981", "#f97316", "#8b5cf6", "#14b8a6", "#ec4899"];
 
+const STATUS_BG: Record<string, string> = {
+  scheduled: "#e0ecff",
+  confirmed: "#e7f8ee",
+  show: "#f6efff",
+  no_show: "#fff1f2",
+  canceled: "#f8fafc",
+  completed: "#fff9d9"
+};
+
+const STATUS_BORDER: Record<string, string> = {
+  scheduled: "#93c5fd",
+  confirmed: "#86efac",
+  show: "#c4b5fd",
+  no_show: "#fecdd3",
+  canceled: "#e2e8f0",
+  completed: "#fef08a"
+};
+
 const SLOT_MINUTES = 15;
 
 const STATUS_OPTIONS = [
@@ -59,6 +78,15 @@ const STATUS_LABELS = STATUS_OPTIONS.reduce<Record<string, string>>((acc, curr) 
   acc[curr.value] = curr.label;
   return acc;
 }, {});
+
+const STATUS_COLORS: Record<string, { dot: string; badgeBg: string; text: string }> = {
+  scheduled: { dot: "#cbdffb", badgeBg: "#e9f2ff", text: "#0f172a" },
+  confirmed: { dot: "#bbf7d0", badgeBg: "#e7f8ee", text: "#0f172a" },
+  show: { dot: "#e9d5ff", badgeBg: "#f6efff", text: "#0f172a" },
+  no_show: { dot: "#fecdd3", badgeBg: "#fff1f2", text: "#0f172a" },
+  canceled: { dot: "#e2e8f0", badgeBg: "#f8fafc", text: "#0f172a" },
+  completed: { dot: "#fef08a", badgeBg: "#fff9d9", text: "#0f172a" }
+};
 
 const timeStringToMinutes = (value?: string | null) => {
   if (!value) {
@@ -304,10 +332,29 @@ export const AppointmentsScreen = () => {
   }, [customerQuery, searchCustomers, showNewCustomerForm]);
 
   const events: CalendarEvent<AppointmentApi>[] = useMemo(() => {
+    const matchesProfessional = (appointment: AppointmentApi) => {
+      if (!selectedProfessional) return true;
+      if (appointment.professional === selectedProfessional) return true;
+      const professionalObj = (appointment as any).professional as
+        | { _id?: string }
+        | string
+        | undefined;
+      if (
+        professionalObj &&
+        typeof professionalObj === "object" &&
+        professionalObj._id === selectedProfessional
+      ) {
+        return true;
+      }
+      const professionalId = (appointment as any).professionalId;
+      if (professionalId && professionalId === selectedProfessional) {
+        return true;
+      }
+      return false;
+    };
+
     return appointments
-      .filter((appointment) =>
-        selectedProfessional ? appointment.professional === selectedProfessional : true
-      )
+      .filter((appointment) => matchesProfessional(appointment))
       .map((appointment, index) => {
         const start = dayjs(appointment.startDate);
         const end = dayjs(appointment.endDate);
@@ -326,7 +373,7 @@ export const AppointmentsScreen = () => {
           end: end.toDate(),
           title: clientName,
           children: appointment.notes,
-          color: colors[index % colors.length],
+          color: STATUS_BG[appointment.status] ?? colors[index % colors.length],
           data: appointment
         };
       });
@@ -450,12 +497,20 @@ export const AppointmentsScreen = () => {
       if (!scheduleEntries.length) {
         return [];
       }
-      const busyAppointments = appointments.filter(
-        (appointment) =>
-          appointment.professional === professionalId &&
+      const busyAppointments = appointments.filter((appointment) => {
+        const apptPro = (appointment as any).professional;
+        const apptProId =
+          typeof apptPro === "string"
+            ? apptPro
+            : apptPro && typeof apptPro === "object"
+              ? apptPro._id
+              : (appointment as any).professionalId;
+        return (
+          apptProId === professionalId &&
           dayjs(appointment.startDate).isSame(date, "day") &&
           (!editingAppointment || appointment._id !== editingAppointment._id)
-      );
+        );
+      });
       return timeOptions.filter((option) => {
         const optionMinutes = timeStringToMinutes(option.value);
         if (optionMinutes === null) {
@@ -744,6 +799,21 @@ export const AppointmentsScreen = () => {
     if (!editingAppointment?._id) {
       return;
     }
+    const confirmed = await new Promise<boolean>((resolve) => {
+      if (Platform.OS === "web") {
+        const ok =
+          (global as any)?.confirm?.("¿Está seguro de que desea eliminar esta cita?") ?? false;
+        resolve(ok);
+      } else {
+        Alert.alert("Eliminar cita", "¿Está seguro de que desea eliminar esta cita?", [
+          { text: "Cancelar", style: "cancel", onPress: () => resolve(false) },
+          { text: "Eliminar", style: "destructive", onPress: () => resolve(true) }
+        ]);
+      }
+    });
+    if (!confirmed) {
+      return;
+    }
     try {
       setCreatingAppointment(true);
       const response = await fetch(`${API_BASE_URL}/appointments/${editingAppointment._id}`, {
@@ -997,11 +1067,15 @@ export const AppointmentsScreen = () => {
                   "Servicio";
                 const clientName =
                   event.data?.clientName ?? (event.data as any)?.customerName ?? "";
-                const cardBackground = { backgroundColor: event.color ?? "#f8fafc" };
+                const cardBackground = {
+                  backgroundColor: STATUS_COLORS[event.data?.status].badgeBg,
+                  borderColor: STATUS_BORDER[event.data?.status],
+                  borderWidth: 0.5
+                };
                 return (
                   <TouchableOpacity
                     {...touchableOpacityProps}
-                    style={[styles.eventCard, cardBackground, touchableOpacityProps?.style]}
+                    style={[styles.eventCard, touchableOpacityProps?.style, cardBackground]}
                     activeOpacity={0.9}
                   >
                     <Text style={styles.eventTitle} numberOfLines={1} ellipsizeMode="tail">
@@ -1066,32 +1140,42 @@ export const AppointmentsScreen = () => {
                     ]}
                   >
                     <View style={styles.editInfo}>
-                      <Text style={styles.editCustomer}>
-                        {editingAppointment?.clientName ?? "Cliente"}
-                      </Text>
-                      {editingAppointment?.clientPhone ? (
-                        <Text style={styles.editCustomerInfo}>
-                          {editingAppointment.clientPhone}
-                        </Text>
-                      ) : null}
-                      <Text style={styles.editService}>
-                        {editingAppointment?.serviceNames?.[0] ?? "Servicio"}
-                      </Text>
-                      <Text style={styles.editCustomerInfo}>
-                        {serviceSlotCount * SLOT_MINUTES} min
-                        {(() => {
-                          const price =
-                            selectedServiceOption?.price ??
-                            editingAppointment?.servicePrices?.[0] ??
-                            null;
-                          return price ? ` - $${price}` : "";
-                        })()}
-                      </Text>
-                      {editingAppointment?.professionalName ? (
-                        <Text style={styles.editCustomerInfo}>
-                          {editingAppointment.professionalName}
-                        </Text>
-                      ) : null}
+                      <View style={styles.editInfoRow}>
+                        <Text style={styles.editInfoIcon}>👤</Text>
+                        <View style={styles.editInfoColumn}>
+                          <Text style={styles.editCustomer}>
+                            {editingAppointment?.clientName ?? "Cliente"}
+                          </Text>
+                          {editingAppointment?.clientPhone ? (
+                            <Text style={styles.editCustomerInfo}>
+                              📞 {editingAppointment.clientPhone}
+                            </Text>
+                          ) : null}
+                        </View>
+                      </View>
+                      <View style={styles.editInfoRow}>
+                        <Text style={styles.editInfoIcon}>✂️</Text>
+                        <View style={styles.editInfoColumn}>
+                          <Text style={styles.editService}>
+                            {editingAppointment?.serviceNames?.[0] ?? "Servicio"}
+                          </Text>
+                          <Text style={styles.editCustomerInfo}>
+                            {serviceSlotCount * SLOT_MINUTES} min
+                            {(() => {
+                              const price =
+                                selectedServiceOption?.price ??
+                                editingAppointment?.servicePrices?.[0] ??
+                                null;
+                              return price ? ` - $${price}` : "";
+                            })()}
+                          </Text>
+                          {editingAppointment?.professionalName ? (
+                            <Text style={styles.editCustomerInfo}>
+                              {editingAppointment.professionalName}
+                            </Text>
+                          ) : null}
+                        </View>
+                      </View>
                     </View>
                     <View style={styles.editDateTime}>
                       <TouchableOpacity style={styles.input} onPress={handleOpenDatePicker}>
@@ -1154,8 +1238,21 @@ export const AppointmentsScreen = () => {
                     ]}
                   >
                     <Text style={styles.fieldLabel}>Estado actual:</Text>
-                    <View style={styles.statusBadge}>
-                      <Text style={styles.statusBadgeText}>
+                    <View
+                      style={[
+                        styles.statusBadge,
+                        {
+                          backgroundColor: (STATUS_COLORS[modalStatus] ?? STATUS_COLORS.scheduled)
+                            .badgeBg
+                        }
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.statusBadgeText,
+                          { color: (STATUS_COLORS[modalStatus] ?? STATUS_COLORS.scheduled).text }
+                        ]}
+                      >
                         {STATUS_LABELS[modalStatus] || "Programada"}
                       </Text>
                     </View>
@@ -1197,13 +1294,25 @@ export const AppointmentsScreen = () => {
                           {STATUS_OPTIONS.map((option) => (
                             <TouchableOpacity
                               key={option.value}
-                              style={styles.dropdownItemInline}
+                              style={[styles.dropdownItemInline, styles.statusItem]}
                               onPress={() => {
                                 setModalStatus(option.value);
                                 setStatusSelectorOpen(false);
                               }}
                             >
-                              <Text style={styles.dropdownItemText}>{option.label}</Text>
+                              <View style={styles.statusOptionRow}>
+                                <View
+                                  style={[
+                                    styles.statusDot,
+                                    {
+                                      backgroundColor: (
+                                        STATUS_COLORS[option.value] ?? STATUS_COLORS.scheduled
+                                      ).dot
+                                    }
+                                  ]}
+                                />
+                                <Text style={styles.dropdownItemText}>{option.label}</Text>
+                              </View>
                             </TouchableOpacity>
                           ))}
                         </View>
@@ -1228,43 +1337,86 @@ export const AppointmentsScreen = () => {
                   {appointmentError ? (
                     <Text style={styles.errorText}>{appointmentError}</Text>
                   ) : null}
-                  <View style={styles.editFooter}>
-                    <TouchableOpacity
-                      style={[
-                        styles.dangerButton,
-                        creatingAppointment && styles.secondaryButtonDisabled
-                      ]}
-                      onPress={handleDeleteAppointment}
-                      disabled={creatingAppointment}
-                    >
-                      <Text style={styles.dangerButtonText}>Eliminar Cita</Text>
-                    </TouchableOpacity>
-                    <View style={styles.editFooterActions}>
+                  {isMobile ? (
+                    <View style={[styles.editFooter, styles.editFooterMobile]}>
                       <TouchableOpacity
                         style={[
-                          styles.secondaryButton,
+                          styles.dangerButton,
+                          styles.fullWidthButton,
                           creatingAppointment && styles.secondaryButtonDisabled
                         ]}
-                        onPress={handleCloseModal}
+                        onPress={handleDeleteAppointment}
                         disabled={creatingAppointment}
                       >
-                        <Text style={styles.secondaryButtonText}>Cancelar</Text>
+                        <Text style={styles.dangerButtonText}>Eliminar Cita</Text>
                       </TouchableOpacity>
+                      <View style={styles.editFooterMobileRow}>
+                        <TouchableOpacity
+                          style={[
+                            styles.secondaryButton,
+                            styles.halfWidthButton,
+                            creatingAppointment && styles.secondaryButtonDisabled
+                          ]}
+                          onPress={handleCloseModal}
+                          disabled={creatingAppointment}
+                        >
+                          <Text style={styles.secondaryButtonText}>Cancelar</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={[
+                            styles.primaryButton,
+                            styles.halfWidthButton,
+                            (creatingAppointment || !canSubmitAppointment) &&
+                              styles.primaryButtonDisabled
+                          ]}
+                          onPress={handleSubmitAppointment}
+                          disabled={creatingAppointment || !canSubmitAppointment}
+                        >
+                          <Text style={styles.primaryButtonText}>
+                            {creatingAppointment ? "Guardando..." : "Guardar Cambios"}
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  ) : (
+                    <View style={styles.editFooter}>
                       <TouchableOpacity
                         style={[
-                          styles.primaryButton,
-                          (creatingAppointment || !canSubmitAppointment) &&
-                            styles.primaryButtonDisabled
+                          styles.dangerButton,
+                          creatingAppointment && styles.secondaryButtonDisabled
                         ]}
-                        onPress={handleSubmitAppointment}
-                        disabled={creatingAppointment || !canSubmitAppointment}
+                        onPress={handleDeleteAppointment}
+                        disabled={creatingAppointment}
                       >
-                        <Text style={styles.primaryButtonText}>
-                          {creatingAppointment ? "Guardando..." : "Guardar Cambios"}
-                        </Text>
+                        <Text style={styles.dangerButtonText}>Eliminar Cita</Text>
                       </TouchableOpacity>
+                      <View style={styles.editFooterActions}>
+                        <TouchableOpacity
+                          style={[
+                            styles.secondaryButton,
+                            creatingAppointment && styles.secondaryButtonDisabled
+                          ]}
+                          onPress={handleCloseModal}
+                          disabled={creatingAppointment}
+                        >
+                          <Text style={styles.secondaryButtonText}>Cancelar</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={[
+                            styles.primaryButton,
+                            (creatingAppointment || !canSubmitAppointment) &&
+                              styles.primaryButtonDisabled
+                          ]}
+                          onPress={handleSubmitAppointment}
+                          disabled={creatingAppointment || !canSubmitAppointment}
+                        >
+                          <Text style={styles.primaryButtonText}>
+                            {creatingAppointment ? "Guardando..." : "Guardar Cambios"}
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
                     </View>
-                  </View>
+                  )}
                 </ScrollView>
               ) : (
                 <ScrollView
@@ -1898,7 +2050,23 @@ const styles = StyleSheet.create({
   },
   editInfo: {
     flex: 1,
+    gap: 12,
+    marginVertical: 8
+  },
+  editInfoColumn: {
+    flex: 1,
     gap: 4
+  },
+  editInfoRow: {
+    flexDirection: "row",
+    gap: 4
+  },
+  editInfoIcon: {
+    width: 24,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: 16
   },
   editCustomer: {
     fontWeight: "700",
@@ -1937,19 +2105,46 @@ const styles = StyleSheet.create({
     gap: 12,
     marginTop: 12
   },
+  editFooterMobile: {
+    flexDirection: "column"
+  },
+  editFooterMobileRow: {
+    flexDirection: "row",
+    gap: 8
+  },
+  fullWidthButton: {
+    width: "100%"
+  },
+  halfWidthButton: {
+    flex: 1,
+    alignItems: "center"
+  },
   editFooterActions: {
     flexDirection: "row",
     gap: 10
   },
   dangerButton: {
-    backgroundColor: "#ef4444",
+    backgroundColor: "#f87171",
     borderRadius: 12,
     paddingVertical: 12,
-    paddingHorizontal: 20
+    paddingHorizontal: 20,
+    alignItems: "center",
+    justifyContent: "center"
   },
   dangerButtonText: {
     color: "#fff",
-    fontWeight: "700"
+    fontWeight: "700",
+    textAlign: "center"
+  },
+  statusOptionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8
+  },
+  statusDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5
   },
   calendarWrapper: {
     flex: 1,
@@ -2059,20 +2254,21 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     paddingHorizontal: 4,
     gap: 2,
-    borderRadius: 10
+    borderRadius: 10,
+    borderWidth: 1
   },
   eventTitle: {
-    color: "#fff",
+    color: "#0f172a",
     fontWeight: "700",
     fontSize: 12
   },
   eventSubtitle: {
-    color: "#f8fafc",
+    color: "#0f172a",
     fontWeight: "600",
     fontSize: 11
   },
   eventMeta: {
-    color: "#e2e8f0",
+    color: "#334155",
     fontSize: 11
   },
   loadingState: {
@@ -2176,27 +2372,33 @@ const styles = StyleSheet.create({
     borderColor: "#e2e8f0",
     borderRadius: 12,
     paddingVertical: 12,
-    paddingHorizontal: 24
+    paddingHorizontal: 24,
+    alignItems: "center",
+    justifyContent: "center"
   },
   secondaryButtonDisabled: {
     opacity: 0.6
   },
   secondaryButtonText: {
     fontWeight: "600",
-    color: "#0f172a"
+    color: "#0f172a",
+    textAlign: "center"
   },
   primaryButton: {
     borderRadius: 12,
     paddingVertical: 12,
     paddingHorizontal: 24,
-    backgroundColor: "#f87171"
+    backgroundColor: "#ef4444",
+    alignItems: "center",
+    justifyContent: "center"
   },
   primaryButtonDisabled: {
     opacity: 0.6
   },
   primaryButtonText: {
     color: "#fff",
-    fontWeight: "700"
+    fontWeight: "700",
+    textAlign: "center"
   },
   errorText: {
     color: "#dc2626",
