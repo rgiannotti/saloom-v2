@@ -6,7 +6,8 @@ import {
   IsMongoId,
   IsOptional,
   IsString,
-  MinLength
+  MinLength,
+  ValidateIf
 } from "class-validator";
 
 import { UserRole } from "../schemas/user.schema";
@@ -16,8 +17,16 @@ export class CreateUserDto {
   @MinLength(2)
   name!: string;
 
+  @IsOptional()
+  @ValidateIf(
+    (o) =>
+      o.email !== undefined &&
+      o.email !== null &&
+      typeof o.email === "string" &&
+      o.email.trim().length > 0
+  )
   @IsEmail()
-  email!: string;
+  email?: string;
 
   @IsString()
   phone!: string;

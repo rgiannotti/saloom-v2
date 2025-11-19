@@ -24,12 +24,15 @@ export class AppUsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get()
-  @Roles(UserRole.ADMIN, UserRole.STAFF)
   findAll(@Query("clientId") clientId?: string, @Query("roles") roles?: string | string[]) {
     const requestedRoles = this.getRolesFromQuery(roles);
     const filter: FilterQuery<UserDocument> = { roles: { $in: requestedRoles } };
-    if (clientId && Types.ObjectId.isValid(clientId)) {
-      filter.client = new Types.ObjectId(clientId);
+    if (clientId) {
+      if (Types.ObjectId.isValid(clientId)) {
+        filter.$or = [{ client: new Types.ObjectId(clientId) }, { client: clientId }];
+      } else {
+        filter.client = clientId;
+      }
     }
     return this.usersService.findAll(filter);
   }

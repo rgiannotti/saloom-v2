@@ -1,4 +1,4 @@
-import { IsEmail, IsOptional, IsString, MinLength } from "class-validator";
+import { IsEmail, IsOptional, IsString, MinLength, ValidateIf } from "class-validator";
 
 export class CreateClientUserDto {
   @IsString()
@@ -6,7 +6,15 @@ export class CreateClientUserDto {
   name!: string;
 
   @IsEmail()
-  email!: string;
+  @ValidateIf(
+    (o) =>
+      o.email !== undefined &&
+      o.email !== null &&
+      typeof o.email === "string" &&
+      o.email.trim().length > 0
+  )
+  @IsOptional()
+  email?: string;
 
   @IsString()
   phone!: string;

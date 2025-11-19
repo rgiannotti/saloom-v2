@@ -18,7 +18,7 @@ export class User {
   @Prop({ required: true, trim: true })
   name: string;
 
-  @Prop({ required: true, unique: true, lowercase: true, trim: true })
+  @Prop({ required: false, unique: true, lowercase: true, trim: true })
   email: string;
 
   @Prop({ required: true, trim: true })
@@ -35,6 +35,9 @@ export class User {
 
   @Prop({ type: Types.ObjectId, ref: "Client", default: null })
   client?: Types.ObjectId | null;
+
+  @Prop({ default: true })
+  active: boolean;
 
   createdAt: Date;
   updatedAt: Date;

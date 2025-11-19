@@ -39,12 +39,16 @@ export class AuthService {
     if (!userDoc?.passwordHash) {
       throw new UnauthorizedException("Invalid credentials");
     }
+    if (userDoc.active === false) {
+      throw new ForbiddenException("Usuario inactivo");
+    }
     const passwordValid = await bcrypt.compare(loginDto.password, userDoc.passwordHash);
     if (!passwordValid) {
       throw new UnauthorizedException("Invalid credentials");
     }
     const userId = this.extractUserId(userDoc as UserWithId);
     const user = await this.usersService.findOne(userId);
+    this.ensureActive(user);
     this.ensureAudiencePermission(user, audience);
     return this.issueTokens(user, audience);
   }
@@ -62,6 +66,7 @@ export class AuthService {
       throw new UnauthorizedException("Invalid refresh token");
     }
     const userDoc = await this.usersService.findOne(userId);
+    this.ensureActive(userDoc);
     const userWithSecrets = await this.usersService.findByEmail(userDoc.email, true);
     if (!userWithSecrets?.refreshTokenHash) {
       throw new UnauthorizedException("Refresh token missing");
@@ -134,6 +139,12 @@ export class AuthService {
     }
     if (audience === AppAudience.CLIENT && !user.client) {
       throw new ForbiddenException("Client app requires an assigned client");
+    }
+  }
+
+  private ensureActive(user: User) {
+    if (user.active === false) {
+      throw new ForbiddenException("Usuario inactivo");
     }
   }
 
