@@ -1,13 +1,15 @@
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { useAuth } from "../auth/AuthContext";
 import { DashboardLayout } from "../components/DashboardLayout";
 import type { SidebarItem } from "../components/Sidebar";
 import { AppointmentsScreen } from "./AppointmentsScreen";
+import { StaffScreen } from "./StaffScreen";
 
 const modules: SidebarItem[] = [
   { key: "appointments", label: "Agenda", icon: "📅" },
+  { key: "staff", label: "Personal", icon: "👥" },
   { key: "overview", label: "Resumen", icon: "📊" },
   { key: "clients", label: "Clientes", icon: "👥" },
   { key: "services", label: "Servicios", icon: "💈" },
@@ -24,7 +26,8 @@ const moduleDescriptions: Record<string, string> = {
     "Administra los servicios que ofreces, precios y disponibilidad por cada sede del cliente.",
   messages:
     "Centraliza la comunicación con el cliente y recibe alertas del backoffice en tiempo real.",
-  settings: "Actualiza tu perfil profesional, credenciales y preferencias de notificación."
+  settings: "Actualiza tu perfil profesional, credenciales y preferencias de notificación.",
+  staff: "Administra los miembros de tu equipo, sus datos y servicios asignados."
 };
 
 export const HomeScreen = () => {
@@ -37,15 +40,25 @@ export const HomeScreen = () => {
 
   const { user } = session;
 
+  const headerContent =
+    activeModule === "staff" ? (
+      <View style={styles.headerTextInline}>
+        <Text style={styles.moduleTitle}>Gestión de Personal</Text>
+      </View>
+    ) : null;
+
   return (
     <DashboardLayout
       userName={user.name || user.email}
       items={modules}
       activeItem={activeModule}
       onSelectItem={setActiveModule}
+      headerContent={headerContent}
     >
       {activeModule === "appointments" ? (
         <AppointmentsScreen />
+      ) : activeModule === "staff" ? (
+        <StaffScreen />
       ) : (
         <>
           <View style={styles.moduleHeader}>
@@ -94,6 +107,9 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: "700",
     color: "#0f172a"
+  },
+  headerTextInline: {
+    flexGrow: 1
   },
   moduleDescription: {
     color: "#475569",

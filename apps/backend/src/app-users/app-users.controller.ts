@@ -29,7 +29,7 @@ export class AppUsersController {
     const requestedRoles = this.getRolesFromQuery(roles);
     const filter: FilterQuery<UserDocument> = { roles: { $in: requestedRoles } };
     if (clientId && Types.ObjectId.isValid(clientId)) {
-      filter.$or = [{ client: null }, { client: clientId }];
+      filter.client = new Types.ObjectId(clientId);
     }
     return this.usersService.findAll(filter);
   }

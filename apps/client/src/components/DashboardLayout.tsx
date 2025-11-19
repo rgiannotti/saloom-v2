@@ -1,4 +1,4 @@
-import React, { ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import React, { ReactNode, useEffect, useRef, useState } from "react";
 import {
   Animated,
   Modal,
@@ -18,6 +18,7 @@ interface DashboardLayoutProps {
   items: SidebarItem[];
   activeItem: string;
   onSelectItem: (key: string) => void;
+  headerContent?: ReactNode;
   children: ReactNode;
 }
 
@@ -26,6 +27,7 @@ export const DashboardLayout = ({
   items,
   activeItem,
   onSelectItem,
+  headerContent,
   children
 }: DashboardLayoutProps) => {
   const { logout } = useAuth();
@@ -37,11 +39,6 @@ export const DashboardLayout = ({
   const [drawerOpen, setDrawerOpen] = useState(false);
   const drawerTranslate = useRef(new Animated.Value(-400)).current;
   const drawerWidth = Math.min(width * 0.78, isMediumScreen ? 360 : 320);
-
-  const headerTitle = useMemo(() => {
-    const current = items.find((item) => item.key === activeItem);
-    return current?.label ?? "Panel";
-  }, [items, activeItem]);
 
   const openDrawer = () => {
     setDrawerVisible(true);
@@ -95,32 +92,19 @@ export const DashboardLayout = ({
         ) : null}
 
         <View style={styles.contentArea}>
-          <View style={styles.topBar}>
-            {!isLargeScreen ? (
+          {!isLargeScreen ? (
+            <View style={styles.mobileHeader}>
               <TouchableOpacity
                 style={styles.menuButton}
                 onPress={drawerOpen ? closeDrawer : openDrawer}
               >
                 <Text style={styles.menuButtonLabel}>☰</Text>
               </TouchableOpacity>
-            ) : null}
-            <View style={styles.titleGroup}>
-              <Text style={styles.title}>{headerTitle}</Text>
-              <Text style={styles.subtitle}>Bienvenido/a, {userName}</Text>
+              {headerContent ? <View style={styles.headerSlot}>{headerContent}</View> : null}
             </View>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarLabel}>{userName.slice(0, 2).toUpperCase()}</Text>
-            </View>
-          </View>
+          ) : null}
 
-          <View
-            style={[
-              styles.moduleCard,
-              isLargeScreen ? styles.moduleCardDesktop : styles.moduleCardMobile
-            ]}
-          >
-            {children}
-          </View>
+          <View style={styles.moduleCard}>{children}</View>
         </View>
       </View>
 
@@ -170,14 +154,16 @@ const styles = StyleSheet.create({
   contentArea: {
     flex: 1,
     paddingHorizontal: 16,
-    paddingVertical: 16,
-    gap: 16
+    paddingVertical: 16
   },
-  topBar: {
+  mobileHeader: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    gap: 16
+    gap: 12,
+    marginBottom: 12
+  },
+  headerSlot: {
+    flex: 1
   },
   menuButton: {
     width: 44,
@@ -192,30 +178,6 @@ const styles = StyleSheet.create({
   menuButtonLabel: {
     fontSize: 20,
     color: "#0f172a"
-  },
-  titleGroup: {
-    flex: 1
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: "#0f172a"
-  },
-  subtitle: {
-    fontSize: 14,
-    color: "#475569"
-  },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    backgroundColor: "#0f172a",
-    alignItems: "center",
-    justifyContent: "center"
-  },
-  avatarLabel: {
-    color: "#fff",
-    fontWeight: "700"
   },
   moduleCard: {
     flex: 1

@@ -1,17 +1,37 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { FilterQuery, Model } from "mongoose";
+import { FilterQuery, Model, Types } from "mongoose";
 
 import { CreateClientDto } from "./dto/create-client.dto";
+import { UpsertClientProfessionalDto } from "./dto/upsert-client-professional.dto";
 import { UpdateClientDto } from "./dto/update-client.dto";
 import { Client, ClientDocument } from "./schemas/client.schema";
+import { User, UserDocument, UserRole } from "../users/schemas/user.schema";
 
 @Injectable()
 export class ClientsService {
   constructor(
     @InjectModel(Client.name)
-    private readonly clientModel: Model<ClientDocument>
+    private readonly clientModel: Model<ClientDocument>,
+    @InjectModel(User.name)
+    private readonly userModel: Model<UserDocument>
   ) {}
+
+  private mapProfessionals(professionals: any[] = []) {
+    return professionals.map((entry) => ({
+      professional: new Types.ObjectId(entry.professional),
+      services: (entry.services ?? []).map((service: any) => ({
+        service: new Types.ObjectId(service.service),
+        price: service.price,
+        slot: service.slot
+      })),
+      schedule: (entry.schedule ?? []).map((workday: any) => ({
+        day: workday.day,
+        start: workday.start,
+        end: workday.end
+      }))
+    }));
+  }
 
   private async nextCode(): Promise<number> {
     const last = await this.clientModel.findOne().sort({ code: -1 }).select("code").lean().exec();
@@ -22,13 +42,17 @@ export class ClientsService {
     const code = await this.nextCode();
     const client = await this.clientModel.create({
       code,
-      ...createClientDto
+      ...createClientDto,
+      professionals: this.mapProfessionals((createClientDto as any).professionals ?? [])
     });
     return client.toObject();
   }
 
   findAll(filter: FilterQuery<ClientDocument> = {}): Promise<Client[]> {
-    return this.clientModel.find({ active: true, ...filter }).lean().exec();
+    return this.clientModel
+      .find({ active: true, ...filter })
+      .lean()
+      .exec();
   }
 
   async findOne(id: string): Promise<Client> {
@@ -43,7 +67,14 @@ export class ClientsService {
     const client = await this.clientModel
       .findByIdAndUpdate(
         id,
-        { $set: updateClientDto },
+        {
+          $set: {
+            ...updateClientDto,
+            ...(updateClientDto as any).professionals
+              ? { professionals: this.mapProfessionals((updateClientDto as any).professionals) }
+              : {}
+          }
+        },
         {
           new: true,
           runValidators: true
@@ -87,29 +118,24 @@ export class ClientsService {
         const serviceDoc = serviceEntry.service as Record<string, any>;
         const serviceId =
           typeof serviceDoc === "object"
-            ? serviceDoc?._id?.toString() ?? ""
-            : serviceEntry.service?.toString?.() ?? "";
+            ? (serviceDoc?._id?.toString() ?? "")
+            : (serviceEntry.service?.toString?.() ?? "");
         return {
           _id: serviceId,
-          name:
-            typeof serviceDoc === "object" && serviceDoc?.name
-              ? serviceDoc.name
-              : "Servicio",
+          name: typeof serviceDoc === "object" && serviceDoc?.name ? serviceDoc.name : "Servicio",
           price: serviceEntry.price,
           slot: serviceEntry.slot ?? 1
         };
       });
       return {
         _id:
-          typeof professional === "object" && professional?._id
-            ? professional._id.toString()
-            : "",
+          typeof professional === "object" && professional?._id ? professional._id.toString() : "",
         name:
           typeof professional === "object" && professional?.name
             ? professional.name
             : "Profesional",
-        email: typeof professional === "object" ? professional?.email ?? "" : "",
-        phone: typeof professional === "object" ? professional?.phone ?? "" : "",
+        email: typeof professional === "object" ? (professional?.email ?? "") : "",
+        phone: typeof professional === "object" ? (professional?.phone ?? "") : "",
         services,
         schedule: (entry.schedule ?? []).map((workday) => ({
           day: workday?.day ?? "",
@@ -126,5 +152,87 @@ export class ClientsService {
         location: client.location
       }
     };
+  }
+
+  async upsertProfessional(clientId: string, payload: UpsertClientProfessionalDto) {
+    const client = await this.clientModel.findById(clientId).exec();
+    if (!client || client.active === false) {
+      throw new NotFoundException(`Client with id ${clientId} not found`);
+    }
+
+    const { professionalId, services = [], schedule = [], name, email, phone } = payload;
+
+    let proObjectId: Types.ObjectId;
+    if (professionalId) {
+      proObjectId = new Types.ObjectId(professionalId);
+    } else {
+      const created = await this.userModel.create({
+        name: name ?? "",
+        email: email ?? "",
+        phone: phone ?? "",
+        roles: [UserRole.PRO],
+        client: client._id
+      });
+      proObjectId = created._id as Types.ObjectId;
+    }
+
+    const mappedServices = services.map((service) => ({
+      service: new Types.ObjectId(service.serviceId),
+      price: service.price,
+      slot: service.slot
+    }));
+
+    const mappedSchedule = schedule
+      .filter((entry) => entry?.day && entry?.start && entry?.end)
+      .map((entry) => ({
+        day: entry.day,
+        start: entry.start,
+        end: entry.end
+      }));
+
+    const existingIndex = (client.professionals ?? []).findIndex((p) =>
+      p.professional?.equals ? p.professional.equals(proObjectId) : false
+    );
+
+    // Persist general info on User document
+    if (name || email || phone) {
+      await this.userModel.findByIdAndUpdate(
+        proObjectId,
+        {
+          ...(name ? { name } : {}),
+          ...(email ? { email } : {}),
+          ...(phone ? { phone } : {})
+        },
+        { new: true }
+      );
+    }
+
+    if (existingIndex >= 0) {
+      client.professionals[existingIndex].services = mappedServices;
+      client.professionals[existingIndex].schedule = mappedSchedule;
+    } else {
+      client.professionals.push({
+        professional: proObjectId,
+        services: mappedServices,
+        schedule: mappedSchedule
+      } as any);
+    }
+
+    await client.save();
+
+    return this.findProfessionals(clientId);
+  }
+
+  async removeProfessional(clientId: string, professionalId: string) {
+    const client = await this.clientModel.findById(clientId).exec();
+    if (!client || client.active === false) {
+      throw new NotFoundException(`Client with id ${clientId} not found`);
+    }
+    const proObjectId = new Types.ObjectId(professionalId);
+    client.professionals = (client.professionals ?? []).filter((p) =>
+      p.professional?.equals ? !p.professional.equals(proObjectId) : true
+    );
+    await client.save();
+    return this.findProfessionals(clientId);
   }
 }
