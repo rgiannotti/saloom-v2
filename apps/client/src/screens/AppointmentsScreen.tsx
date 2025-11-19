@@ -1471,7 +1471,7 @@ export const AppointmentsScreen = () => {
                               >
                                 <Text style={styles.dropdownItemText}>{customer.name}</Text>
                                 <Text style={styles.dropdownItemSub}>
-                                  {customer.email || customer.phone}
+                                  {customer.phone || customer.email}
                                 </Text>
                               </TouchableOpacity>
                             ))}
