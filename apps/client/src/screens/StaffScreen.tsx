@@ -316,18 +316,18 @@ export const StaffScreen = () => {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {!isMobile ? (
-        <View style={styles.headerRow}>
+      <View style={[styles.headerRow, isMobile && styles.headerRowMobile]}>
+        {!isMobile ? (
           <View style={styles.headerText}>
             <Text style={styles.title}>Gestión de Personal</Text>
             <Text style={styles.subtitle}>Administra el equipo del salón</Text>
           </View>
-        </View>
-      ) : null}
-      <View style={styles.headerActions}>
-        <TouchableOpacity style={styles.newButton} onPress={openCreateModal}>
-          <Text style={styles.newButtonIcon}>＋</Text>
-          <Text style={styles.newButtonLabel}>Nuevo Personal</Text>
+        ) : null}
+        <TouchableOpacity
+          style={[styles.headerButton, isMobile && styles.headerButtonMobile]}
+          onPress={openCreateModal}
+        >
+          <Text style={styles.headerButtonText}>＋ Nuevo Personal</Text>
         </TouchableOpacity>
       </View>
 
@@ -341,17 +341,14 @@ export const StaffScreen = () => {
       ) : (
         <View style={[styles.grid, isMobile && { flexDirection: "column", gap: 16 }]}>
           {staff.map((pro) => (
-            <View
+            <TouchableOpacity
               key={pro._id}
               style={[styles.card, !isMobile && { maxWidth: "32%", minWidth: "32%" }]}
+              onPress={() => openEditModal(pro)}
+              activeOpacity={0.85}
             >
               <View style={styles.cardHeader}>
                 <Text style={styles.name}>{pro.name}</Text>
-                <View style={styles.cardActions}>
-                  <TouchableOpacity onPress={() => openEditModal(pro)}>
-                    <Text style={styles.actionIcon}>✏️</Text>
-                  </TouchableOpacity>
-                </View>
               </View>
 
               {pro.email ? (
@@ -378,7 +375,7 @@ export const StaffScreen = () => {
 
               <Text style={styles.sectionLabel}>Días laborales:</Text>
               <Text style={styles.infoText}>{formatDays(pro.schedule)}</Text>
-            </View>
+            </TouchableOpacity>
           ))}
         </View>
       )}
@@ -706,6 +703,9 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: 12
   },
+  headerRowMobile: {
+    flexDirection: "column"
+  },
   headerText: {
     gap: 4
   },
@@ -723,21 +723,18 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
     marginBottom: 20
   },
-  newButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
+  headerButton: {
     backgroundColor: "#f43f5e",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
     borderRadius: 12
   },
-  newButtonIcon: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "700"
+  headerButtonMobile: {
+    marginTop: 12,
+    alignSelf: "stretch",
+    alignItems: "center"
   },
-  newButtonLabel: {
+  headerButtonText: {
     color: "#fff",
     fontWeight: "700"
   },

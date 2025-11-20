@@ -28,8 +28,21 @@ export class UsersService {
     return this.findOne(createdId);
   }
 
-  findAll(filter: FilterQuery<UserDocument> = {}): Promise<User[]> {
-    return this.userModel.find(filter).select(this.safeSelect()).lean().exec();
+  findAll(
+    filter: FilterQuery<UserDocument> = {},
+    options: { skip?: number; limit?: number; sort?: Record<string, 1 | -1> } = {}
+  ): Promise<User[]> {
+    const query = this.userModel.find(filter).select(this.safeSelect());
+    if (options.sort) {
+      query.sort(options.sort);
+    }
+    if (typeof options.skip === "number" && options.skip > 0) {
+      query.skip(options.skip);
+    }
+    if (typeof options.limit === "number" && options.limit > 0) {
+      query.limit(options.limit);
+    }
+    return query.lean().exec();
   }
 
   async findOne(id: string): Promise<User> {

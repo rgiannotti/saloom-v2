@@ -5,6 +5,7 @@ import { useAuth } from "../auth/AuthContext";
 import { DashboardLayout } from "../components/DashboardLayout";
 import type { SidebarItem } from "../components/Sidebar";
 import { AppointmentsScreen } from "./AppointmentsScreen";
+import { ClientsScreen } from "./ClientsScreen";
 import { StaffScreen } from "./StaffScreen";
 
 const modules: SidebarItem[] = [
@@ -20,8 +21,7 @@ const modules: SidebarItem[] = [
 const moduleDescriptions: Record<string, string> = {
   overview:
     "Consulta indicadores rápidos de tu operación diaria y tareas pendientes para el cliente asignado.",
-  clients:
-    "Revisa información clave del cliente asociado, contactos y accesos directos a locaciones.",
+  clients: "Consulta y gestiona tu base de clientes registrados.",
   services:
     "Administra los servicios que ofreces, precios y disponibilidad por cada sede del cliente.",
   messages:
@@ -40,12 +40,16 @@ export const HomeScreen = () => {
 
   const { user } = session;
 
-  const headerContent =
-    activeModule === "staff" ? (
-      <View style={styles.headerTextInline}>
-        <Text style={styles.moduleTitle}>Gestión de Personal</Text>
-      </View>
-    ) : null;
+  const headerLabels: Record<string, string> = {
+    staff: "Gestión de Personal",
+    clients: "Gestión de Clientes",
+    appointments: "Gestión de Citas"
+  };
+  const headerContent = headerLabels[activeModule] ? (
+    <View style={styles.headerTextInline}>
+      <Text style={styles.moduleTitle}>{headerLabels[activeModule]}</Text>
+    </View>
+  ) : null;
 
   return (
     <DashboardLayout
@@ -59,6 +63,8 @@ export const HomeScreen = () => {
         <AppointmentsScreen />
       ) : activeModule === "staff" ? (
         <StaffScreen />
+      ) : activeModule === "clients" ? (
+        <ClientsScreen />
       ) : (
         <>
           <View style={styles.moduleHeader}>
