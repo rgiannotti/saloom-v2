@@ -21,6 +21,18 @@ import {
   ProfessionalServiceOption
 } from "../types/appointments";
 
+type ServiceCatalogItem = {
+  _id: string;
+  name: string;
+  categoryId?: string | null;
+  categoryName?: string | null;
+};
+
+type ClientCategoryOption = {
+  _id: string;
+  name: string;
+};
+
 const dayLabels: Record<string, string> = {
   monday: "Lun",
   tuesday: "Mar",
@@ -67,6 +79,8 @@ export const StaffScreen = () => {
   const [editing, setEditing] = useState<ProfessionalOption | null>(null);
   const [form, setForm] = useState({ name: "", email: "", phone: "" });
   const [formServices, setFormServices] = useState<ProfessionalServiceOption[]>([]);
+  const [serviceCatalog, setServiceCatalog] = useState<ServiceCatalogItem[]>([]);
+  const [clientCategories, setClientCategories] = useState<ClientCategoryOption[]>([]);
   const [activeTab, setActiveTab] = useState<"info" | "services" | "schedule">("info");
   const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null);
   const [servicePrice, setServicePrice] = useState<string>("");
@@ -120,11 +134,19 @@ export const StaffScreen = () => {
         if (!response.ok) {
           throw new Error("No se pudo cargar el personal.");
         }
-        const data = (await response.json()) as { professionals?: ProfessionalOption[] };
+        const data = (await response.json()) as {
+          professionals?: ProfessionalOption[];
+          serviceCatalog?: ServiceCatalogItem[];
+          clientCategories?: ClientCategoryOption[];
+        };
         setStaff(data.professionals ?? []);
+        setServiceCatalog(data.serviceCatalog ?? []);
+        setClientCategories(data.clientCategories ?? []);
       } catch (err) {
         setError((err as Error).message);
         setStaff([]);
+        setServiceCatalog([]);
+        setClientCategories([]);
       } finally {
         setLoading(false);
       }
@@ -192,22 +214,36 @@ export const StaffScreen = () => {
     setModalVisible(false);
   };
 
-  const aggregatedServiceOptions = useMemo(() => {
-    const all = staff.flatMap((p) => p.services ?? []);
-    const uniqueMap = new Map<string, ProfessionalServiceOption>();
-    all.forEach((s) => {
-      if (s?._id && !uniqueMap.has(s._id)) {
-        uniqueMap.set(s._id, s);
+  const availableServiceOptions = useMemo(() => {
+    if (!serviceCatalog.length) {
+      return [];
+    }
+    const allowedCategoryIds = new Set(clientCategories.map((category) => category._id));
+    if (!allowedCategoryIds.size) {
+      return serviceCatalog;
+    }
+    return serviceCatalog.filter((service) => {
+      if (!service.categoryId) {
+        return false;
       }
+      return allowedCategoryIds.has(service.categoryId);
     });
-    return Array.from(uniqueMap.values());
-  }, [staff]);
+  }, [serviceCatalog, clientCategories]);
+
+  useEffect(() => {
+    if (
+      selectedServiceId &&
+      !availableServiceOptions.some((service) => service._id === selectedServiceId)
+    ) {
+      setSelectedServiceId(null);
+    }
+  }, [selectedServiceId, availableServiceOptions]);
 
   const handleAddService = () => {
     if (!selectedServiceId) return;
     const existing = formServices.find((s) => s._id === selectedServiceId);
     if (existing) return;
-    const base = aggregatedServiceOptions.find((s) => s._id === selectedServiceId);
+    const base = availableServiceOptions.find((s) => s._id === selectedServiceId);
     if (!base) return;
     const priceNumber = Number.parseFloat(servicePrice || "0");
     setFormServices((prev) => [...prev, { ...base, price: priceNumber, slot: selectedSlot }]);
@@ -483,7 +519,7 @@ export const StaffScreen = () => {
                               onPress={() => setServiceDropdownOpen((prev) => !prev)}
                             >
                               <Text style={styles.dropdownButtonText}>
-                                {aggregatedServiceOptions.find((s) => s._id === selectedServiceId)
+                                {availableServiceOptions.find((s) => s._id === selectedServiceId)
                                   ?.name ?? "Selecciona servicio"}
                               </Text>
                               <Text style={styles.dropdownButtonIcon}>
@@ -492,20 +528,28 @@ export const StaffScreen = () => {
                             </TouchableOpacity>
                             {serviceDropdownOpen ? (
                               <View style={styles.dropdownList}>
-                                <ScrollView style={styles.dropdownScroll}>
-                                  {aggregatedServiceOptions.map((service) => (
-                                    <TouchableOpacity
-                                      key={service._id}
-                                      style={styles.dropdownItemInline}
-                                      onPress={() => {
-                                        setSelectedServiceId(service._id);
-                                        setServiceDropdownOpen(false);
-                                      }}
-                                    >
-                                      <Text style={styles.dropdownItemText}>{service.name}</Text>
-                                    </TouchableOpacity>
-                                  ))}
-                                </ScrollView>
+                                {availableServiceOptions.length ? (
+                                  <ScrollView style={styles.dropdownScroll}>
+                                    {availableServiceOptions.map((service) => (
+                                      <TouchableOpacity
+                                        key={service._id}
+                                        style={styles.dropdownItemInline}
+                                        onPress={() => {
+                                          setSelectedServiceId(service._id);
+                                          setServiceDropdownOpen(false);
+                                        }}
+                                      >
+                                        <Text style={styles.dropdownItemText}>{service.name}</Text>
+                                      </TouchableOpacity>
+                                    ))}
+                                  </ScrollView>
+                                ) : (
+                                  <View style={styles.dropdownEmpty}>
+                                    <Text style={styles.dropdownEmptyText}>
+                                      No hay servicios disponibles
+                                    </Text>
+                                  </View>
+                                )}
                               </View>
                             ) : null}
                           </View>
@@ -959,6 +1003,15 @@ const styles = StyleSheet.create({
   },
   dropdownScroll: {
     maxHeight: 180
+  },
+  dropdownEmpty: {
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+    alignItems: "center"
+  },
+  dropdownEmptyText: {
+    color: "#94a3b8",
+    fontWeight: "600"
   },
   dropdownItemInline: {
     paddingVertical: 10,

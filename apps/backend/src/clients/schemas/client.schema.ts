@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { Document, Types } from "mongoose";
 
+import { ServiceCategory } from "../../service-categories/schemas/service-category.schema";
 import { Service } from "../../services/schemas/service.schema";
 import { User } from "../../users/schemas/user.schema";
 
@@ -148,6 +149,9 @@ export class Client {
 
   @Prop({ type: [ClientProfessionalSchema], default: [] })
   professionals: ClientProfessional[];
+
+  @Prop({ type: [Types.ObjectId], ref: ServiceCategory.name, default: [] })
+  categories: Types.ObjectId[];
 
   createdAt: Date;
   updatedAt: Date;

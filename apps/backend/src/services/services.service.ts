@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { FilterQuery, Model } from "mongoose";
+import { FilterQuery, Model, Types } from "mongoose";
 
 import { CreateServiceDto } from "./dto/create-service.dto";
 import { UpdateServiceDto } from "./dto/update-service.dto";
@@ -14,22 +14,25 @@ export class ServicesService {
   ) {}
 
   create(createServiceDto: CreateServiceDto): Promise<Service> {
+    const { categoryId, ...rest } = createServiceDto;
     return this.serviceModel.create({
       active: true,
-      ...createServiceDto
+      ...rest,
+      category: categoryId ? new Types.ObjectId(categoryId) : null
     });
   }
 
   findAll(filter: FilterQuery<ServiceDocument> = {}): Promise<Service[]> {
     return this.serviceModel
       .find({ ...filter, active: true })
+      .populate("category")
       .sort({ order: 1, createdAt: -1 })
       .lean()
       .exec();
   }
 
   async findOne(id: string): Promise<Service> {
-    const service = await this.serviceModel.findById(id).lean().exec();
+    const service = await this.serviceModel.findById(id).populate("category").lean().exec();
     if (!service) {
       throw new NotFoundException(`Service with id ${id} not found`);
     }
@@ -37,14 +40,20 @@ export class ServicesService {
   }
 
   async update(id: string, updateServiceDto: UpdateServiceDto): Promise<Service> {
+    const { categoryId, ...rest } = updateServiceDto;
+    const updatePayload: Record<string, unknown> = { ...rest };
+    if (categoryId !== undefined) {
+      updatePayload.category = categoryId ? new Types.ObjectId(categoryId) : null;
+    }
     const service = await this.serviceModel
       .findByIdAndUpdate(
         id,
         {
-          $set: updateServiceDto
+          $set: updatePayload
         },
         { new: true, runValidators: true }
       )
+      .populate("category")
       .lean()
       .exec();
     if (!service) {

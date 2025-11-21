@@ -69,7 +69,8 @@
 }
 
 .services-form input,
-.services-form textarea {
+.services-form textarea,
+.services-form select {
   border-radius: 10px;
   border: 1px solid var(--color-border);
   padding: 0.65rem 0.75rem;
@@ -80,9 +81,44 @@
 .services-form textarea {
   resize: vertical;
 }
+.services-form select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2349555f' stroke-width='2' fill='none' fill-rule='evenodd'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.65rem center;
+  background-size: 12px 8px;
+}
 
 .services-form input:focus,
-.services-form textarea:focus {
+.services-form textarea:focus,
+.services-form select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(255, 54, 54, 0.2);
+}
+
+.category-select-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.category-inline {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.category-inline input {
+  flex: 1;
+  border-radius: 10px;
+  border: 1px solid var(--color-border);
+  padding: 0.55rem 0.65rem;
+  background: transparent;
+  color: var(--color-text);
+}
+
+.category-inline input:focus {
   outline: none;
   border-color: var(--color-primary);
   box-shadow: 0 0 0 2px rgba(255, 54, 54, 0.2);

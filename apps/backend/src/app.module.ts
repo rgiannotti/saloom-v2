@@ -11,6 +11,7 @@ import { JwtAuthGuard } from "./auth/guards/jwt-auth.guard";
 import { RolesGuard } from "./auth/guards/roles.guard";
 import { BackofficeUsersModule } from "./backoffice-users/backoffice-users.module";
 import { ClientsModule } from "./clients/clients.module";
+import { ServiceCategoriesModule } from "./service-categories/service-categories.module";
 import { ServicesModule } from "./services/services.module";
 import { UsersModule } from "./users/users.module";
 import { AppointmentsModule } from "./appointments/appointments.module";
@@ -27,6 +28,7 @@ import { AppointmentsModule } from "./appointments/appointments.module";
     ClientsModule,
     AppointmentsModule,
     ServicesModule,
+    ServiceCategoriesModule,
     AuthModule
   ],
   controllers: [AppController],

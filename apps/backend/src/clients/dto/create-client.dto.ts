@@ -159,6 +159,11 @@ export class CreateClientDto {
   payments?: string[];
 
   @IsArray()
+  @IsMongoId({ each: true })
+  @IsOptional()
+  categories?: string[];
+
+  @IsArray()
   @ValidateNested({ each: true })
   @Type(() => ClientProfessionalDto)
   @IsOptional()

@@ -39,7 +39,7 @@ export const ClientsScreen = () => {
   const [form, setForm] = useState({ name: "", email: "", phone: "" });
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const endReachedLock = useRef(false);
+  const endReachedLock = useRef(true);
 
   const loadClients = useCallback(async () => {
     if (!token) {

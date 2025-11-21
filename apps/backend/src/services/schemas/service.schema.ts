@@ -1,5 +1,7 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { Document } from "mongoose";
+import { Document, Types } from "mongoose";
+
+import { ServiceCategory } from "../../service-categories/schemas/service-category.schema";
 
 export type ServiceDocument = Service & Document;
 
@@ -21,6 +23,9 @@ export class Service {
 
   @Prop({ default: true })
   active: boolean;
+
+  @Prop({ type: Types.ObjectId, ref: ServiceCategory.name, default: null })
+  category?: Types.ObjectId | null;
 
   createdAt: Date;
   updatedAt: Date;

@@ -1,4 +1,4 @@
-import { IsBoolean, IsNumber, IsOptional, IsString, MinLength } from "class-validator";
+import { IsBoolean, IsMongoId, IsNumber, IsOptional, IsString, MinLength } from "class-validator";
 import { Type } from "class-transformer";
 
 export class CreateServiceDto {
@@ -22,4 +22,8 @@ export class CreateServiceDto {
   @IsOptional()
   @IsBoolean()
   active?: boolean;
+
+  @IsOptional()
+  @IsMongoId()
+  categoryId?: string;
 }

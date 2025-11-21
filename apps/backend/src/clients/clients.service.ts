@@ -7,6 +7,7 @@ import { UpsertClientProfessionalDto } from "./dto/upsert-client-professional.dt
 import { UpdateClientDto } from "./dto/update-client.dto";
 import { Client, ClientDocument } from "./schemas/client.schema";
 import { User, UserDocument, UserRole } from "../users/schemas/user.schema";
+import { Service, ServiceDocument } from "../services/schemas/service.schema";
 
 @Injectable()
 export class ClientsService {
@@ -14,7 +15,9 @@ export class ClientsService {
     @InjectModel(Client.name)
     private readonly clientModel: Model<ClientDocument>,
     @InjectModel(User.name)
-    private readonly userModel: Model<UserDocument>
+    private readonly userModel: Model<UserDocument>,
+    @InjectModel(Service.name)
+    private readonly serviceModel: Model<ServiceDocument>
   ) {}
 
   private mapProfessionals(professionals: any[] = []) {
@@ -40,10 +43,12 @@ export class ClientsService {
 
   async create(createClientDto: CreateClientDto): Promise<Client> {
     const code = await this.nextCode();
+    const { professionals, categories, ...rest } = createClientDto as any;
     const client = await this.clientModel.create({
       code,
-      ...createClientDto,
-      professionals: this.mapProfessionals((createClientDto as any).professionals ?? [])
+      ...rest,
+      categories: (categories ?? []).map((id: string) => new Types.ObjectId(id)),
+      professionals: this.mapProfessionals(professionals ?? [])
     });
     return client.toObject();
   }
@@ -51,12 +56,13 @@ export class ClientsService {
   findAll(filter: FilterQuery<ClientDocument> = {}): Promise<Client[]> {
     return this.clientModel
       .find({ active: true, ...filter })
+      .populate("categories")
       .lean()
       .exec();
   }
 
   async findOne(id: string): Promise<Client> {
-    const client = await this.clientModel.findById(id).lean().exec();
+    const client = await this.clientModel.findById(id).populate("categories").lean().exec();
     if (!client || client.active === false) {
       throw new NotFoundException(`Client with id ${id} not found`);
     }
@@ -64,12 +70,18 @@ export class ClientsService {
   }
 
   async update(id: string, updateClientDto: UpdateClientDto): Promise<Client> {
+    const payload: Record<string, unknown> = { ...updateClientDto };
+    if (Object.prototype.hasOwnProperty.call(updateClientDto, "categories")) {
+      payload.categories = (updateClientDto.categories ?? []).map((catId) =>
+        new Types.ObjectId(catId)
+      );
+    }
     const client = await this.clientModel
       .findByIdAndUpdate(
         id,
         {
           $set: {
-            ...updateClientDto,
+            ...payload,
             ...(updateClientDto as any).professionals
               ? { professionals: this.mapProfessionals((updateClientDto as any).professionals) }
               : {}
@@ -80,6 +92,7 @@ export class ClientsService {
           runValidators: true
         }
       )
+      .populate("categories")
       .lean()
       .exec();
     if (!client || client.active === false) {
@@ -100,10 +113,11 @@ export class ClientsService {
   async findProfessionals(id: string) {
     const client = await this.clientModel
       .findById(id)
-      .select("professionals address location active")
+      .select("professionals address location active categories")
       .populate([
         { path: "professionals.professional", select: "name email phone" },
-        { path: "professionals.services.service", select: "name" }
+        { path: "professionals.services.service", select: "name" },
+        { path: "categories", select: "name" }
       ])
       .lean()
       .exec();
@@ -145,12 +159,82 @@ export class ClientsService {
       };
     });
 
+    const categoryOptions = ((client.categories ?? []) as any[])
+      .map((categoryEntry) => {
+        if (!categoryEntry) {
+          return null;
+        }
+        if (categoryEntry instanceof Types.ObjectId) {
+          return { _id: categoryEntry.toHexString(), name: "Categoría" };
+        }
+        if (typeof categoryEntry === "string") {
+          return { _id: categoryEntry, name: "Categoría" };
+        }
+        if (typeof categoryEntry === "object") {
+          const idValue =
+            categoryEntry._id instanceof Types.ObjectId
+              ? categoryEntry._id.toHexString()
+              : categoryEntry._id?.toString?.() ?? "";
+          if (!idValue) {
+            return null;
+          }
+          return {
+            _id: idValue,
+            name: categoryEntry.name ?? "Categoría"
+          };
+        }
+        return null;
+      })
+      .filter((item): item is { _id: string; name: string } => Boolean(item && item._id));
+
+    const categoryObjectIds = categoryOptions.map((category) => new Types.ObjectId(category._id));
+
+    const serviceFilter: FilterQuery<ServiceDocument> = { active: true };
+    if (categoryObjectIds.length) {
+      serviceFilter.category = { $in: categoryObjectIds };
+    }
+
+    const serviceCatalogDocs = await this.serviceModel
+      .find(serviceFilter)
+      .select("name category")
+      .populate("category", "name")
+      .sort({ order: 1, createdAt: -1 })
+      .lean()
+      .exec();
+
+    const serviceCatalog = serviceCatalogDocs.map((service) => {
+      const categoryValue = service.category as any;
+      let categoryId: string | null = null;
+      let categoryName: string | null = null;
+      if (categoryValue) {
+        if (categoryValue instanceof Types.ObjectId) {
+          categoryId = categoryValue.toHexString();
+        } else if (typeof categoryValue === "string") {
+          categoryId = categoryValue;
+        } else if (typeof categoryValue === "object") {
+          categoryId =
+            categoryValue._id instanceof Types.ObjectId
+              ? categoryValue._id.toHexString()
+              : categoryValue._id?.toString?.() ?? null;
+          categoryName = categoryValue.name ?? null;
+        }
+      }
+      return {
+        _id: service._id.toString(),
+        name: service.name,
+        categoryId,
+        categoryName
+      };
+    });
+
     return {
       professionals,
       place: {
         address: client.address,
         location: client.location
-      }
+      },
+      clientCategories: categoryOptions,
+      serviceCatalog
     };
   }
 

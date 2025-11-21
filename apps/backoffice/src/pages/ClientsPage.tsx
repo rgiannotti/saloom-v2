@@ -5,6 +5,12 @@ import { API_BASE_URL, GOOGLE_MAPS_API_KEY, GOOGLE_MAPS_COUNTRY } from "../confi
 import { useGooglePlaces } from "../hooks/useGooglePlaces";
 import "./clients.css";
 
+interface ServiceCategoryOption {
+  _id: string;
+  name: string;
+  description?: string;
+}
+
 interface Client {
   _id: string;
   code: number;
@@ -29,6 +35,7 @@ interface Client {
     }>;
     schedule: Array<{ day: string; start: string; end: string }>;
   }>;
+  categories?: Array<{ _id: string; name: string } | string>;
 }
 
 interface ClientFormState {
@@ -42,6 +49,7 @@ interface ClientFormState {
   useGoogleMap: boolean;
   home: boolean;
   blocked: boolean;
+  categories: string[];
 }
 
 interface AddressState {
@@ -102,7 +110,8 @@ const defaultForm: ClientFormState = {
   website: "",
   useGoogleMap: true,
   home: false,
-  blocked: false
+  blocked: false,
+  categories: []
 };
 
 const defaultAddress: AddressState = {
@@ -155,7 +164,8 @@ export const ClientsPage = () => {
   const [catalogs, setCatalogs] = useState<{
     professionals: ProfessionalOption[];
     services: ServiceOption[];
-  }>({ professionals: [], services: [] });
+    categories: ServiceCategoryOption[];
+  }>({ professionals: [], services: [], categories: [] });
   const [catalogStatus, setCatalogStatus] = useState<{ loading: boolean; error: string | null }>({
     loading: false,
     error: null
@@ -191,6 +201,42 @@ export const ClientsPage = () => {
     catalogs.services.forEach((service) => map.set(service._id, service));
     return map;
   }, [catalogs.services]);
+
+  const getServiceCategoryId = useCallback((service: ServiceOption | undefined) => {
+    if (!service) {
+      return null;
+    }
+    if (typeof service.category === "string") {
+      return service.category;
+    }
+    return service.category?._id ?? null;
+  }, []);
+
+  const filteredServicesByCategory = useMemo(() => {
+    if (!form.categories.length) {
+      return catalogs.services;
+    }
+    const allowed = new Set(form.categories);
+    return catalogs.services.filter((service) => {
+      const categoryId = getServiceCategoryId(service);
+      return categoryId ? allowed.has(categoryId) : false;
+    });
+  }, [catalogs.services, form.categories, getServiceCategoryId]);
+
+  const getServiceOptionsForSelect = useCallback(
+    (serviceId?: string) => {
+      if (!form.categories.length) {
+        return catalogs.services;
+      }
+      const allowed = filteredServicesByCategory;
+      if (serviceId && !allowed.some((option) => option._id === serviceId)) {
+        const selected = catalogs.services.find((option) => option._id === serviceId);
+        return selected ? [...allowed, selected] : allowed;
+      }
+      return allowed;
+    },
+    [catalogs.services, filteredServicesByCategory, form.categories.length]
+  );
   const availableProfessionalOptions = useMemo(
     () =>
       catalogs.professionals.filter(
@@ -201,6 +247,18 @@ export const ClientsPage = () => {
 
   const removeProfessional = (index: number) => {
     setProfessionals((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const toggleCategorySelection = (categoryId: string) => {
+    setForm((prev) => {
+      const exists = prev.categories.includes(categoryId);
+      return {
+        ...prev,
+        categories: exists
+          ? prev.categories.filter((id) => id !== categoryId)
+          : [...prev.categories, categoryId]
+      };
+    });
   };
 
   const updateProfessionalField = (index: number, field: "id" | "name", value: string) => {
@@ -369,25 +427,32 @@ export const ClientsPage = () => {
         if (editingId) {
           usersUrl.searchParams.set("clientId", editingId);
         }
-        const [professionalsResponse, servicesResponse] = await Promise.all([
+        const [professionalsResponse, servicesResponse, categoriesResponse] = await Promise.all([
           fetch(usersUrl.toString(), {
             headers: authHeaders
           }),
           fetch(`${API_BASE_URL}/services`, {
             headers: authHeaders
+          }),
+          fetch(`${API_BASE_URL}/service-categories`, {
+            headers: authHeaders
           })
         ]);
-        if (!professionalsResponse.ok || !servicesResponse.ok) {
-          throw new Error("No se pudieron cargar los catálogos de profesionales y servicios.");
+        if (!professionalsResponse.ok || !servicesResponse.ok || !categoriesResponse.ok) {
+          throw new Error(
+            "No se pudieron cargar los catálogos de profesionales, servicios y categorías."
+          );
         }
         const professionalsData = (await professionalsResponse.json()) as ProfessionalOption[];
         const serviceData = (await servicesResponse.json()) as ServiceOption[];
+        const categoryData = (await categoriesResponse.json()) as ServiceCategoryOption[];
         const prosOnly = professionalsData.filter((user) =>
           user.roles?.some((role) => role.toLowerCase() === "pro")
         );
         setCatalogs({
           professionals: prosOnly,
-          services: serviceData
+          services: serviceData,
+          categories: categoryData
         });
         catalogsFetchedRef.current = true;
         setCatalogStatus({ loading: false, error: null });
@@ -580,6 +645,11 @@ export const ClientsPage = () => {
   const openEditor = (client?: Client) => {
     if (client) {
       setEditingId(client._id);
+      const categoryIds = (client.categories ?? [])
+        .map((category) =>
+          typeof category === "string" ? category : category?._id ?? ""
+        )
+        .filter(Boolean);
       setForm({
         rif: client.rif,
         denomination: client.denomination,
@@ -590,7 +660,8 @@ export const ClientsPage = () => {
         website: client.website ?? "",
         useGoogleMap: Boolean(client.useGoogleMap && client.address?.placeId),
         home: client.home,
-        blocked: client.blocked
+        blocked: client.blocked,
+        categories: categoryIds
       });
       setAddressState(
         client.useGoogleMap && client.address?.placeId
@@ -1178,6 +1249,55 @@ export const ClientsPage = () => {
                     )}
                   </div>
                 ) : null}
+
+                <div className="clients-category-section">
+                  <div className="clients-category-section__header">
+                    <div>
+                      <h4>Categorías del cliente</h4>
+                      <p className="muted-text">Asigna las categorías relevantes para este cliente.</p>
+                    </div>
+                    <button
+                      type="button"
+                      className="icon-button icon-button--ghost"
+                      onClick={() => loadCatalogs(true)}
+                      aria-label="Actualizar categorías"
+                      disabled={catalogStatus.loading}
+                    >
+                      {catalogStatus.loading ? "…" : "⟳"}
+                    </button>
+                  </div>
+                  {catalogStatus.error ? (
+                    <p className="error" role="alert">
+                      {catalogStatus.error}
+                    </p>
+                  ) : null}
+                  <div className="clients-category-grid">
+                    {catalogs.categories.length === 0 ? (
+                      <p className="muted-text">No hay categorías disponibles.</p>
+                    ) : (
+                      catalogs.categories.map((category) => (
+                        <label
+                          key={category._id}
+                          className={`clients-category-chip ${
+                            form.categories.includes(category._id)
+                              ? "clients-category-chip--active"
+                              : ""
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={form.categories.includes(category._id)}
+                            onChange={() => toggleCategorySelection(category._id)}
+                          />
+                          {category.name}
+                        </label>
+                      ))
+                    )}
+                  </div>
+                  <small className="muted-text">
+                    {"Administra las categorías desde el módulo de Servicios."}
+                  </small>
+                </div>
               </>
             ) : (
               <div className="clients-personal-tab">
@@ -1191,8 +1311,10 @@ export const ClientsPage = () => {
                     <div className="clients-personal__catalog">
                       {catalogStatus.loading
                         ? "Actualizando catálogos..."
-                        : catalogs.professionals.length || catalogs.services.length
-                          ? `${catalogs.professionals.length} profesionales · ${catalogs.services.length} servicios`
+                        : catalogs.professionals.length ||
+                            catalogs.services.length ||
+                            catalogs.categories.length
+                          ? `${catalogs.professionals.length} profesionales · ${catalogs.services.length} servicios · ${catalogs.categories.length} categorías`
                           : "Catálogos sin datos cargados"}
                     </div>
                   </div>
@@ -1372,35 +1494,37 @@ export const ClientsPage = () => {
                               {pro.services.length === 0 ? (
                                 <p className="muted-text">Sin servicios configurados.</p>
                               ) : (
-                                pro.services.map((service, serviceIndex) => (
-                                  <div
-                                    className="professional-service-row"
-                                    key={`pro-${proIndex}-service-${serviceIndex}`}
-                                  >
-                                    <label className="professional-field">
-                                      <span>Servicio</span>
-                                      <select
-                                        value={
-                                          serviceLookup.has(service.serviceId)
-                                            ? service.serviceId
-                                            : ""
-                                        }
-                                        onChange={(e) =>
-                                          updateProfessionalService(
-                                            proIndex,
-                                            serviceIndex,
-                                            "serviceId",
-                                            e.target.value
-                                          )
-                                        }
-                                      >
-                                        <option value="">Selecciona un servicio</option>
-                                        {catalogs.services.map((option) => (
-                                          <option key={option._id} value={option._id}>
-                                            {option.name}
-                                          </option>
-                                        ))}
-                                      </select>
+                                pro.services.map((service, serviceIndex) => {
+                                  const serviceOptions = getServiceOptionsForSelect(service.serviceId);
+                                  return (
+                                    <div
+                                      className="professional-service-row"
+                                      key={`pro-${proIndex}-service-${serviceIndex}`}
+                                    >
+                                      <label className="professional-field">
+                                        <span>Servicio</span>
+                                        <select
+                                          value={
+                                            serviceLookup.has(service.serviceId)
+                                              ? service.serviceId
+                                              : ""
+                                          }
+                                          onChange={(e) =>
+                                            updateProfessionalService(
+                                              proIndex,
+                                              serviceIndex,
+                                              "serviceId",
+                                              e.target.value
+                                            )
+                                          }
+                                        >
+                                          <option value="">Selecciona un servicio</option>
+                                            {serviceOptions.map((option) => (
+                                              <option key={option._id} value={option._id}>
+                                                {option.name}
+                                              </option>
+                                            ))}
+                                        </select>
                                     </label>
                                     <label className="professional-field professional-field--compact">
                                       <span>Precio</span>
@@ -1446,7 +1570,8 @@ export const ClientsPage = () => {
                                       🗑️
                                     </button>
                                   </div>
-                                ))
+                                  );
+                                })
                               )}
                             </section>
 

@@ -4,12 +4,20 @@ import { useAuth } from "../auth/AuthProvider";
 import { API_BASE_URL } from "../config";
 import "./services.css";
 
+interface ServiceCategory {
+  _id: string;
+  name: string;
+  description?: string;
+  order?: number;
+}
+
 interface Service {
   _id: string;
   name: string;
   notes: string;
   order: number;
   home: boolean;
+  category?: ServiceCategory | null;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -19,24 +27,31 @@ interface ServiceFormState {
   notes: string;
   order: string;
   home: boolean;
+  categoryId: string;
 }
 
 const defaultForm: ServiceFormState = {
   name: "",
   notes: "",
   order: "",
-  home: false
+  home: false,
+  categoryId: ""
 };
 
 export const ServicesPage = () => {
   const { token } = useAuth();
   const [services, setServices] = useState<Service[]>([]);
+  const [categories, setCategories] = useState<ServiceCategory[]>([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<ServiceFormState>(defaultForm);
+  const [categoryError, setCategoryError] = useState<string | null>(null);
+  const [showCategoryForm, setShowCategoryForm] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [creatingCategory, setCreatingCategory] = useState(false);
 
   const authHeaders = useMemo(() => {
     if (!token) {
@@ -75,6 +90,29 @@ export const ServicesPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authHeaders]);
 
+  const fetchCategories = async () => {
+    if (!authHeaders) {
+      return;
+    }
+    try {
+      const response = await fetch(`${API_BASE_URL}/service-categories`, {
+        headers: authHeaders
+      });
+      if (!response.ok) {
+        throw new Error("No se pudieron cargar las categorías");
+      }
+      const data = (await response.json()) as ServiceCategory[];
+      setCategories(data);
+    } catch (err) {
+      console.warn(err);
+    }
+  };
+
+  useEffect(() => {
+    fetchCategories();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authHeaders]);
+
   const openModal = (service?: Service) => {
     if (service) {
       setEditingId(service._id);
@@ -82,12 +120,21 @@ export const ServicesPage = () => {
         name: service.name,
         notes: service.notes ?? "",
         order: service.order?.toString() ?? "",
-        home: Boolean(service.home)
+        home: Boolean(service.home),
+        categoryId:
+          typeof service.category === "string"
+            ? service.category
+            : service.category && service.category._id
+              ? service.category._id
+              : ""
       });
     } else {
       setEditingId(null);
       setForm(defaultForm);
     }
+    setCategoryError(null);
+    setShowCategoryForm(false);
+    setNewCategoryName("");
     setModalOpen(true);
   };
 
@@ -96,6 +143,9 @@ export const ServicesPage = () => {
     setForm(defaultForm);
     setEditingId(null);
     setError(null);
+    setCategoryError(null);
+    setShowCategoryForm(false);
+    setNewCategoryName("");
   };
 
   const handleSubmit = async (event: FormEvent) => {
@@ -111,7 +161,8 @@ export const ServicesPage = () => {
       name: form.name,
       notes: form.notes,
       order: form.order ? Number(form.order) : 0,
-      home: form.home
+      home: form.home,
+      categoryId: form.categoryId || undefined
     };
 
     try {
@@ -149,6 +200,38 @@ export const ServicesPage = () => {
       setServices((prev) => prev.filter((service) => service._id !== id));
     } catch (err) {
       setError((err as Error).message);
+    }
+  };
+
+  const handleCreateCategory = async () => {
+    if (!authHeaders) {
+      setCategoryError("Sesión inválida, vuelve a ingresar.");
+      return;
+    }
+    if (!newCategoryName.trim()) {
+      setCategoryError("Ingresa un nombre para la categoría.");
+      return;
+    }
+    setCreatingCategory(true);
+    setCategoryError(null);
+    try {
+      const response = await fetch(`${API_BASE_URL}/service-categories`, {
+        method: "POST",
+        headers: authHeaders,
+        body: JSON.stringify({ name: newCategoryName.trim() })
+      });
+      if (!response.ok) {
+        throw new Error("No se pudo crear la categoría");
+      }
+      const created = (await response.json()) as ServiceCategory;
+      setCategories((prev) => [...prev, created]);
+      setForm((prev) => ({ ...prev, categoryId: created._id }));
+      setNewCategoryName("");
+      setShowCategoryForm(false);
+    } catch (err) {
+      setCategoryError((err as Error).message);
+    } finally {
+      setCreatingCategory(false);
     }
   };
 
@@ -191,6 +274,7 @@ export const ServicesPage = () => {
             <thead>
               <tr>
                 <th>Nombre</th>
+                <th>Categoría</th>
                 <th>Orden</th>
                 <th>Domicilio</th>
                 <th></th>
@@ -199,7 +283,7 @@ export const ServicesPage = () => {
             <tbody>
               {services.length === 0 ? (
                 <tr>
-                  <td className="table-empty" colSpan={4}>
+                  <td className="table-empty" colSpan={5}>
                     Aún no hay servicios creados.
                   </td>
                 </tr>
@@ -210,9 +294,14 @@ export const ServicesPage = () => {
                       <strong>{service.name}</strong>
                       {service.notes ? <p className="service-notes">{service.notes}</p> : null}
                     </td>
-                    <td>{service.order}</td>
+                    <td>
+                      {service.category && typeof service.category === "object"
+                        ? service.category.name
+                        : "Sin categoría"}
+                    </td>
+                    <td>{service.order ?? 0}</td>
                     <td>{service.home ? "Sí" : "No"}</td>
-                  <td className="table-actions">
+                    <td className="table-actions">
                     <button
                       type="button"
                       className="icon-button icon-button--ghost"
@@ -274,6 +363,55 @@ export const ServicesPage = () => {
                 value={form.order}
                 onChange={(event) => setForm((prev) => ({ ...prev, order: event.target.value }))}
               />
+
+              <label htmlFor="service-category">Categoría</label>
+              <div className="category-select-group">
+                <select
+                  id="service-category"
+                  value={form.categoryId}
+                  onChange={(event) => setForm((prev) => ({ ...prev, categoryId: event.target.value }))}
+                >
+                  <option value="">Sin categoría</option>
+                  {categories.map((category) => (
+                    <option key={category._id} value={category._id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  className="link-button"
+                  onClick={() => {
+                    setShowCategoryForm((prev) => !prev);
+                    setCategoryError(null);
+                  }}
+                >
+                  {showCategoryForm ? "Cancelar" : "Nueva categoría"}
+                </button>
+              </div>
+              {showCategoryForm ? (
+                <div className="category-inline">
+                  <input
+                    type="text"
+                    placeholder="Nombre de la categoría"
+                    value={newCategoryName}
+                    onChange={(event) => setNewCategoryName(event.target.value)}
+                  />
+                  <button
+                    type="button"
+                    className="primary-button"
+                    onClick={handleCreateCategory}
+                    disabled={creatingCategory}
+                  >
+                    {creatingCategory ? "Creando..." : "Crear"}
+                  </button>
+                </div>
+              ) : null}
+              {categoryError ? (
+                <p className="error" role="alert">
+                  {categoryError}
+                </p>
+              ) : null}
 
               <label htmlFor="service-notes">Notas</label>
               <textarea
