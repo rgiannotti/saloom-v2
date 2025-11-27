@@ -16,7 +16,7 @@ import { UpdateUserDto } from "../users/dto/update-user.dto";
 import { User, UserRole } from "../users/schemas/user.schema";
 import { UsersService } from "../users/users.service";
 
-const BACKOFFICE_ROLES = [UserRole.ADMIN, UserRole.STAFF];
+const BACKOFFICE_ROLES = [UserRole.ADMIN];
 
 @Controller("backoffice/users")
 export class BackofficeUsersController {

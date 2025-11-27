@@ -6,13 +6,16 @@ import { DashboardLayout } from "../components/DashboardLayout";
 import type { SidebarItem } from "../components/Sidebar";
 import { AppointmentsScreen } from "./AppointmentsScreen";
 import { ClientsScreen } from "./ClientsScreen";
+import { DashboardScreen } from "./DashboardScreen";
+import { SettingsScreen } from "./SettingsScreen";
 import { StaffScreen } from "./StaffScreen";
 
 const modules: SidebarItem[] = [
+  { key: "dashboard", label: "Dashboard", icon: "🏠" },
   { key: "appointments", label: "Agenda", icon: "📅" },
-  { key: "staff", label: "Personal", icon: "👥" },
-  { key: "overview", label: "Resumen", icon: "📊" },
+  { key: "staff", label: "Personal", icon: "👤" },
   { key: "clients", label: "Clientes", icon: "👥" },
+  { key: "overview", label: "Resumen", icon: "📊" },
   { key: "services", label: "Servicios", icon: "💈" },
   { key: "messages", label: "Mensajes", icon: "💬" },
   { key: "settings", label: "Configuración", icon: "⚙️" }
@@ -27,12 +30,13 @@ const moduleDescriptions: Record<string, string> = {
   messages:
     "Centraliza la comunicación con el cliente y recibe alertas del backoffice en tiempo real.",
   settings: "Actualiza tu perfil profesional, credenciales y preferencias de notificación.",
-  staff: "Administra los miembros de tu equipo, sus datos y servicios asignados."
+  staff: "Administra los miembros de tu equipo, sus datos y servicios asignados.",
+  dashboard: "Panel principal con indicadores y próximas citas."
 };
 
 export const HomeScreen = () => {
   const { session, logout } = useAuth();
-  const [activeModule, setActiveModule] = useState("appointments");
+  const [activeModule, setActiveModule] = useState("dashboard");
 
   if (!session) {
     return null;
@@ -43,7 +47,9 @@ export const HomeScreen = () => {
   const headerLabels: Record<string, string> = {
     staff: "Gestión de Personal",
     clients: "Gestión de Clientes",
-    appointments: "Gestión de Citas"
+    appointments: "Gestión de Citas",
+    dashboard: "Dashboard",
+    settings: "Configuración"
   };
   const headerContent = headerLabels[activeModule] ? (
     <View style={styles.headerTextInline}>
@@ -59,12 +65,16 @@ export const HomeScreen = () => {
       onSelectItem={setActiveModule}
       headerContent={headerContent}
     >
-      {activeModule === "appointments" ? (
+      {activeModule === "dashboard" ? (
+        <DashboardScreen />
+      ) : activeModule === "appointments" ? (
         <AppointmentsScreen />
       ) : activeModule === "staff" ? (
         <StaffScreen />
       ) : activeModule === "clients" ? (
         <ClientsScreen />
+      ) : activeModule === "settings" ? (
+        <SettingsScreen />
       ) : (
         <>
           <View style={styles.moduleHeader}>

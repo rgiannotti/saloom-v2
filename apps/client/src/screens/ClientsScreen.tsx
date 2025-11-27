@@ -57,7 +57,10 @@ export const ClientsScreen = () => {
         throw new Error("No se pudieron cargar los clientes");
       }
       const data = (await response.json()) as User[];
-      setClients(data);
+      const sortedData = [...data].sort((a, b) =>
+        (a.name ?? "").localeCompare(b.name ?? "", "es", { sensitivity: "base" })
+      );
+      setClients(sortedData);
       setDisplayCount(Math.min(PAGE_CHUNK, data.length));
       endReachedLock.current = false;
     } catch (err) {

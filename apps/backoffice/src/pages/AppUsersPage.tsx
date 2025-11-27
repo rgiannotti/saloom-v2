@@ -276,7 +276,11 @@ export const AppUsersPage = () => {
                     </td>
                   </tr>
                 ) : (
-                  users.map((user) => (
+                  [...users]
+                    .sort((a, b) =>
+                      (a.name || "").localeCompare(b.name || "", "es", { sensitivity: "base" })
+                    )
+                    .map((user) => (
                     <tr key={user._id}>
                       <td>{user.name}</td>
                       <td>{user.email}</td>

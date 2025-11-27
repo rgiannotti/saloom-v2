@@ -14,6 +14,7 @@ import { Platform } from "react-native";
 
 import { API_BASE_URL } from "../config";
 import type { AuthSession } from "../types/auth";
+import type { User } from "../types/user";
 
 interface LoginParams {
   email: string;
@@ -25,6 +26,7 @@ interface AuthContextValue {
   login: (params: LoginParams) => Promise<void>;
   logout: () => void;
   initializing: boolean;
+  updateSessionUser: (payload: Partial<User>) => Promise<void>;
 }
 
 interface LoginResponse {
@@ -253,9 +255,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       session,
       login,
       logout,
-      initializing
+      initializing,
+      updateSessionUser: async (payload: Partial<User>) => {
+        if (!session?.user) {
+          return;
+        }
+        const nextUser = { ...session.user, ...payload };
+        await persistSession({
+          user: nextUser,
+          tokens: session.tokens
+        });
+      }
     }),
-    [session, login, logout, initializing]
+    [session, login, logout, initializing, persistSession]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

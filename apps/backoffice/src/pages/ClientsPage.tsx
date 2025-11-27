@@ -144,7 +144,7 @@ const createEmptySchedule = (): ProfessionalScheduleForm => ({
 const createEmptyProfessional = (): ClientProfessionalForm => ({
   id: "",
   name: "",
-  services: [createEmptyService()],
+  services: [],
   schedule: [],
   uiExpanded: false
 });
@@ -175,7 +175,13 @@ export const ClientsPage = () => {
   const [selectedProfessionalId, setSelectedProfessionalId] = useState("");
   const [professionalPickerError, setProfessionalPickerError] = useState<string | null>(null);
   const [newProModalOpen, setNewProModalOpen] = useState(false);
-  const [newProForm, setNewProForm] = useState({ name: "", email: "", phone: "", password: "" });
+  const [newProForm, setNewProForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    password: "",
+    role: "pro"
+  });
   const [newProError, setNewProError] = useState<string | null>(null);
   const [newProSubmitting, setNewProSubmitting] = useState(false);
   const professionalsEndRef = useRef<HTMLDivElement | null>(null);
@@ -423,7 +429,7 @@ export const ClientsPage = () => {
       setCatalogStatus((prev) => ({ ...prev, loading: true, error: null }));
       try {
         const usersUrl = new URL(`${API_BASE_URL}/app/users`);
-        usersUrl.searchParams.set("roles", "pro");
+        usersUrl.searchParams.set("roles", "pro,staff");
         if (editingId) {
           usersUrl.searchParams.set("clientId", editingId);
         }
@@ -447,7 +453,10 @@ export const ClientsPage = () => {
         const serviceData = (await servicesResponse.json()) as ServiceOption[];
         const categoryData = (await categoriesResponse.json()) as ServiceCategoryOption[];
         const prosOnly = professionalsData.filter((user) =>
-          user.roles?.some((role) => role.toLowerCase() === "pro")
+          user.roles?.some((role) => {
+            const normalized = role.toLowerCase();
+            return normalized === "pro" || normalized === "staff";
+          })
         );
         setCatalogs({
           professionals: prosOnly,
@@ -755,9 +764,6 @@ export const ClientsPage = () => {
         return `Selecciona un profesional para ${label}.`;
       }
       const validServices = assignment.services.filter((service) => service.serviceId.trim());
-      if (!validServices.length) {
-        return `Agrega al menos un servicio para ${label}.`;
-      }
       const invalidPrice = validServices.find((service) => {
         if (!service.price.trim()) {
           return true;
@@ -815,10 +821,10 @@ export const ClientsPage = () => {
           schedule: schedulePayload
         };
       })
-      .filter((assignment) => assignment.professional && assignment.services.length);
+      .filter((assignment) => assignment.professional);
 
   const openNewProModal = () => {
-    setNewProForm({ name: "", email: "", phone: "", password: "" });
+    setNewProForm({ name: "", email: "", phone: "", password: "", role: "pro" });
     setNewProError(null);
     setNewProModalOpen(true);
   };
@@ -854,7 +860,7 @@ export const ClientsPage = () => {
           email: newProForm.email,
           phone: newProForm.phone,
           password: newProForm.password,
-          roles: ["pro"],
+          roles: [newProForm.role],
           client: editingId
         })
       });
@@ -1736,6 +1742,16 @@ export const ClientsPage = () => {
                   required
                 />
               </label>
+              <label>
+                Rol
+                <select
+                  value={newProForm.role}
+                  onChange={(e) => updateNewProForm("role", e.target.value)}
+                >
+                  <option value="pro">Administrador</option>
+                  <option value="staff">Staff</option>
+                </select>
+              </label>
               {newProError ? (
                 <p className="error" role="alert">
                   {newProError}
@@ -1743,7 +1759,7 @@ export const ClientsPage = () => {
               ) : null}
               <div className="clients-modal__actions">
                 <button type="submit" disabled={newProSubmitting}>
-                  {newProSubmitting ? "Creando..." : "Crear usuario PRO"}
+                  {newProSubmitting ? "Creando..." : "Crear usuario"}
                 </button>
                 <button type="button" className="ghost-button" onClick={closeNewProModal}>
                   Cancelar

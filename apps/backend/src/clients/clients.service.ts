@@ -254,7 +254,7 @@ export class ClientsService {
         name: name ?? "",
         email: email ?? "",
         phone: phone ?? "",
-        roles: [UserRole.PRO],
+        roles: [UserRole.STAFF],
         client: client._id
       });
       proObjectId = created._id as Types.ObjectId;

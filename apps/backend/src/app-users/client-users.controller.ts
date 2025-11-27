@@ -9,7 +9,7 @@ import {
   Post,
   Query
 } from "@nestjs/common";
-import { FilterQuery } from "mongoose";
+import { FilterQuery, Types } from "mongoose";
 
 import { CurrentUser } from "../auth/decorators/current-user.decorator";
 import { Roles } from "../auth/decorators/roles.decorator";
@@ -33,7 +33,7 @@ export class ClientUsersController {
       throw new ForbiddenException("El usuario no está asociado a un cliente");
     }
     const filter: FilterQuery<UserDocument> = {
-      client: clientId,
+      $or: [{ client: clientId }, { client: new Types.ObjectId(clientId) }],
       roles: UserRole.USER
     };
     if (search?.trim()) {

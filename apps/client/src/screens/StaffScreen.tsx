@@ -87,6 +87,7 @@ export const StaffScreen = () => {
   const [serviceDropdownOpen, setServiceDropdownOpen] = useState(false);
   const [slotDropdownOpen, setSlotDropdownOpen] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<number>(1); // each slot = 15min
+  const [serviceSlotPicker, setServiceSlotPicker] = useState<string | null>(null);
   const dayTemplate: { key: string; label: string }[] = [
     { key: "monday", label: "Lunes" },
     { key: "tuesday", label: "Martes" },
@@ -254,6 +255,24 @@ export const StaffScreen = () => {
     setSelectedSlot(1);
   };
 
+  const handleUpdateServiceSlot = (serviceId: string, slot: number) => {
+    setFormServices((prev) =>
+      prev.map((service) => (service._id === serviceId ? { ...service, slot } : service))
+    );
+  };
+
+  const handleUpdateServicePrice = (serviceId: string, value: string) => {
+    const price =
+      value.trim() === ""
+        ? undefined
+        : Number.isNaN(Number.parseFloat(value))
+          ? undefined
+          : Number.parseFloat(value);
+    setFormServices((prev) =>
+      prev.map((service) => (service._id === serviceId ? { ...service, price } : service))
+    );
+  };
+
   const handleDeleteProfessional = async () => {
     if (!editing?._id) {
       return;
@@ -347,6 +366,7 @@ export const StaffScreen = () => {
   };
 
   const handleRemoveService = (id: string) => {
+    setServiceSlotPicker((prev) => (prev === id ? null : prev));
     setFormServices((prev) => prev.filter((s) => s._id !== id));
   };
 
@@ -404,7 +424,15 @@ export const StaffScreen = () => {
               <View style={styles.tagsRow}>
                 {(pro.services ?? []).map((service) => (
                   <View key={service._id} style={styles.tag}>
-                    <Text style={styles.tagText}>{service.name}</Text>
+                    <Text style={styles.tagText}>
+                      {service.name}
+                      {service.slot ? ` · ${service.slot * 15} min` : ""}
+                      {service.price !== undefined &&
+                      service.price !== null &&
+                      Number(service.price) > 0
+                        ? ` · $${service.price}`
+                        : ""}
+                    </Text>
                   </View>
                 ))}
               </View>
@@ -459,9 +487,7 @@ export const StaffScreen = () => {
             <View style={[styles.modalBody, { zIndex: 10 }]}>
               {activeTab === "info" ? (
                 <>
-                  <View
-                    style={[styles.fieldRow, isMobile && styles.fieldRowMobile, styles.serviceRow]}
-                  >
+                  <View style={[styles.fieldRow, isMobile && styles.fieldRowMobile]}>
                     <View style={[styles.fieldColumn, styles.fieldColumnHalf]}>
                       <Text style={styles.inputLabel}>Nombre</Text>
                       <TextInput
@@ -496,20 +522,20 @@ export const StaffScreen = () => {
 
               {activeTab === "services" ? (
                 <>
-                  <View style={[{ gap: 24 }]}>
+                  <View style={[{ gap: 12 }]}>
                     <View style={[!isMobile ? styles.fieldColumn : { gap: 6 }, { zIndex: 20 }]}>
                       <Text style={styles.inputLabel}>Agregar servicio</Text>
                       <View
                         style={[
                           styles.fieldRow,
-                          isMobile && styles.fieldRowMobile,
-                          styles.serviceRow
+                          styles.serviceRow,
+                          isMobile && styles.fieldRowMobile
                         ]}
                       >
                         <View
                           style={[
                             !isMobile && styles.fieldColumn,
-                            !isMobile && styles.fieldColumnGrow2,
+                            !isMobile && styles.fieldColumn40,
                             { zIndex: 30 }
                           ]}
                         >
@@ -557,13 +583,13 @@ export const StaffScreen = () => {
                         <View
                           style={[
                             !isMobile && styles.fieldColumn,
-                            !isMobile && styles.fieldColumnQuarter,
+                            !isMobile && styles.fieldColumn20,
                             { zIndex: 25 }
                           ]}
                         >
                           <View style={styles.dropdownField}>
                             <TouchableOpacity
-                              style={styles.dropdownButton}
+                              style={[styles.dropdownButton]}
                               onPress={() => setSlotDropdownOpen((prev) => !prev)}
                             >
                               <Text style={styles.dropdownButtonText}>{selectedSlot * 15} min</Text>
@@ -598,7 +624,7 @@ export const StaffScreen = () => {
                         <View
                           style={[
                             !isMobile && styles.fieldColumn,
-                            !isMobile && styles.fieldColumnQuarter
+                            !isMobile && styles.fieldColumn20
                           ]}
                         >
                           <TextInput
@@ -609,7 +635,7 @@ export const StaffScreen = () => {
                             onChangeText={setServicePrice}
                           />
                         </View>
-                        <View style={[styles.fieldColumn, styles.fieldColumnQuarter]}>
+                        <View style={[styles.fieldColumn, styles.fieldColumn15]}>
                           <TouchableOpacity
                             style={[styles.primaryButton, styles.addButton]}
                             onPress={handleAddService}
@@ -620,25 +646,104 @@ export const StaffScreen = () => {
                       </View>
                     </View>
                     <View style={[styles.fieldColumn]}>
-                      <Text style={styles.inputLabel}>Servicios agregados</Text>
-                      <View style={styles.tagsRow}>
-                        {formServices.length === 0 ? (
-                          <Text style={styles.infoText}>Sin servicios asignados</Text>
-                        ) : (
-                          formServices.map((service) => (
-                            <View key={service._id} style={styles.serviceChip}>
-                              <Text style={styles.tagText}>
-                                {service.name}{" "}
-                                {service.price ? `- $${Number(service.price).toFixed(2)}` : ""}{" "}
-                                {service.slot ? `· ${service.slot * 15} min` : ""}
-                              </Text>
-                              <TouchableOpacity onPress={() => handleRemoveService(service._id)}>
-                                <Text style={styles.removeIcon}>✕</Text>
-                              </TouchableOpacity>
-                            </View>
-                          ))
-                        )}
+                      <View style={styles.serviceHeaderRow}>
+                        <View style={styles.serviceNameBox}>
+                          <Text style={styles.inputLabel}>Servicios agregados</Text>
+                        </View>
+                        <View style={styles.serviceField}>
+                          <Text style={[styles.serviceHeaderText, styles.serviceHeaderAlign]}>
+                            Minutos
+                          </Text>
+                        </View>
+                        <View style={styles.serviceField}>
+                          <Text style={[styles.serviceHeaderText, styles.serviceHeaderAlign]}>
+                            Precio
+                          </Text>
+                        </View>
+                        <View style={styles.serviceDeleteSpacer} />
                       </View>
+                      {formServices.length === 0 ? (
+                        <Text style={styles.infoText}>Sin servicios asignados</Text>
+                      ) : (
+                        <View style={styles.serviceListContainer}>
+                          <ScrollView
+                            style={styles.serviceListScroll}
+                            contentContainerStyle={styles.serviceList}
+                          >
+                            {formServices.map((service) => (
+                              <View key={service._id} style={styles.serviceRow}>
+                                <View style={styles.serviceNameBox}>
+                                  <Text style={styles.serviceName}>{service.name}</Text>
+                                </View>
+                                <View style={styles.serviceField}>
+                                  <View style={styles.dropdownFieldSmall}>
+                                    <TouchableOpacity
+                                      style={styles.dropdownButton}
+                                      onPress={() =>
+                                        setServiceSlotPicker((prev) =>
+                                          prev === service._id ? null : service._id
+                                        )
+                                      }
+                                    >
+                                      <Text style={styles.dropdownButtonText}>
+                                        {(service.slot ?? 1) * 15} min
+                                      </Text>
+                                      <Text style={styles.dropdownButtonIcon}>
+                                        {serviceSlotPicker === service._id ? "▲" : "▼"}
+                                      </Text>
+                                    </TouchableOpacity>
+                                    {serviceSlotPicker === service._id ? (
+                                      <View style={styles.dropdownList}>
+                                        <ScrollView style={styles.dropdownScroll}>
+                                          {Array.from({ length: 32 }).map((_, idx) => {
+                                            const slot = idx + 1;
+                                            const minutes = slot * 15;
+                                            return (
+                                              <TouchableOpacity
+                                                key={slot}
+                                                style={styles.dropdownItemInline}
+                                                onPress={() => {
+                                                  handleUpdateServiceSlot(service._id, slot);
+                                                  setServiceSlotPicker(null);
+                                                }}
+                                              >
+                                                <Text style={styles.dropdownItemText}>
+                                                  {minutes} min
+                                                </Text>
+                                              </TouchableOpacity>
+                                            );
+                                          })}
+                                        </ScrollView>
+                                      </View>
+                                    ) : null}
+                                  </View>
+                                </View>
+                                <View style={styles.serviceField}>
+                                  <TextInput
+                                    style={styles.input}
+                                    placeholder="0"
+                                    keyboardType="numeric"
+                                    value={
+                                      service.price === undefined || service.price === null
+                                        ? ""
+                                        : service.price.toString()
+                                    }
+                                    onChangeText={(text) =>
+                                      handleUpdateServicePrice(service._id, text)
+                                    }
+                                  />
+                                </View>
+                                <TouchableOpacity
+                                  style={styles.deleteButton}
+                                  onPress={() => handleRemoveService(service._id)}
+                                >
+                                  <Text style={styles.deleteIcon}>🗑️</Text>
+                                </TouchableOpacity>
+                              </View>
+                            ))}
+                          </ScrollView>
+                        </View>
+                      )}
                     </View>
                   </View>
                 </>
@@ -863,6 +968,65 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     fontSize: 12
   },
+  serviceList: {
+    gap: 10,
+    paddingBottom: 8
+  },
+  serviceListContainer: {
+    maxHeight: 240
+  },
+  serviceListScroll: {
+    maxHeight: 240
+  },
+  serviceHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingHorizontal: 4,
+    marginBottom: 6
+  },
+  serviceHeaderText: {
+    color: "#475569",
+    fontWeight: "700"
+  },
+  serviceHeaderAlign: {
+    textAlign: "center"
+  },
+  serviceDeleteSpacer: {
+    width: 36
+  },
+  serviceRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    backgroundColor: "#f8fafc",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+    padding: 10,
+    position: "relative"
+  },
+  serviceNameBox: {
+    flex: 1,
+    minWidth: 180
+  },
+  serviceName: {
+    fontWeight: "700",
+    color: "#0f172a"
+  },
+  serviceField: {
+    width: 140,
+    flexShrink: 0,
+    gap: 6
+  },
+  serviceFieldLabel: {
+    color: "#475569",
+    fontSize: 12,
+    fontWeight: "700"
+  },
+  dropdownFieldSmall: {
+    position: "relative"
+  },
   serviceChip: {
     flexDirection: "row",
     alignItems: "center",
@@ -875,6 +1039,14 @@ const styles = StyleSheet.create({
   removeIcon: {
     color: "#ef4444",
     fontWeight: "700"
+  },
+  deleteButton: {
+    padding: 6,
+    marginLeft: "auto"
+  },
+  deleteIcon: {
+    fontSize: 18,
+    color: "#ef4444"
   },
   modalOverlay: {
     flex: 1,
@@ -939,21 +1111,25 @@ const styles = StyleSheet.create({
   },
   fieldRow: {
     flexDirection: "row",
-    gap: 12
+    gap: 12,
+    width: "100%"
   },
   fieldRowMobile: {
     flexDirection: "column"
   },
-  serviceRow: {
-    position: "relative",
-    zIndex: 30
-  },
+  // serviceRow: {
+  //   position: "relative",
+  //   zIndex: 30
+  // },
   fieldColumn: {
-    flex: 1,
+    width: "100%",
     gap: 6
   },
   fieldColumnHalf: {
-    flexBasis: "50%"
+    flex: 1,
+    flexBasis: "50%",
+    minWidth: 0,
+    maxWidth: "50%"
   },
   fieldColumnGrow2: {
     flexBasis: "50%"
@@ -961,6 +1137,15 @@ const styles = StyleSheet.create({
   fieldColumnQuarter: {
     flexBasis: "25%",
     justifyContent: "flex-end"
+  },
+  fieldColumn40: {
+    flexBasis: "40%"
+  },
+  fieldColumn20: {
+    flexBasis: "20%"
+  },
+  fieldColumn15: {
+    flexBasis: "15%"
   },
   dropdownField: {
     position: "relative"
@@ -1032,7 +1217,8 @@ const styles = StyleSheet.create({
     borderColor: "#e2e8f0",
     borderRadius: 12,
     padding: 12,
-    backgroundColor: "#fff"
+    backgroundColor: "#fff",
+    width: "100%"
   },
   modalFooter: {
     flexDirection: "row",

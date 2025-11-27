@@ -4,14 +4,12 @@ import { useAuth } from "../auth/AuthProvider";
 import { API_BASE_URL } from "../config";
 import "./backoffice-users.css";
 
-type BackofficeRole = "admin" | "staff";
-
 interface BackofficeUser {
   _id: string;
   name: string;
   email: string;
   phone: string;
-  roles: BackofficeRole[];
+  roles: string[];
   createdAt?: string;
 }
 
@@ -19,14 +17,14 @@ interface UserFormState {
   name: string;
   email: string;
   phone: string;
-  role: BackofficeRole;
+  password: string;
 }
 
 const defaultForm: UserFormState = {
   name: "",
   email: "",
   phone: "",
-  role: "staff"
+  password: ""
 };
 
 export const BackofficeUsersPage = () => {
@@ -110,7 +108,7 @@ export const BackofficeUsersPage = () => {
       name: user.name,
       email: user.email,
       phone: user.phone,
-      role: user.roles.includes("admin") ? "admin" : "staff"
+      password: ""
     });
     setFormError(null);
     setIsEditorOpen(true);
@@ -143,8 +141,11 @@ export const BackofficeUsersPage = () => {
       name: form.name,
       email: form.email,
       phone: form.phone,
-      roles: [form.role]
+      roles: ["admin"]
     };
+    if (!editingId && form.password.trim()) {
+      payload.password = form.password;
+    }
 
     try {
       const url = editingId
@@ -278,24 +279,24 @@ export const BackofficeUsersPage = () => {
                   <th>Nombre</th>
                   <th>Email</th>
                   <th>Teléfono</th>
-                <th>Rol</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {showEmptyState ? (
-                <tr>
-                  <td className="table-empty" colSpan={5}>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {showEmptyState ? (
+                  <tr>
+                    <td className="table-empty" colSpan={4}>
                     No hay usuarios creados todavía.
                   </td>
                 </tr>
               ) : (
-                users.map((user) => (
+                [...users]
+                  .sort((a, b) => (a.name || "").localeCompare(b.name || "", "es", { sensitivity: "base" }))
+                  .map((user) => (
                   <tr key={user._id}>
                     <td>{user.name}</td>
                     <td>{user.email}</td>
                     <td>{user.phone}</td>
-                    <td>{user.roles?.join(", ")}</td>
                     <td className="table-actions">
                       <button
                         type="button"
@@ -378,17 +379,19 @@ export const BackofficeUsersPage = () => {
                 required
               />
 
-              <label htmlFor="role">Rol</label>
-              <select
-                id="role"
-                value={form.role}
-                onChange={(e) =>
-                  setForm((prev) => ({ ...prev, role: e.target.value as BackofficeRole }))
-                }
-              >
-                <option value="staff">Staff</option>
-                <option value="admin">Admin</option>
-              </select>
+              {!editingId ? (
+                <>
+                  <label htmlFor="password">Contraseña</label>
+                  <input
+                    id="password"
+                    type="password"
+                    value={form.password}
+                    onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))}
+                    minLength={8}
+                    required
+                  />
+                </>
+              ) : null}
 
               {formError ? (
                 <p className="error" role="alert">

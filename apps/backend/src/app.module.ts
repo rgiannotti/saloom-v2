@@ -15,6 +15,7 @@ import { ServiceCategoriesModule } from "./service-categories/service-categories
 import { ServicesModule } from "./services/services.module";
 import { UsersModule } from "./users/users.module";
 import { AppointmentsModule } from "./appointments/appointments.module";
+import { DashboardModule } from "./dashboard/dashboard.module";
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { AppointmentsModule } from "./appointments/appointments.module";
     AppointmentsModule,
     ServicesModule,
     ServiceCategoriesModule,
+    DashboardModule,
     AuthModule
   ],
   controllers: [AppController],

@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { FilterQuery, Model } from "mongoose";
+import { FilterQuery, Model, Types } from "mongoose";
 
 import { CreateAppointmentDto } from "./dto/create-appointment.dto";
 import { UpdateAppointmentDto } from "./dto/update-appointment.dto";
@@ -14,9 +14,10 @@ export class AppointmentsService {
   ) {}
 
   async create(dto: CreateAppointmentDto): Promise<Appointment> {
+    const payload = this.normalizeAppointmentPayload(dto);
     const code = await this.generateNextCode();
     const created = await this.appointmentModel.create({
-      ...dto,
+      ...payload,
       code
     });
     const createdId =
@@ -104,10 +105,11 @@ export class AppointmentsService {
   }
 
   async update(id: string, dto: UpdateAppointmentDto): Promise<Appointment> {
+    const payload = this.normalizeAppointmentPayload(dto);
     const updated = await this.appointmentModel
       .findOneAndUpdate(
         { _id: id, active: true },
-        { $set: dto },
+        { $set: payload },
         { new: true, runValidators: true }
       )
       .lean()
@@ -140,5 +142,25 @@ export class AppointmentsService {
     const numeric = last?.code ? parseInt(last.code, 10) || 0 : 0;
     const next = numeric + 1;
     return next.toString().padStart(6, "0");
+  }
+
+  private normalizeObjectId(value?: string | Types.ObjectId | null) {
+    if (!value) {
+      return value;
+    }
+    return value instanceof Types.ObjectId ? value : new Types.ObjectId(value);
+  }
+
+  private normalizeAppointmentPayload(dto: CreateAppointmentDto | UpdateAppointmentDto) {
+    return {
+      ...dto,
+      client: this.normalizeObjectId(dto.client),
+      professional: this.normalizeObjectId(dto.professional),
+      user: this.normalizeObjectId(dto.user),
+      services: (dto.services as any[])?.map((item) => ({
+        ...item,
+        service: this.normalizeObjectId(item.service)
+      }))
+    };
   }
 }
