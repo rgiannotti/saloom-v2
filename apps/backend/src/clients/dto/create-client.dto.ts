@@ -9,6 +9,7 @@ import {
   IsOptional,
   IsString,
   Min,
+  IsIn,
   ValidateNested
 } from "class-validator";
 import { Type } from "class-transformer";
@@ -105,6 +106,10 @@ export class CreateClientDto {
 
   @IsString()
   @IsNotEmpty()
+  fiscalAddress!: string;
+
+  @IsString()
+  @IsNotEmpty()
   person!: string;
 
   @IsString()
@@ -157,6 +162,11 @@ export class CreateClientDto {
   @IsString({ each: true })
   @IsOptional()
   payments?: string[];
+
+  @IsArray()
+  @IsIn(["whatsapp", "sms", "email"], { each: true })
+  @IsOptional()
+  communicationChannels?: string[];
 
   @IsArray()
   @IsMongoId({ each: true })

@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { FilterQuery, Model, Types } from "mongoose";
 
+import { CommunicationsService } from "../communications/communications.service";
 import { CreateAppointmentDto } from "./dto/create-appointment.dto";
 import { UpdateAppointmentDto } from "./dto/update-appointment.dto";
 import { Appointment, AppointmentDocument } from "./schemas/appointment.schema";
@@ -10,7 +11,8 @@ import { Appointment, AppointmentDocument } from "./schemas/appointment.schema";
 export class AppointmentsService {
   constructor(
     @InjectModel(Appointment.name)
-    private readonly appointmentModel: Model<AppointmentDocument>
+    private readonly appointmentModel: Model<AppointmentDocument>,
+    private readonly communicationsService: CommunicationsService
   ) {}
 
   async create(dto: CreateAppointmentDto): Promise<Appointment> {
@@ -26,7 +28,9 @@ export class AppointmentsService {
         : created._id instanceof this.appointmentModel.db.base.Types.ObjectId
           ? created._id.toHexString()
           : created._id?.toString?.();
-    return this.findOne(createdId as string);
+    const appointment = await this.findOne(createdId as string);
+    await this.communicationsService.notifyAppointmentChange(appointment, "created");
+    return appointment;
   }
 
   findAll(filter: FilterQuery<AppointmentDocument> = {}): Promise<Appointment[]> {
@@ -112,25 +116,35 @@ export class AppointmentsService {
         { $set: payload },
         { new: true, runValidators: true }
       )
-      .lean()
       .exec();
-    if (!updated) {
+    if (!updated || updated.active === false) {
       throw new NotFoundException(`Appointment with id ${id} not found or inactive`);
     }
-    return updated;
+    const appointmentId =
+      typeof updated._id === "string"
+        ? updated._id
+        : updated._id?.toString?.() ?? id;
+    const appointment = await this.findOne(appointmentId);
+    await this.communicationsService.notifyAppointmentChange(appointment, "updated");
+    return appointment;
   }
 
   async remove(id: string): Promise<void> {
-    const result = await this.appointmentModel
+    const appointment = await this.appointmentModel
+      .findOne({ _id: id, active: true })
+      .lean()
+      .exec();
+    if (!appointment) {
+      throw new NotFoundException(`Appointment with id ${id} not found or inactive`);
+    }
+    await this.appointmentModel
       .findOneAndUpdate(
         { _id: id, active: true },
         { $set: { active: false } },
         { new: true }
       )
       .exec();
-    if (!result) {
-      throw new NotFoundException(`Appointment with id ${id} not found or inactive`);
-    }
+    await this.communicationsService.notifyAppointmentChange(appointment as any, "deleted");
   }
 
   private async generateNextCode(): Promise<string> {

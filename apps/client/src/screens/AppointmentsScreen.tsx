@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -125,6 +125,13 @@ const getNearestTimeValue = (date: Date) => {
 const isPastSlot = (date: Date) => dayjs(date).isBefore(dayjs(), "minute");
 const isDaySlot = (date: Date) => dayjs(date).isSame(dayjs(), "day");
 
+type SmsMessage = {
+  id: string;
+  body: string;
+  direction: "incoming" | "outgoing" | string;
+  date: string;
+};
+
 export const AppointmentsScreen = () => {
   const {
     session: { tokens, user }
@@ -164,6 +171,12 @@ export const AppointmentsScreen = () => {
   const [customerDropdownOpen, setCustomerDropdownOpen] = useState(false);
   const [creatingAppointment, setCreatingAppointment] = useState(false);
   const [appointmentError, setAppointmentError] = useState<string | null>(null);
+  const [smsMessages, setSmsMessages] = useState<SmsMessage[]>([]);
+  const [smsLoading, setSmsLoading] = useState(false);
+  const [smsError, setSmsError] = useState<string | null>(null);
+  const [smsInput, setSmsInput] = useState("");
+  const smsListRef = useRef<ScrollView | null>(null);
+  const [smsMenuOpen, setSmsMenuOpen] = useState(false);
 
   const [datePickerVisible, setDatePickerVisible] = useState(false);
   const [webDateCursor, setWebDateCursor] = useState(() => dayjs());
@@ -834,6 +847,154 @@ export const AppointmentsScreen = () => {
     }
   };
 
+  const loadSmsHistory = useCallback(
+    async (appointmentId?: string, showSpinner = true) => {
+      if (!appointmentId) return;
+      if (showSpinner) {
+        setSmsLoading(true);
+      }
+      setSmsError(null);
+      try {
+        const response = await fetch(
+          `${API_BASE_URL}/communications/appointments/${appointmentId}/messages`,
+          {
+            headers
+          }
+        );
+        if (!response.ok) {
+          throw new Error("No se pudo cargar el historial de SMS");
+        }
+        const data = (await response.json()) as { messages?: SmsMessage[] };
+        setSmsMessages(data.messages ?? []);
+      } catch (err) {
+        setSmsError((err as Error).message);
+        setSmsMessages([]);
+      } finally {
+        if (showSpinner) {
+          setSmsLoading(false);
+        }
+      }
+    },
+    [headers]
+  );
+
+  const handleSendSms = useCallback(async () => {
+    if (!editingAppointment?._id || !smsInput.trim()) return;
+    const text = smsInput.trim();
+    setSmsInput("");
+    try {
+      const resp = await fetch(
+        `${API_BASE_URL}/communications/appointments/${editingAppointment._id}/messages`,
+        {
+          method: "POST",
+          headers: {
+            ...headers,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ body: text })
+        }
+      );
+      if (!resp.ok) {
+        throw new Error("No se pudo enviar el SMS");
+      }
+      await loadSmsHistory(editingAppointment._id, false);
+    } catch (err) {
+      setSmsError((err as Error).message);
+    }
+  }, [editingAppointment, headers, loadSmsHistory, smsInput]);
+
+  const sendQuickSms = useCallback(
+    async (body: string) => {
+      if (!editingAppointment?._id || !body.trim()) return;
+      try {
+        const resp = await fetch(
+          `${API_BASE_URL}/communications/appointments/${editingAppointment._id}/messages`,
+          {
+            method: "POST",
+            headers: {
+              ...headers,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ body })
+          }
+        );
+        if (!resp.ok) {
+          throw new Error("No se pudo enviar el SMS");
+        }
+        await loadSmsHistory(editingAppointment._id, false);
+      } catch (err) {
+        setSmsError((err as Error).message);
+      }
+    },
+    [editingAppointment, headers, loadSmsHistory]
+  );
+
+  const handleSendTemplate = useCallback(
+    async (type: "confirm" | "reminder") => {
+      if (!editingAppointment) return;
+      setSmsMenuOpen(false);
+      if (type === "confirm") {
+        try {
+          const resp = await fetch(
+            `${API_BASE_URL}/communications/appointments/${editingAppointment._id}/messages/confirm`,
+            {
+              method: "POST",
+              headers
+            }
+          );
+          if (!resp.ok) {
+            throw new Error("No se pudo enviar la confirmación");
+          }
+          await loadSmsHistory(editingAppointment._id, false);
+        } catch (err) {
+          setSmsError((err as Error).message);
+        }
+      } else {
+        try {
+          const resp = await fetch(
+            `${API_BASE_URL}/communications/appointments/${editingAppointment._id}/messages/reminder`,
+            {
+              method: "POST",
+              headers
+            }
+          );
+          if (!resp.ok) {
+            throw new Error("No se pudo enviar el recordatorio");
+          }
+          await loadSmsHistory(editingAppointment._id, false);
+        } catch (err) {
+          setSmsError((err as Error).message);
+        }
+      }
+    },
+    [editingAppointment, headers, loadSmsHistory, modalDate, modalTime, sendQuickSms]
+  );
+
+  useEffect(() => {
+    if (modalVisible && isEditing) {
+      loadSmsHistory(editingAppointment?._id);
+    } else {
+      setSmsMessages([]);
+    }
+  }, [modalVisible, isEditing, editingAppointment, loadSmsHistory]);
+
+  useEffect(() => {
+    if (!modalVisible || !isEditing || !editingAppointment?._id) {
+      return undefined;
+    }
+    const appointmentId = editingAppointment._id;
+    const interval = setInterval(() => {
+      loadSmsHistory(appointmentId, false);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [editingAppointment?._id, isEditing, loadSmsHistory, modalVisible]);
+
+  useEffect(() => {
+    if (!modalVisible) {
+      setSmsMenuOpen(false);
+    }
+  }, [modalVisible]);
+
   const anyDropdownOpen =
     customerDropdownOpen || professionalSelectorOpen || serviceSelectorOpen || timeSelectorOpen;
 
@@ -1135,208 +1296,326 @@ export const AppointmentsScreen = () => {
                 >
                   <View
                     style={[
-                      !isMobile ? styles.editHeaderRow : styles.editHeaderRowMobile,
-                      styles.modalRowElevated
+                      styles.editLayoutRow,
+                      styles.modalRowElevated,
+                      isMobile && styles.editLayoutColumn
                     ]}
                   >
-                    <View style={styles.editInfo}>
-                      <View style={styles.editInfoRow}>
-                        <Text style={styles.editInfoIcon}>👤</Text>
-                        <View style={styles.editInfoColumn}>
-                          <Text style={styles.editCustomer}>
-                            {editingAppointment?.clientName ?? "Cliente"}
-                          </Text>
-                          {editingAppointment?.clientPhone ? (
-                            <Text style={styles.editCustomerInfo}>
-                              📞 {editingAppointment.clientPhone}
-                            </Text>
-                          ) : null}
-                        </View>
-                      </View>
-                      <View style={styles.editInfoRow}>
-                        <Text style={styles.editInfoIcon}>✂️</Text>
-                        <View style={styles.editInfoColumn}>
-                          <Text style={styles.editService}>
-                            {editingAppointment?.serviceNames?.[0] ?? "Servicio"}
-                          </Text>
-                          <Text style={styles.editCustomerInfo}>
-                            {serviceSlotCount * SLOT_MINUTES} min
-                            {(() => {
-                              const price =
-                                selectedServiceOption?.price ??
-                                editingAppointment?.servicePrices?.[0] ??
-                                null;
-                              return price ? ` - $${price}` : "";
-                            })()}
-                          </Text>
-                          {editingAppointment?.professionalName ? (
-                            <Text style={styles.editCustomerInfo}>
-                              {editingAppointment.professionalName}
-                            </Text>
-                          ) : null}
-                        </View>
-                      </View>
-                    </View>
-                    <View style={styles.editDateTime}>
-                      <TouchableOpacity style={styles.input} onPress={handleOpenDatePicker}>
-                        <Text>{dayjs(modalDate).format("DD/MM/YYYY")}</Text>
-                      </TouchableOpacity>
-                      <View style={styles.dropdownField}>
-                        <TouchableOpacity
-                          style={[
-                            styles.dropdownButton,
-                            !modalProfessional && styles.dropdownButtonDisabled
-                          ]}
-                          onPress={() => {
-                            if (!modalProfessional) {
-                              return;
-                            }
-                            setProfessionalSelectorOpen(false);
-                            setServiceSelectorOpen(false);
-                            setCustomerDropdownOpen(false);
-                            setTimeSelectorOpen((prev) => !prev);
-                          }}
-                          disabled={!modalProfessional}
-                        >
-                          <Text style={styles.dropdownButtonText}>{selectedTimeLabel}</Text>
-                          <Text style={styles.dropdownButtonIcon}>
-                            {timeSelectorOpen ? "▲" : "▼"}
-                          </Text>
-                        </TouchableOpacity>
-                        {timeSelectorOpen ? (
-                          <View style={styles.autocompleteDropdown}>
-                            {availableTimeOptions.length ? (
-                              <ScrollView style={styles.dropdownScroll}>
-                                {availableTimeOptions.map((option) => (
-                                  <TouchableOpacity
-                                    key={option.value}
-                                    style={styles.dropdownItemInline}
-                                    onPress={() => {
-                                      setModalTime(option.value);
-                                      setTimeSelectorOpen(false);
-                                      clearAppointmentError();
-                                    }}
-                                  >
-                                    <Text style={styles.dropdownItemText}>{option.label}</Text>
-                                  </TouchableOpacity>
-                                ))}
-                              </ScrollView>
-                            ) : (
-                              <Text style={styles.emptyHint}>Sin horarios disponibles</Text>
-                            )}
-                          </View>
-                        ) : null}
-                      </View>
-                    </View>
-                  </View>
-
-                  <View
-                    style={[
-                      styles.modalSectionNoFlex,
-                      { flexDirection: "row", alignItems: "center", marginBottom: 16 },
-                      isMobile && styles.fullWidth
-                    ]}
-                  >
-                    <Text style={styles.fieldLabel}>Estado actual:</Text>
                     <View
                       style={[
-                        styles.statusBadge,
-                        {
-                          backgroundColor: (STATUS_COLORS[modalStatus] ?? STATUS_COLORS.scheduled)
-                            .badgeBg
-                        }
+                        { flexDirection: "column" },
+                        styles.editMain,
+                        styles.modalRowElevated,
+                        isMobile && styles.fullWidth
                       ]}
                     >
-                      <Text
+                      <View
                         style={[
-                          styles.statusBadgeText,
-                          { color: (STATUS_COLORS[modalStatus] ?? STATUS_COLORS.scheduled).text }
+                          !isMobile ? styles.editHeaderRow : styles.editHeaderRowMobile,
+                          styles.modalRowElevated
                         ]}
                       >
-                        {STATUS_LABELS[modalStatus] || "Programada"}
-                      </Text>
-                    </View>
-                  </View>
-
-                  <View
-                    style={[
-                      styles.modalSectionNoFlex,
-                      styles.modalRowLower,
-                      isMobile && styles.fullWidth
-                    ]}
-                  >
-                    <Text style={styles.fieldLabel}>Estado de la Cita *</Text>
-                    <View
-                      style={[
-                        styles.dropdownField,
-                        statusSelectorOpen && styles.dropdownFieldRaised
-                      ]}
-                    >
-                      <TouchableOpacity
-                        style={styles.dropdownButton}
-                        onPress={() => {
-                          setServiceSelectorOpen(false);
-                          setProfessionalSelectorOpen(false);
-                          setCustomerDropdownOpen(false);
-                          setTimeSelectorOpen(false);
-                          setStatusSelectorOpen((prev) => !prev);
-                        }}
-                      >
-                        <Text style={styles.dropdownButtonText}>
-                          {STATUS_LABELS[modalStatus] ?? "Selecciona estado"}
-                        </Text>
-                        <Text style={styles.dropdownButtonIcon}>
-                          {statusSelectorOpen ? "▲" : "▼"}
-                        </Text>
-                      </TouchableOpacity>
-                      {statusSelectorOpen ? (
-                        <View style={styles.autocompleteDropdown}>
-                          {STATUS_OPTIONS.map((option) => (
-                            <TouchableOpacity
-                              key={option.value}
-                              style={[styles.dropdownItemInline, styles.statusItem]}
-                              onPress={() => {
-                                setModalStatus(option.value);
-                                setStatusSelectorOpen(false);
-                              }}
-                            >
-                              <View style={styles.statusOptionRow}>
-                                <View
-                                  style={[
-                                    styles.statusDot,
-                                    {
-                                      backgroundColor: (
-                                        STATUS_COLORS[option.value] ?? STATUS_COLORS.scheduled
-                                      ).dot
-                                    }
-                                  ]}
-                                />
-                                <Text style={styles.dropdownItemText}>{option.label}</Text>
-                              </View>
-                            </TouchableOpacity>
-                          ))}
+                        <View style={styles.editInfo}>
+                          <View style={styles.editInfoRow}>
+                            <Text style={styles.editInfoIcon}>👤</Text>
+                            <View style={styles.editInfoColumn}>
+                              <Text style={styles.editCustomer}>
+                                {editingAppointment?.clientName ?? "Cliente"}
+                              </Text>
+                              {editingAppointment?.clientPhone ? (
+                                <Text style={styles.editCustomerInfo}>
+                                  📞 {editingAppointment.clientPhone}
+                                </Text>
+                              ) : null}
+                            </View>
+                          </View>
+                          <View style={styles.editInfoRow}>
+                            <Text style={styles.editInfoIcon}>✂️</Text>
+                            <View style={styles.editInfoColumn}>
+                              <Text style={styles.editService}>
+                                {editingAppointment?.serviceNames?.[0] ?? "Servicio"}
+                              </Text>
+                              <Text style={styles.editCustomerInfo}>
+                                {serviceSlotCount * SLOT_MINUTES} min
+                                {(() => {
+                                  const price =
+                                    selectedServiceOption?.price ??
+                                    editingAppointment?.servicePrices?.[0] ??
+                                    null;
+                                  return price ? ` - $${price}` : "";
+                                })()}
+                              </Text>
+                              {editingAppointment?.professionalName ? (
+                                <Text style={styles.editCustomerInfo}>
+                                  {editingAppointment.professionalName}
+                                </Text>
+                              ) : null}
+                            </View>
+                          </View>
                         </View>
+                        <View style={styles.editDateTime}>
+                          <TouchableOpacity style={styles.input} onPress={handleOpenDatePicker}>
+                            <Text>{dayjs(modalDate).format("DD/MM/YYYY")}</Text>
+                          </TouchableOpacity>
+                          <View style={styles.dropdownField}>
+                            <TouchableOpacity
+                              style={[
+                                styles.dropdownButton,
+                                !modalProfessional && styles.dropdownButtonDisabled
+                              ]}
+                              onPress={() => {
+                                if (!modalProfessional) {
+                                  return;
+                                }
+                                setProfessionalSelectorOpen(false);
+                                setServiceSelectorOpen(false);
+                                setCustomerDropdownOpen(false);
+                                setTimeSelectorOpen((prev) => !prev);
+                              }}
+                              disabled={!modalProfessional}
+                            >
+                              <Text style={styles.dropdownButtonText}>{selectedTimeLabel}</Text>
+                              <Text style={styles.dropdownButtonIcon}>
+                                {timeSelectorOpen ? "▲" : "▼"}
+                              </Text>
+                            </TouchableOpacity>
+                            {timeSelectorOpen ? (
+                              <View style={styles.autocompleteDropdown}>
+                                {availableTimeOptions.length ? (
+                                  <ScrollView style={styles.dropdownScroll}>
+                                    {availableTimeOptions.map((option) => (
+                                      <TouchableOpacity
+                                        key={option.value}
+                                        style={styles.dropdownItemInline}
+                                        onPress={() => {
+                                          setModalTime(option.value);
+                                          setTimeSelectorOpen(false);
+                                          clearAppointmentError();
+                                        }}
+                                      >
+                                        <Text style={styles.dropdownItemText}>{option.label}</Text>
+                                      </TouchableOpacity>
+                                    ))}
+                                  </ScrollView>
+                                ) : (
+                                  <Text style={styles.emptyHint}>Sin horarios disponibles</Text>
+                                )}
+                              </View>
+                            ) : null}
+                          </View>
+                        </View>
+                      </View>
+
+                      <View
+                        style={[
+                          styles.modalSectionNoFlex,
+                          { flexDirection: "row", alignItems: "center", marginBottom: 16 },
+                          isMobile && styles.fullWidth
+                        ]}
+                      >
+                        <Text style={styles.fieldLabel}>Estado actual:</Text>
+                        <View
+                          style={[
+                            styles.statusBadge,
+                            {
+                              backgroundColor: (
+                                STATUS_COLORS[modalStatus] ?? STATUS_COLORS.scheduled
+                              ).badgeBg
+                            }
+                          ]}
+                        >
+                          <Text
+                            style={[
+                              styles.statusBadgeText,
+                              {
+                                color: (STATUS_COLORS[modalStatus] ?? STATUS_COLORS.scheduled).text
+                              }
+                            ]}
+                          >
+                            {STATUS_LABELS[modalStatus] || "Programada"}
+                          </Text>
+                        </View>
+                      </View>
+
+                      <View
+                        style={[
+                          styles.modalSectionNoFlex,
+                          styles.modalRowLower,
+                          isMobile && styles.fullWidth
+                        ]}
+                      >
+                        <Text style={styles.fieldLabel}>Estado de la Cita *</Text>
+                        <View
+                          style={[
+                            styles.dropdownField,
+                            statusSelectorOpen && styles.dropdownFieldRaised
+                          ]}
+                        >
+                          <TouchableOpacity
+                            style={styles.dropdownButton}
+                            onPress={() => {
+                              setServiceSelectorOpen(false);
+                              setProfessionalSelectorOpen(false);
+                              setCustomerDropdownOpen(false);
+                              setTimeSelectorOpen(false);
+                              setStatusSelectorOpen((prev) => !prev);
+                            }}
+                          >
+                            <Text style={styles.dropdownButtonText}>
+                              {STATUS_LABELS[modalStatus] ?? "Selecciona estado"}
+                            </Text>
+                            <Text style={styles.dropdownButtonIcon}>
+                              {statusSelectorOpen ? "▲" : "▼"}
+                            </Text>
+                          </TouchableOpacity>
+                          {statusSelectorOpen ? (
+                            <View style={styles.autocompleteDropdown}>
+                              {STATUS_OPTIONS.map((option) => (
+                                <TouchableOpacity
+                                  key={option.value}
+                                  style={[styles.dropdownItemInline, styles.statusItem]}
+                                  onPress={() => {
+                                    setModalStatus(option.value);
+                                    setStatusSelectorOpen(false);
+                                  }}
+                                >
+                                  <View style={styles.statusOptionRow}>
+                                    <View
+                                      style={[
+                                        styles.statusDot,
+                                        {
+                                          backgroundColor: (
+                                            STATUS_COLORS[option.value] ?? STATUS_COLORS.scheduled
+                                          ).dot
+                                        }
+                                      ]}
+                                    />
+                                    <Text style={styles.dropdownItemText}>{option.label}</Text>
+                                  </View>
+                                </TouchableOpacity>
+                              ))}
+                            </View>
+                          ) : null}
+                        </View>
+                      </View>
+
+                      <View style={styles.modalSection}>
+                        <Text style={styles.fieldLabel}>Notas</Text>
+                        <TextInput
+                          style={[styles.input, styles.notesInput]}
+                          multiline
+                          value={notes}
+                          onChangeText={(value) => {
+                            setNotes(value);
+                            clearAppointmentError();
+                          }}
+                          placeholder="Notas adicionales sobre la cita..."
+                        />
+                      </View>
+
+                      {appointmentError ? (
+                        <Text style={styles.errorText}>{appointmentError}</Text>
                       ) : null}
                     </View>
+
+                    <View style={[styles.smsPanelContainer, isMobile && styles.fullWidth]}>
+                      <View style={[styles.smsPanel, isMobile && styles.smsPanelMobile]}>
+                        <Text style={styles.smsTitle}>Historial de SMS</Text>
+                        {smsError ? <Text style={styles.errorText}>{smsError}</Text> : null}
+                        <View style={styles.smsContent}>
+                          {smsLoading ? (
+                            <View style={[styles.smsLoading, styles.smsLoadingFill]}>
+                              <ActivityIndicator color="#f43f5e" />
+                              <Text style={styles.smsLoadingText}>Cargando SMS...</Text>
+                            </View>
+                          ) : (
+                          <ScrollView
+                            ref={smsListRef}
+                            style={styles.smsList}
+                            contentContainerStyle={styles.smsListContent}
+                            onContentSizeChange={() =>
+                              smsListRef.current?.scrollToEnd({ animated: false })
+                            }
+                          >
+                              {smsMessages.length === 0 ? (
+                                <Text style={styles.mutedText}>Sin mensajes</Text>
+                              ) : (
+                                smsMessages.map((msg) => {
+                                  const isOutgoing = msg.direction === "outgoing";
+                                  return (
+                                    <View
+                                      key={msg.id}
+                                      style={[
+                                        styles.smsRow,
+                                        isOutgoing ? styles.smsRowRight : styles.smsRowLeft
+                                      ]}
+                                    >
+                                      <View
+                                        style={[
+                                          styles.smsBubble,
+                                          isOutgoing ? styles.smsBubbleOutgoing : styles.smsBubbleIncoming
+                                        ]}
+                                      >
+                                        <Text style={styles.smsBody}>{msg.body}</Text>
+                                        <Text style={styles.smsMeta}>
+                                          {isOutgoing ? "Enviado" : "Recibido"}{" "}
+                                          {dayjs(msg.date).format("DD/MM/YYYY, hh:mm A")}
+                                        </Text>
+                                      </View>
+                                    </View>
+                                  );
+                                })
+                              )}
+                            </ScrollView>
+                          )}
+                        </View>
+                        <View style={[styles.smsInputRow, styles.smsInputRowWithMenu]}>
+                          <View style={styles.smsMenuWrapper}>
+                            <TouchableOpacity
+                              style={[styles.iconButton, styles.secondaryButton]}
+                              onPress={() => setSmsMenuOpen((prev) => !prev)}
+                            >
+                              <Text style={styles.actionIcon}>⋮</Text>
+                            </TouchableOpacity>
+                            {smsMenuOpen ? (
+                              <View style={styles.smsMenu}>
+                                <TouchableOpacity
+                                  style={styles.smsMenuItem}
+                                  onPress={() => handleSendTemplate("confirm")}
+                                >
+                                  <Text style={styles.smsMenuText}>Enviar confirmación</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                  style={styles.smsMenuItem}
+                                  onPress={() => handleSendTemplate("reminder")}
+                                >
+                                  <Text style={styles.smsMenuText}>Enviar recordatorio</Text>
+                                </TouchableOpacity>
+                              </View>
+                            ) : null}
+                          </View>
+                          <TextInput
+                            style={[styles.modalInput, styles.smsInput]}
+                            placeholder="Escribir un mensaje..."
+                            value={smsInput}
+                            onChangeText={setSmsInput}
+                          />
+                          <TouchableOpacity
+                            style={[
+                              styles.primaryButton,
+                              styles.smsSendButton,
+                              (!smsInput.trim() || smsLoading) && styles.primaryButtonDisabled
+                            ]}
+                            onPress={handleSendSms}
+                            disabled={!smsInput.trim() || smsLoading}
+                          >
+                            <Text style={styles.primaryButtonText}>➤</Text>
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    </View>
                   </View>
 
-                  <View style={styles.modalSection}>
-                    <Text style={styles.fieldLabel}>Notas</Text>
-                    <TextInput
-                      style={[styles.input, styles.notesInput]}
-                      multiline
-                      value={notes}
-                      onChangeText={(value) => {
-                        setNotes(value);
-                        clearAppointmentError();
-                      }}
-                      placeholder="Notas adicionales sobre la cita..."
-                    />
-                  </View>
-
-                  {appointmentError ? (
-                    <Text style={styles.errorText}>{appointmentError}</Text>
-                  ) : null}
                   {isMobile ? (
                     <View style={[styles.editFooter, styles.editFooterMobile]}>
                       <TouchableOpacity
@@ -2028,10 +2307,10 @@ const styles = StyleSheet.create({
   dropdownItemActive: {
     backgroundColor: "rgba(244,63,94,0.1)"
   },
-  dropdownItemText: {
-    color: "#0f172a",
-    fontWeight: "500"
-  },
+  // dropdownItemText: {
+  //   color: "#0f172a",
+  //   fontWeight: "500"
+  // },
   dropdownItemTextActive: {
     color: "#f43f5e",
     fontWeight: "600"
@@ -2122,6 +2401,157 @@ const styles = StyleSheet.create({
   editFooterActions: {
     flexDirection: "row",
     gap: 10
+  },
+  smsPanel: {
+    marginTop: 0,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+    borderRadius: 12,
+    padding: 12,
+    backgroundColor: "#f8fafc",
+    flex: 1,
+    minHeight: 0,
+    maxHeight: "100%",
+    height: "100%",
+    flexDirection: "column",
+    gap: 8
+  },
+  smsPanelMobile: {
+    width: "100%"
+  },
+  smsTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#0f172a",
+    marginBottom: 8
+  },
+  smsLoading: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingVertical: 8
+  },
+  smsLoadingFill: {
+    flex: 1,
+    justifyContent: "center"
+  },
+  smsLoadingText: {
+    color: "#475569",
+    fontWeight: "600"
+  },
+  smsContent: {
+    flex: 1,
+    minHeight: 0
+  },
+  smsList: {
+    flex: 1,
+    minHeight: 0
+  },
+  smsListContent: {
+    gap: 8,
+    paddingVertical: 4,
+    flexGrow: 1
+  },
+  smsBubble: {
+    borderRadius: 8,
+    padding: 10,
+    borderWidth: 1,
+    maxWidth: "90%"
+  },
+  smsBubbleOutgoing: {
+    backgroundColor: "#e0f2fe",
+    borderColor: "#bae6fd",
+    alignSelf: "flex-end"
+  },
+  smsBubbleIncoming: {
+    backgroundColor: "#e2fbe5",
+    borderColor: "#bbf7d0",
+    alignSelf: "flex-start"
+  },
+  smsRow: {
+    width: "100%"
+  },
+  smsRowRight: {
+    alignItems: "flex-end"
+  },
+  smsRowLeft: {
+    alignItems: "flex-start"
+  },
+  smsBody: {
+    color: "#0f172a",
+    marginBottom: 4
+  },
+  smsMeta: {
+    color: "#475569",
+    fontSize: 12
+  },
+  modalInput: {
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    backgroundColor: "#fff"
+  },
+  smsInputRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginTop: 10
+  },
+  smsInputRowWithMenu: {
+    position: "relative"
+  },
+  smsInput: {
+    flex: 1,
+    minHeight: 44
+  },
+  smsSendButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 12
+  },
+  iconButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+    alignItems: "center",
+    justifyContent: "center",
+    minWidth: 44
+  },
+  actionIcon: {
+    fontSize: 14,
+    color: "#0f172a"
+  },
+  smsMenuWrapper: {
+    position: "relative"
+  },
+  smsMenu: {
+    position: "absolute",
+    bottom: "110%",
+    left: 0,
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+    shadowColor: "#0f172a",
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 3,
+    minWidth: 160,
+    zIndex: 10
+  },
+  smsMenuItem: {
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#e2e8f0"
+  },
+  smsMenuText: {
+    color: "#0f172a",
+    fontWeight: "600"
   },
   dangerButton: {
     backgroundColor: "#f87171",
@@ -2294,8 +2724,8 @@ const styles = StyleSheet.create({
     gap: 8,
     position: "relative",
     zIndex: 1,
-    maxWidth: 720,
-    width: "90%",
+    maxWidth: 1000,
+    width: "96%",
     maxHeight: "90%"
   },
   modalScroll: {
@@ -2352,6 +2782,24 @@ const styles = StyleSheet.create({
     gap: 8,
     position: "relative",
     zIndex: 5
+  },
+  editLayoutRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 16,
+    width: "100%"
+  },
+  editLayoutColumn: {
+    flexDirection: "column"
+  },
+  editMain: {
+    flex: 0.65
+  },
+  smsPanelContainer: {
+    flex: 0.35,
+    alignSelf: "stretch",
+    minHeight: 0,
+    maxHeight: 380
   },
   modalColumn: {
     flexDirection: "column"

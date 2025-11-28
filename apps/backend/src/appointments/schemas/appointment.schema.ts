@@ -138,6 +138,9 @@ export class Appointment {
   @Prop({ type: String, trim: true })
   type?: string;
 
+  @Prop({ type: Boolean, default: false })
+  reminderSent?: boolean;
+
   createdAt: Date;
   updatedAt: Date;
 }

@@ -106,6 +106,9 @@ export class Client {
   name: string;
 
   @Prop({ required: true, trim: true })
+  fiscalAddress: string;
+
+  @Prop({ required: true, trim: true })
   person: string;
 
   @Prop({ default: "", trim: true })
@@ -143,6 +146,9 @@ export class Client {
 
   @Prop({ default: true })
   active: boolean;
+
+  @Prop({ type: [String], enum: ["whatsapp", "sms", "email"], default: [] })
+  communicationChannels: string[];
 
   @Prop({ type: [String], default: [] })
   payments: string[];

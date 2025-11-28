@@ -16,6 +16,7 @@ interface Client {
   code: number;
   denomination: string;
   rif: string;
+  fiscalAddress?: string;
   name: string;
   email: string;
   phone: string;
@@ -41,6 +42,7 @@ interface Client {
 interface ClientFormState {
   rif: string;
   denomination: string;
+  fiscalAddress: string;
   name: string;
   person: string;
   email: string;
@@ -50,6 +52,7 @@ interface ClientFormState {
   home: boolean;
   blocked: boolean;
   categories: string[];
+  communicationChannels: string[];
 }
 
 interface AddressState {
@@ -103,6 +106,7 @@ interface ServiceOption {
 const defaultForm: ClientFormState = {
   rif: "",
   denomination: "",
+  fiscalAddress: "",
   name: "",
   person: "",
   email: "",
@@ -111,7 +115,8 @@ const defaultForm: ClientFormState = {
   useGoogleMap: true,
   home: false,
   blocked: false,
-  categories: []
+  categories: [],
+  communicationChannels: []
 };
 
 const defaultAddress: AddressState = {
@@ -662,6 +667,7 @@ export const ClientsPage = () => {
       setForm({
         rif: client.rif,
         denomination: client.denomination,
+        fiscalAddress: client.fiscalAddress ?? "",
         name: client.name,
         person: client.person,
         email: client.email,
@@ -670,7 +676,8 @@ export const ClientsPage = () => {
         useGoogleMap: Boolean(client.useGoogleMap && client.address?.placeId),
         home: client.home,
         blocked: client.blocked,
-        categories: categoryIds
+        categories: categoryIds,
+        communicationChannels: client.communicationChannels ?? []
       });
       setAddressState(
         client.useGoogleMap && client.address?.placeId
@@ -943,7 +950,8 @@ export const ClientsPage = () => {
         ? { type: "Point", coordinates: addressState.coordinates }
         : { type: "Point", coordinates: [0, 0] },
       professionals: buildProfessionalPayload(),
-      payments: []
+      payments: [],
+      communicationChannels: form.communicationChannels
     };
 
     try {
@@ -1160,6 +1168,16 @@ export const ClientsPage = () => {
                   </div>
 
                   <div className="form-field">
+                    <label htmlFor="client-fiscal-address">Dirección fiscal</label>
+                    <input
+                      id="client-fiscal-address"
+                      value={form.fiscalAddress}
+                      onChange={(e) => setForm((prev) => ({ ...prev, fiscalAddress: e.target.value }))}
+                      required
+                    />
+                  </div>
+
+                  <div className="form-field">
                     <label htmlFor="client-name">Nombre Comercial</label>
                     <input
                       id="client-name"
@@ -1255,6 +1273,52 @@ export const ClientsPage = () => {
                     )}
                   </div>
                 ) : null}
+
+                <div className="clients-category-section">
+                  <div className="clients-category-section__header">
+                    <div>
+                      <p className="clients-category-section__title">Comunicación con usuarios</p>
+                      <p className="clients-category-section__subtitle">
+                        Selecciona uno o varios canales para usuarios rol "user".
+                      </p>
+                    </div>
+                  </div>
+                  <div className="clients-category-grid">
+                    {[
+                      { value: "whatsapp", label: "WhatsApp" },
+                      { value: "sms", label: "SMS" },
+                      { value: "email", label: "Email" }
+                    ].map((option) => {
+                      const checked = form.communicationChannels.includes(option.value);
+                      return (
+                        <label
+                          key={option.value}
+                          className={`clients-category-chip ${
+                            checked ? "clients-category-chip--active" : ""
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={(e) => {
+                              const isChecked = e.target.checked;
+                              setForm((prev) => {
+                                const next = new Set(prev.communicationChannels);
+                                if (isChecked) {
+                                  next.add(option.value);
+                                } else {
+                                  next.delete(option.value);
+                                }
+                                return { ...prev, communicationChannels: Array.from(next) };
+                              });
+                            }}
+                          />
+                          <span>{option.label}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
 
                 <div className="clients-category-section">
                   <div className="clients-category-section__header">
