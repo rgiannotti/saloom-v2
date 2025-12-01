@@ -8,6 +8,8 @@ import { AppointmentsScreen } from "./AppointmentsScreen";
 import { ClientsScreen } from "./ClientsScreen";
 import { DashboardScreen } from "./DashboardScreen";
 import { SettingsScreen } from "./SettingsScreen";
+import { ReportsScreen } from "./ReportsScreen";
+import { ClientReportScreen } from "./ClientReportScreen";
 import { StaffScreen } from "./StaffScreen";
 
 const modules: SidebarItem[] = [
@@ -15,18 +17,16 @@ const modules: SidebarItem[] = [
   { key: "appointments", label: "Agenda", icon: "📅" },
   { key: "staff", label: "Personal", icon: "👤" },
   { key: "clients", label: "Clientes", icon: "👥" },
-  { key: "overview", label: "Resumen", icon: "📊" },
-  { key: "services", label: "Servicios", icon: "💈" },
+  { key: "overview", label: "Reporte por Citas", icon: "📊" },
+  { key: "clientReport", label: "Reporte por Cliente", icon: "📋" },
   { key: "messages", label: "Mensajes", icon: "💬" },
   { key: "settings", label: "Configuración", icon: "⚙️" }
 ];
 
 const moduleDescriptions: Record<string, string> = {
-  overview:
-    "Consulta indicadores rápidos de tu operación diaria y tareas pendientes para el cliente asignado.",
+  overview: "Reporte por citas con indicadores rápidos de tu operación diaria y tareas pendientes.",
   clients: "Consulta y gestiona tu base de clientes registrados.",
-  services:
-    "Administra los servicios que ofreces, precios y disponibilidad por cada sede del cliente.",
+  clientReport: "Agrupa y resume las citas por cliente y estado.",
   messages:
     "Centraliza la comunicación con el cliente y recibe alertas del backoffice en tiempo real.",
   settings: "Actualiza tu perfil profesional, credenciales y preferencias de notificación.",
@@ -49,7 +49,9 @@ export const HomeScreen = () => {
     clients: "Gestión de Clientes",
     appointments: "Gestión de Citas",
     dashboard: "Dashboard",
-    settings: "Configuración"
+    settings: "Configuración",
+    overview: "Reporte por Citas",
+    clientReport: "Reporte por Cliente"
   };
   const headerContent = headerLabels[activeModule] ? (
     <View style={styles.headerTextInline}>
@@ -75,6 +77,10 @@ export const HomeScreen = () => {
         <ClientsScreen />
       ) : activeModule === "settings" ? (
         <SettingsScreen />
+      ) : activeModule === "clientReport" ? (
+        <ClientReportScreen />
+      ) : activeModule === "overview" ? (
+        <ReportsScreen />
       ) : (
         <>
           <View style={styles.moduleHeader}>
