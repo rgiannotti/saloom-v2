@@ -1604,7 +1604,6 @@ export const ClientsPage = () => {
                                             type="button"
                                             className="select-button"
                                             onClick={() => {
-                                              console.log("toggle", key);
                                               setServiceDropdownOpen((prev) => ({
                                                 ...prev,
                                                 [key]: !prev[key]
