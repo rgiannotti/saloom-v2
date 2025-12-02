@@ -13,6 +13,7 @@ import dayjs from "dayjs";
 
 import { useAuth } from "../auth/AuthContext";
 import { API_BASE_URL } from "../config";
+import { useLanguage } from "../i18n/LanguageContext";
 
 type ReportAppointment = {
   _id: string;
@@ -25,30 +26,6 @@ type ReportAppointment = {
   status?: string;
 };
 
-const MONTHS = [
-  "Enero",
-  "Febrero",
-  "Marzo",
-  "Abril",
-  "Mayo",
-  "Junio",
-  "Julio",
-  "Agosto",
-  "Septiembre",
-  "Octubre",
-  "Noviembre",
-  "Diciembre"
-];
-
-const STATUSES = [
-  { value: "scheduled", label: "Programada" },
-  { value: "confirmed", label: "Confirmada" },
-  { value: "show", label: "Asistió" },
-  { value: "no_show", label: "No asistió" },
-  { value: "canceled", label: "Cancelada" },
-  { value: "completed", label: "Completada" }
-];
-
 const currentYear = dayjs().year();
 const YEAR_OPTIONS = Array.from({ length: 5 }).map((_, idx) => currentYear - 2 + idx);
 
@@ -56,6 +33,7 @@ export const ReportsScreen = () => {
   const {
     session: { tokens }
   } = useAuth();
+  const { t } = useLanguage();
   const [appointments, setAppointments] = useState<ReportAppointment[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -73,6 +51,19 @@ export const ReportsScreen = () => {
     null | "month" | "year" | "professional" | "status"
   >(null);
 
+  const months = t.reports.months;
+  const statuses = useMemo(
+    () => [
+      { value: "scheduled", label: t.reports.statuses.scheduled },
+      { value: "confirmed", label: t.reports.statuses.confirmed },
+      { value: "show", label: t.reports.statuses.show },
+      { value: "no_show", label: t.reports.statuses.no_show },
+      { value: "canceled", label: t.reports.statuses.canceled },
+      { value: "completed", label: t.reports.statuses.completed }
+    ],
+    [t.reports.statuses]
+  );
+
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -85,7 +76,7 @@ export const ReportsScreen = () => {
           }
         });
         if (!resp.ok) {
-          throw new Error("No se pudieron cargar las citas");
+          throw new Error(t.reports.errorLoad);
         }
         const data = (await resp.json()) as ReportAppointment[];
         setAppointments(data);
@@ -97,11 +88,11 @@ export const ReportsScreen = () => {
       }
     };
     fetchData();
-  }, [tokens.accessToken]);
+  }, [t.reports.errorLoad, tokens.accessToken]);
 
   useEffect(() => {
     setFiltersOpen(true);
-  }, [isMobile]);
+  }, [isMobile, t]);
 
   const professionals = useMemo(() => {
     const set = new Set<string>();
@@ -135,11 +126,11 @@ export const ReportsScreen = () => {
   const totalByProfessional = useMemo(() => {
     const counts: Record<string, number> = {};
     filtered.forEach((a) => {
-      const key = a.professionalName || "Sin asignar";
+      const key = a.professionalName || t.reports.unassigned;
       counts[key] = (counts[key] || 0) + 1;
     });
     return counts;
-  }, [filtered]);
+  }, [filtered, t.reports.unassigned]);
 
   const totalByStatus = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -180,8 +171,8 @@ export const ReportsScreen = () => {
     <ScrollView style={styles.container} contentContainerStyle={{}}>
       {!isMobile ? (
         <View style={styles.headerText}>
-          <Text style={styles.title}>Reporte de Citas</Text>
-          <Text style={styles.subtitle}>Resumen de citas</Text>
+          <Text style={styles.title}>{t.reports.title}</Text>
+          <Text style={styles.subtitle}>{t.reports.subtitle}</Text>
         </View>
       ) : null}
       {isMobile ? (
@@ -190,28 +181,28 @@ export const ReportsScreen = () => {
           onPress={() => setFiltersOpen((prev) => !prev)}
         >
           <Text style={styles.filterToggleText}>
-            {filtersOpen ? "Ocultar filtros" : "Mostrar filtros"}
+            {filtersOpen ? t.reports.filters.hideFilters : t.reports.filters.showFilters}
           </Text>
         </TouchableOpacity>
       ) : null}
       {filtersOpen ? (
         <View style={styles.filters}>
           <View style={[styles.filterColumn, isMobile ? { zIndex: 3 } : {}]}>
-            <Text style={styles.filterLabel}>Mes</Text>
+            <Text style={styles.filterLabel}>{t.reports.filters.month}</Text>
             <TouchableOpacity
               style={styles.select}
               onPress={() => setOpenDropdown(openDropdown === "month" ? null : "month")}
             >
-              <Text>{MONTHS[month]}</Text>
+              <Text>{months[month]}</Text>
             </TouchableOpacity>
             {renderDropdown(
               "month",
-              MONTHS.map((m, idx) => ({ label: m, value: idx })),
+              months.map((m, idx) => ({ label: m, value: idx })),
               (v) => setMonth(Number(v))
             )}
           </View>
           <View style={[styles.filterColumn, isMobile ? { zIndex: 3 } : {}]}>
-            <Text style={styles.filterLabel}>Año</Text>
+            <Text style={styles.filterLabel}>{t.reports.filters.year}</Text>
             <TouchableOpacity
               style={styles.select}
               onPress={() => setOpenDropdown(openDropdown === "year" ? null : "year")}
@@ -225,50 +216,50 @@ export const ReportsScreen = () => {
             )}
           </View>
           <View style={[styles.filterColumn, isMobile ? { zIndex: 2 } : {}]}>
-            <Text style={styles.filterLabel}>Personal</Text>
+            <Text style={styles.filterLabel}>{t.reports.filters.professional}</Text>
             <TouchableOpacity
               style={styles.select}
               onPress={() =>
                 setOpenDropdown(openDropdown === "professional" ? null : "professional")
               }
             >
-              <Text>{professional === "all" ? "Todos" : professional}</Text>
+              <Text>{professional === "all" ? t.reports.filters.all : professional}</Text>
             </TouchableOpacity>
             {renderDropdown(
               "professional",
               [
-                { label: "Todos", value: "all" },
+                { label: t.reports.filters.all, value: "all" },
                 ...professionals.map((p) => ({ label: p, value: p }))
               ],
               (v) => setProfessional(String(v))
             )}
           </View>
           <View style={[styles.filterColumn, isMobile ? { zIndex: 2 } : {}]}>
-            <Text style={styles.filterLabel}>Estado</Text>
+            <Text style={styles.filterLabel}>{t.reports.filters.status}</Text>
             <TouchableOpacity
               style={styles.select}
               onPress={() => setOpenDropdown(openDropdown === "status" ? null : "status")}
             >
               <Text>
                 {status === "all"
-                  ? "Todos"
-                  : (STATUSES.find((s) => s.value === status)?.label ?? status)}
+                  ? t.reports.filters.all
+                  : (statuses.find((s) => s.value === status)?.label ?? status)}
               </Text>
             </TouchableOpacity>
             {renderDropdown(
               "status",
               [
-                { label: "Todos", value: "all" },
-                ...STATUSES.map((s) => ({ label: s.label, value: s.value }))
+                { label: t.reports.filters.all, value: "all" },
+                ...statuses.map((s) => ({ label: s.label, value: s.value }))
               ],
               (v) => setStatus(String(v))
             )}
           </View>
           <View style={[styles.filterColumn, styles.searchColumn, isMobile ? { zIndex: 1 } : {}]}>
-            <Text style={styles.filterLabel}>Buscar</Text>
+            <Text style={styles.filterLabel}>{t.reports.filters.search}</Text>
             <TextInput
               style={styles.searchInput}
-              placeholder="Buscar por nombre de cliente, teléfono o servicio..."
+              placeholder={t.reports.filters.searchPlaceholder}
               value={search}
               onChangeText={setSearch}
             />
@@ -278,16 +269,18 @@ export const ReportsScreen = () => {
 
       {filtered.length > 0 ? (
         <View style={styles.summaryRow}>
-          <View style={styles.summaryCard}>
-            <Text style={styles.summaryLabel}>Total:</Text>
-            <View style={styles.chipRow}>
-              <View style={styles.chip}>
-                <Text style={styles.chipText}>Citas: {filtered.length}</Text>
+              <View style={styles.summaryCard}>
+                <Text style={styles.summaryLabel}>{t.reports.totals}</Text>
+                <View style={styles.chipRow}>
+                  <View style={styles.chip}>
+                    <Text style={styles.chipText}>
+                      {t.reports.countLabel}: {filtered.length}
+                    </Text>
+                  </View>
+                </View>
               </View>
-            </View>
-          </View>
           <View style={styles.summaryCard}>
-            <Text style={styles.summaryLabel}>Total por personal</Text>
+            <Text style={styles.summaryLabel}>{t.reports.totalByProfessional}</Text>
             <View style={styles.chipRow}>
               {Object.entries(totalByProfessional).map(([name, count]) => (
                 <View key={name} style={styles.chip}>
@@ -299,12 +292,12 @@ export const ReportsScreen = () => {
             </View>
           </View>
           <View style={styles.summaryCard}>
-            <Text style={styles.summaryLabel}>Total por estado</Text>
+            <Text style={styles.summaryLabel}>{t.reports.totalByStatus}</Text>
             <View style={styles.chipRow}>
               {Object.entries(totalByStatus).map(([st, count]) => (
                 <View key={st} style={[styles.chip, styles.statusChip]}>
                   <Text style={styles.chipText}>
-                    {(STATUSES.find((s) => s.value === st)?.label ?? st) + ": " + count}
+                    {(statuses.find((s) => s.value === st)?.label ?? st) + ": " + count}
                   </Text>
                 </View>
               ))}
@@ -321,19 +314,21 @@ export const ReportsScreen = () => {
         <View style={styles.table}>
           {!isMobile || filtered.length > 0 ? (
             <View style={[styles.tableRow, styles.tableHeader]}>
-              <Text style={[styles.cell, styles.cellId]}>ID</Text>
-              <Text style={[styles.cell, styles.cellDate]}>Fecha</Text>
-              <Text style={[styles.cell, styles.cellProfessional]}>Personal</Text>
-              <Text style={[styles.cell, styles.cellService]}>Servicio</Text>
-              <Text style={[styles.cell, styles.cellClient]}>Cliente</Text>
-              <Text style={[styles.cell, styles.cellPhone]}>Teléfono</Text>
-              <Text style={[styles.cell, styles.cellStatus]}>Estado</Text>
+              <Text style={[styles.cell, styles.cellId]}>{t.reports.table.id}</Text>
+              <Text style={[styles.cell, styles.cellDate]}>{t.reports.table.date}</Text>
+              <Text style={[styles.cell, styles.cellProfessional]}>
+                {t.reports.table.professional}
+              </Text>
+              <Text style={[styles.cell, styles.cellService]}>{t.reports.table.service}</Text>
+              <Text style={[styles.cell, styles.cellClient]}>{t.reports.table.client}</Text>
+              <Text style={[styles.cell, styles.cellPhone]}>{t.reports.table.phone}</Text>
+              <Text style={[styles.cell, styles.cellStatus]}>{t.reports.table.status}</Text>
             </View>
           ) : null}
           {loading ? (
             <View style={styles.loadingRow}>
               <ActivityIndicator color="#f43f5e" />
-              <Text style={styles.loadingText}>Cargando citas…</Text>
+              <Text style={styles.loadingText}>{t.reports.loading}</Text>
             </View>
           ) : error ? (
             <View style={styles.loadingRow}>
@@ -341,7 +336,7 @@ export const ReportsScreen = () => {
             </View>
           ) : filtered.length === 0 ? (
             <View style={styles.loadingRow}>
-              <Text style={styles.muted}>Sin resultados para los filtros seleccionados.</Text>
+              <Text style={styles.muted}>{t.reports.empty}</Text>
             </View>
           ) : (
             filtered.map((a) => (
@@ -365,7 +360,7 @@ export const ReportsScreen = () => {
                   {a.clientPhone || "—"}
                 </Text>
                 <Text style={[styles.cell, styles.cellStatus]} numberOfLines={1}>
-                  {STATUSES.find((s) => s.value === a.status)?.label ?? a.status ?? "—"}
+                  {statuses.find((s) => s.value === a.status)?.label ?? a.status ?? "—"}
                 </Text>
               </View>
             ))

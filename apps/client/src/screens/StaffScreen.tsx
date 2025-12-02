@@ -15,6 +15,7 @@ import {
 
 import { useAuth } from "../auth/AuthContext";
 import { API_BASE_URL } from "../config";
+import { useLanguage } from "../i18n/LanguageContext";
 import {
   ProfessionalOption,
   ProfessionalSchedule,
@@ -33,42 +34,11 @@ type ClientCategoryOption = {
   name: string;
 };
 
-const dayLabels: Record<string, string> = {
-  monday: "Lun",
-  tuesday: "Mar",
-  wednesday: "Mié",
-  thursday: "Jue",
-  friday: "Vie",
-  saturday: "Sáb",
-  sunday: "Dom",
-  lunes: "Lun",
-  martes: "Mar",
-  miercoles: "Mié",
-  miércoles: "Mié",
-  jueves: "Jue",
-  viernes: "Vie",
-  sabado: "Sáb",
-  sábado: "Sáb",
-  domingo: "Dom"
-};
-
-const formatDays = (schedule?: ProfessionalOption["schedule"]) => {
-  if (!schedule?.length) return "Sin horario asignado";
-  const uniques = Array.from(
-    new Set(
-      schedule
-        .map((entry) => entry?.day?.toLowerCase?.() ?? "")
-        .filter(Boolean)
-        .map((d) => dayLabels[d] ?? d.slice(0, 3))
-    )
-  );
-  return uniques.join(", ");
-};
-
 export const StaffScreen = () => {
   const {
     session: { tokens, user }
   } = useAuth();
+  const { t } = useLanguage();
   const { width } = useWindowDimensions();
   const isMobile = width < 1024;
   const clientId = user.client;
@@ -88,15 +58,18 @@ export const StaffScreen = () => {
   const [slotDropdownOpen, setSlotDropdownOpen] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<number>(1); // each slot = 15min
   const [serviceSlotPicker, setServiceSlotPicker] = useState<string | null>(null);
-  const dayTemplate: { key: string; label: string }[] = [
-    { key: "monday", label: "Lunes" },
-    { key: "tuesday", label: "Martes" },
-    { key: "wednesday", label: "Miércoles" },
-    { key: "thursday", label: "Jueves" },
-    { key: "friday", label: "Viernes" },
-    { key: "saturday", label: "Sábado" },
-    { key: "sunday", label: "Domingo" }
-  ];
+  const dayTemplate: { key: string; label: string }[] = useMemo(
+    () => [
+      { key: "monday", label: t.staff.daysFull.monday },
+      { key: "tuesday", label: t.staff.daysFull.tuesday },
+      { key: "wednesday", label: t.staff.daysFull.wednesday },
+      { key: "thursday", label: t.staff.daysFull.thursday },
+      { key: "friday", label: t.staff.daysFull.friday },
+      { key: "saturday", label: t.staff.daysFull.saturday },
+      { key: "sunday", label: t.staff.daysFull.sunday }
+    ],
+    [t]
+  );
   const [scheduleRows, setScheduleRows] = useState<
     { day: string; label: string; active: boolean; start: string; end: string }[]
   >(
@@ -110,6 +83,45 @@ export const StaffScreen = () => {
   );
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+
+  const dayLabels = useMemo(
+    () => {
+      const base = {
+        monday: t.staff.daysShort.monday,
+        tuesday: t.staff.daysShort.tuesday,
+        wednesday: t.staff.daysShort.wednesday,
+        thursday: t.staff.daysShort.thursday,
+        friday: t.staff.daysShort.friday,
+        saturday: t.staff.daysShort.saturday,
+        sunday: t.staff.daysShort.sunday
+      };
+      const localized = Object.entries(t.staff.daysFull).reduce<Record<string, string>>(
+        (acc, [key, value]) => {
+          acc[value.toLowerCase()] = t.staff.daysShort[key as keyof typeof base] ?? value;
+          return acc;
+        },
+        {}
+      );
+      return { ...base, ...localized };
+    },
+    [t]
+  );
+
+  const formatDays = useMemo(
+    () => (schedule?: ProfessionalOption["schedule"]) => {
+      if (!schedule?.length) return t.staff.noSchedule;
+      const uniques = Array.from(
+        new Set(
+          schedule
+            .map((entry) => entry?.day?.toLowerCase?.() ?? "")
+            .filter(Boolean)
+            .map((d) => dayLabels[d as keyof typeof dayLabels] ?? d.slice(0, 3))
+        )
+      );
+      return uniques.join(", ");
+    },
+    [dayLabels, t.staff.noSchedule]
+  );
 
   const headers = useMemo(
     () => ({
@@ -133,7 +145,7 @@ export const StaffScreen = () => {
           headers
         });
         if (!response.ok) {
-          throw new Error("No se pudo cargar el personal.");
+          throw new Error(t.staff.errorLoad);
         }
         const data = (await response.json()) as {
           professionals?: ProfessionalOption[];
@@ -153,7 +165,16 @@ export const StaffScreen = () => {
       }
     };
     load();
-  }, [clientId, headers]);
+  }, [clientId, headers, t]);
+
+  useEffect(() => {
+    setScheduleRows((prev) =>
+      prev.map((row) => {
+        const updated = dayTemplate.find((d) => d.key === row.day);
+        return updated ? { ...row, label: updated.label } : row;
+      })
+    );
+  }, [dayTemplate]);
 
   const openCreateModal = () => {
     setEditing(null);
@@ -279,11 +300,11 @@ export const StaffScreen = () => {
     }
     const confirmed =
       Platform.OS === "web"
-        ? window.confirm("¿Estás seguro de eliminar este profesional?")
+        ? window.confirm(t.staff.confirmDelete)
         : await new Promise<boolean>((resolve) => {
-            Alert.alert("Eliminar", "¿Estás seguro de eliminar este profesional?", [
-              { text: "Cancelar", style: "cancel", onPress: () => resolve(false) },
-              { text: "Eliminar", style: "destructive", onPress: () => resolve(true) }
+            Alert.alert(t.staff.confirmDeleteTitle, t.staff.confirmDelete, [
+              { text: t.staff.cancel, style: "cancel", onPress: () => resolve(false) },
+              { text: t.staff.delete, style: "destructive", onPress: () => resolve(true) }
             ]);
           });
     if (!confirmed) {
@@ -300,7 +321,7 @@ export const StaffScreen = () => {
         }
       );
       if (!response.ok) {
-        throw new Error("No se pudo eliminar el profesional.");
+        throw new Error(t.staff.errorDelete);
       }
       setStaff((prev) => prev.filter((pro) => pro._id !== editing._id));
       closeModal();
@@ -313,7 +334,7 @@ export const StaffScreen = () => {
 
   const handleSaveProfessional = async () => {
     if (!form.name.trim()) {
-      setSaveError("El nombre es requerido.");
+      setSaveError(t.staff.errorNameRequired);
       setActiveTab("info");
       return;
     }
@@ -352,7 +373,7 @@ export const StaffScreen = () => {
         })
       });
       if (!response.ok) {
-        throw new Error("No se pudo guardar el profesional.");
+        throw new Error(t.staff.errorSave);
       }
       const data = await response.json();
       const newStaff = (data?.professionals as ProfessionalOption[]) ?? [professionalPayload];
@@ -375,25 +396,27 @@ export const StaffScreen = () => {
       <View style={[styles.headerRow, isMobile && styles.headerRowMobile]}>
         {!isMobile ? (
           <View style={styles.headerText}>
-            <Text style={styles.title}>Gestión de Personal</Text>
-            <Text style={styles.subtitle}>Administra el equipo del salón</Text>
+            <Text style={styles.title}>{t.staff.title}</Text>
+            <Text style={styles.subtitle}>{t.staff.subtitle}</Text>
           </View>
         ) : null}
         <TouchableOpacity
           style={[styles.headerButton, isMobile && styles.headerButtonMobile]}
           onPress={openCreateModal}
         >
-          <Text style={styles.headerButtonText}>＋ Nuevo Personal</Text>
+          <Text style={styles.headerButtonText}>{t.staff.addButton}</Text>
         </TouchableOpacity>
       </View>
 
       {loading ? (
         <View style={styles.loadingState}>
           <ActivityIndicator color="#f43f5e" />
-          <Text style={styles.loadingText}>Cargando personal…</Text>
+          <Text style={styles.loadingText}>{t.staff.loading}</Text>
         </View>
       ) : error ? (
         <Text style={styles.errorText}>{error}</Text>
+      ) : staff.length === 0 ? (
+        <Text style={styles.infoText}>{t.staff.empty}</Text>
       ) : (
         <View style={[styles.grid, isMobile && { flexDirection: "column", gap: 16 }]}>
           {staff.map((pro) => (
@@ -420,13 +443,13 @@ export const StaffScreen = () => {
                 </View>
               ) : null}
 
-              <Text style={styles.sectionLabel}>Servicios:</Text>
+              <Text style={styles.sectionLabel}>{t.staff.servicesLabel}</Text>
               <View style={styles.tagsRow}>
                 {(pro.services ?? []).map((service) => (
                   <View key={service._id} style={styles.tag}>
                     <Text style={styles.tagText}>
                       {service.name}
-                      {service.slot ? ` · ${service.slot * 15} min` : ""}
+                      {service.slot ? ` · ${service.slot * 15} ${t.staff.minutesSuffix}` : ""}
                       {service.price !== undefined &&
                       service.price !== null &&
                       Number(service.price) > 0
@@ -437,7 +460,7 @@ export const StaffScreen = () => {
                 ))}
               </View>
 
-              <Text style={styles.sectionLabel}>Días laborales:</Text>
+              <Text style={styles.sectionLabel}>{t.staff.workingDaysLabel}</Text>
               <Text style={styles.infoText}>{formatDays(pro.schedule)}</Text>
             </TouchableOpacity>
           ))}
@@ -449,7 +472,7 @@ export const StaffScreen = () => {
           <View style={[styles.modalCard, isMobile && styles.modalCardMobile]}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>
-                {editing ? "Editar personal" : "Nuevo personal"}
+                {editing ? t.staff.editTitle : t.staff.newTitle}
               </Text>
               <TouchableOpacity onPress={closeModal}>
                 <Text style={styles.closeIcon}>✕</Text>
@@ -463,7 +486,7 @@ export const StaffScreen = () => {
                 onPress={() => setActiveTab("info")}
               >
                 <Text style={[styles.tabLabel, activeTab === "info" && styles.tabLabelActive]}>
-                  Información Personal
+                  {t.staff.tabInfo}
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
@@ -471,7 +494,7 @@ export const StaffScreen = () => {
                 onPress={() => setActiveTab("services")}
               >
                 <Text style={[styles.tabLabel, activeTab === "services" && styles.tabLabelActive]}>
-                  Servicios
+                  {t.staff.tabServices}
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
@@ -479,7 +502,7 @@ export const StaffScreen = () => {
                 onPress={() => setActiveTab("schedule")}
               >
                 <Text style={[styles.tabLabel, activeTab === "schedule" && styles.tabLabelActive]}>
-                  Horarios
+                  {t.staff.tabSchedule}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -489,19 +512,19 @@ export const StaffScreen = () => {
                 <>
                   <View style={[styles.fieldRow, isMobile && styles.fieldRowMobile]}>
                     <View style={[styles.fieldColumn, styles.fieldColumnHalf]}>
-                      <Text style={styles.inputLabel}>Nombre</Text>
+                      <Text style={styles.inputLabel}>{t.staff.name}</Text>
                       <TextInput
                         style={styles.input}
-                        placeholder="Nombre completo"
+                        placeholder={t.staff.namePlaceholder}
                         value={form.name}
                         onChangeText={(text) => setForm((prev) => ({ ...prev, name: text }))}
                       />
                     </View>
                     <View style={[styles.fieldColumn, styles.fieldColumnHalf]}>
-                      <Text style={styles.inputLabel}>Teléfono</Text>
+                      <Text style={styles.inputLabel}>{t.staff.phone}</Text>
                       <TextInput
                         style={styles.input}
-                        placeholder="+1 555 555 5555"
+                        placeholder={t.staff.phonePlaceholder}
                         value={form.phone}
                         onChangeText={(text) => setForm((prev) => ({ ...prev, phone: text }))}
                       />
@@ -509,10 +532,10 @@ export const StaffScreen = () => {
                   </View>
 
                   <View style={styles.fieldColumn}>
-                    <Text style={styles.inputLabel}>Email</Text>
+                    <Text style={styles.inputLabel}>{t.staff.email}</Text>
                     <TextInput
                       style={styles.input}
-                      placeholder="correo@correo.com"
+                      placeholder={t.staff.emailPlaceholder}
                       value={form.email}
                       onChangeText={(text) => setForm((prev) => ({ ...prev, email: text }))}
                     />
@@ -524,7 +547,7 @@ export const StaffScreen = () => {
                 <>
                   <View style={[{ gap: 12 }]}>
                     <View style={[!isMobile ? styles.fieldColumn : { gap: 6 }, { zIndex: 20 }]}>
-                      <Text style={styles.inputLabel}>Agregar servicio</Text>
+                      <Text style={styles.inputLabel}>{t.staff.addService}</Text>
                       <View
                         style={[
                           styles.fieldRow,
@@ -546,7 +569,7 @@ export const StaffScreen = () => {
                             >
                               <Text style={styles.dropdownButtonText}>
                                 {availableServiceOptions.find((s) => s._id === selectedServiceId)
-                                  ?.name ?? "Selecciona servicio"}
+                                  ?.name ?? t.staff.selectService}
                               </Text>
                               <Text style={styles.dropdownButtonIcon}>
                                 {serviceDropdownOpen ? "▲" : "▼"}
@@ -572,7 +595,7 @@ export const StaffScreen = () => {
                                 ) : (
                                   <View style={styles.dropdownEmpty}>
                                     <Text style={styles.dropdownEmptyText}>
-                                      No hay servicios disponibles
+                                      {t.staff.noServices}
                                     </Text>
                                   </View>
                                 )}
@@ -590,9 +613,11 @@ export const StaffScreen = () => {
                           <View style={styles.dropdownField}>
                             <TouchableOpacity
                               style={[styles.dropdownButton]}
-                              onPress={() => setSlotDropdownOpen((prev) => !prev)}
-                            >
-                              <Text style={styles.dropdownButtonText}>{selectedSlot * 15} min</Text>
+                            onPress={() => setSlotDropdownOpen((prev) => !prev)}
+                          >
+                              <Text style={styles.dropdownButtonText}>
+                                {selectedSlot * 15} {t.staff.minutesSuffix}
+                              </Text>
                               <Text style={styles.dropdownButtonIcon}>
                                 {slotDropdownOpen ? "▲" : "▼"}
                               </Text>
@@ -612,7 +637,9 @@ export const StaffScreen = () => {
                                           setSlotDropdownOpen(false);
                                         }}
                                       >
-                                        <Text style={styles.dropdownItemText}>{minutes} min</Text>
+                                        <Text style={styles.dropdownItemText}>
+                                          {minutes} {t.staff.minutesSuffix}
+                                        </Text>
                                       </TouchableOpacity>
                                     );
                                   })}
@@ -629,7 +656,7 @@ export const StaffScreen = () => {
                         >
                           <TextInput
                             style={styles.input}
-                            placeholder="Precio"
+                            placeholder={t.staff.pricePlaceholder}
                             keyboardType="numeric"
                             value={servicePrice}
                             onChangeText={setServicePrice}
@@ -640,7 +667,7 @@ export const StaffScreen = () => {
                             style={[styles.primaryButton, styles.addButton]}
                             onPress={handleAddService}
                           >
-                            <Text style={styles.primaryButtonText}>Agregar</Text>
+                            <Text style={styles.primaryButtonText}>{t.staff.addAction}</Text>
                           </TouchableOpacity>
                         </View>
                       </View>
@@ -648,22 +675,22 @@ export const StaffScreen = () => {
                     <View style={[styles.fieldColumn]}>
                       <View style={styles.serviceHeaderRow}>
                         <View style={styles.serviceNameBox}>
-                          <Text style={styles.inputLabel}>Servicios agregados</Text>
+                          <Text style={styles.inputLabel}>{t.staff.addedServices}</Text>
                         </View>
                         <View style={styles.serviceField}>
                           <Text style={[styles.serviceHeaderText, styles.serviceHeaderAlign]}>
-                            Minutos
+                            {t.staff.minutesLabel}
                           </Text>
                         </View>
                         <View style={styles.serviceField}>
                           <Text style={[styles.serviceHeaderText, styles.serviceHeaderAlign]}>
-                            Precio
+                            {t.staff.priceLabel}
                           </Text>
                         </View>
                         <View style={styles.serviceDeleteSpacer} />
                       </View>
                       {formServices.length === 0 ? (
-                        <Text style={styles.infoText}>Sin servicios asignados</Text>
+                        <Text style={styles.infoText}>{t.staff.noServices}</Text>
                       ) : (
                         <View style={styles.serviceListContainer}>
                           <ScrollView
@@ -684,14 +711,14 @@ export const StaffScreen = () => {
                                           prev === service._id ? null : service._id
                                         )
                                       }
-                                    >
-                                      <Text style={styles.dropdownButtonText}>
-                                        {(service.slot ?? 1) * 15} min
-                                      </Text>
-                                      <Text style={styles.dropdownButtonIcon}>
-                                        {serviceSlotPicker === service._id ? "▲" : "▼"}
-                                      </Text>
-                                    </TouchableOpacity>
+                                      >
+                                        <Text style={styles.dropdownButtonText}>
+                                        {(service.slot ?? 1) * 15} {t.staff.minutesSuffix}
+                                        </Text>
+                                        <Text style={styles.dropdownButtonIcon}>
+                                          {serviceSlotPicker === service._id ? "▲" : "▼"}
+                                        </Text>
+                                      </TouchableOpacity>
                                     {serviceSlotPicker === service._id ? (
                                       <View style={styles.dropdownList}>
                                         <ScrollView style={styles.dropdownScroll}>
@@ -702,19 +729,19 @@ export const StaffScreen = () => {
                                               <TouchableOpacity
                                                 key={slot}
                                                 style={styles.dropdownItemInline}
-                                                onPress={() => {
-                                                  handleUpdateServiceSlot(service._id, slot);
-                                                  setServiceSlotPicker(null);
-                                                }}
-                                              >
-                                                <Text style={styles.dropdownItemText}>
-                                                  {minutes} min
-                                                </Text>
-                                              </TouchableOpacity>
-                                            );
-                                          })}
-                                        </ScrollView>
-                                      </View>
+                                          onPress={() => {
+                                            handleUpdateServiceSlot(service._id, slot);
+                                            setServiceSlotPicker(null);
+                                          }}
+                                        >
+                                            <Text style={styles.dropdownItemText}>
+                                              {minutes} {t.staff.minutesSuffix}
+                                            </Text>
+                                          </TouchableOpacity>
+                                        );
+                                      })}
+                                    </ScrollView>
+                                  </View>
                                     ) : null}
                                   </View>
                                 </View>
@@ -770,8 +797,8 @@ export const StaffScreen = () => {
                         <Text style={styles.scheduleDay}>{row.label}</Text>
                       </View>
                       <View style={[styles.fieldRow]}>
-                        <View style={[styles.fieldColumn, styles.fieldColumnHalf]}>
-                          <Text style={styles.inputLabel}>Inicio</Text>
+                    <View style={[styles.fieldColumn, styles.fieldColumnHalf]}>
+                          <Text style={styles.inputLabel}>{t.staff.startLabel}</Text>
                           <TextInput
                             style={styles.input}
                             value={row.start}
@@ -784,7 +811,7 @@ export const StaffScreen = () => {
                           />
                         </View>
                         <View style={[styles.fieldColumn, styles.fieldColumnHalf]}>
-                          <Text style={styles.inputLabel}>Fin</Text>
+                          <Text style={styles.inputLabel}>{t.staff.endLabel}</Text>
                           <TextInput
                             style={styles.input}
                             value={row.end}
@@ -812,14 +839,14 @@ export const StaffScreen = () => {
                     disabled={saving}
                   >
                     <Text style={[styles.secondaryButtonText, styles.dangerOutlineText]}>
-                      Eliminar
+                      {t.staff.delete}
                     </Text>
                   </TouchableOpacity>
                 </View>
               ) : null}
               <View style={styles.footerRight}>
                 <TouchableOpacity style={styles.secondaryButton} onPress={closeModal}>
-                  <Text style={styles.secondaryButtonText}>Cancelar</Text>
+                  <Text style={styles.secondaryButtonText}>{t.staff.cancel}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.primaryButton, saving && styles.primaryButtonDisabled]}
@@ -827,7 +854,7 @@ export const StaffScreen = () => {
                   disabled={saving}
                 >
                   <Text style={styles.primaryButtonText}>
-                    {saving ? "Guardando..." : "Guardar"}
+                    {saving ? t.staff.saving : t.staff.save}
                   </Text>
                 </TouchableOpacity>
               </View>

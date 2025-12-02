@@ -19,6 +19,7 @@ import { Calendar, CalendarEvent } from "react-native-big-calendar";
 
 import { useAuth } from "../auth/AuthContext";
 import { API_BASE_URL } from "../config";
+import { useLanguage } from "../i18n/LanguageContext";
 import {
   ClientPlace,
   CustomerOption,
@@ -64,20 +65,6 @@ const STATUS_BORDER: Record<string, string> = {
 };
 
 const SLOT_MINUTES = 15;
-
-const STATUS_OPTIONS = [
-  { value: "scheduled", label: "Programada" },
-  { value: "confirmed", label: "Confirmada" },
-  { value: "show", label: "Presentado" },
-  { value: "no_show", label: "No Presentado" },
-  { value: "canceled", label: "Cancelada" },
-  { value: "completed", label: "Completada" }
-] as const;
-
-const STATUS_LABELS = STATUS_OPTIONS.reduce<Record<string, string>>((acc, curr) => {
-  acc[curr.value] = curr.label;
-  return acc;
-}, {});
 
 const STATUS_COLORS: Record<string, { dot: string; badgeBg: string; text: string }> = {
   scheduled: { dot: "#cbdffb", badgeBg: "#e9f2ff", text: "#0f172a" },
@@ -136,9 +123,29 @@ export const AppointmentsScreen = () => {
   const {
     session: { tokens, user }
   } = useAuth();
+  const { t } = useLanguage();
   const isWeb = Platform.OS === "web";
   const { width } = useWindowDimensions();
   const isMobile = width < 1024;
+  const statusOptions = useMemo(
+    () => [
+      { value: "scheduled", label: t.appointments.statusLabels.scheduled },
+      { value: "confirmed", label: t.appointments.statusLabels.confirmed },
+      { value: "show", label: t.appointments.statusLabels.show },
+      { value: "no_show", label: t.appointments.statusLabels.no_show },
+      { value: "canceled", label: t.appointments.statusLabels.canceled },
+      { value: "completed", label: t.appointments.statusLabels.completed }
+    ],
+    [t]
+  );
+  const STATUS_LABELS = useMemo(
+    () =>
+      statusOptions.reduce<Record<string, string>>((acc, curr) => {
+        acc[curr.value] = curr.label;
+        return acc;
+      }, {}),
+    [statusOptions]
+  );
   const [viewMode, setViewMode] = useState<"week" | "day" | "month">("week");
   const [calendarDate, setCalendarDate] = useState<Date>(new Date());
   const [professionals, setProfessionals] = useState<ProfessionalOption[]>([]);
@@ -237,7 +244,7 @@ export const AppointmentsScreen = () => {
         headers
       });
       if (!response.ok) {
-        throw new Error("No se pudieron cargar los profesionales.");
+        throw new Error(t.appointments.errors.loadProfessionals);
       }
       const data = (await response.json()) as {
         professionals?: ProfessionalOption[];
@@ -263,7 +270,7 @@ export const AppointmentsScreen = () => {
         headers
       });
       if (!response.ok) {
-        throw new Error("No se pudieron cargar las citas.");
+        throw new Error(t.appointments.errors.loadAppointments);
       }
       const data = await response.json();
       setAppointments(data);
@@ -288,7 +295,7 @@ export const AppointmentsScreen = () => {
           }
         );
         if (!response.ok) {
-          throw new Error("No se pudieron cargar los clientes.");
+          throw new Error(t.appointments.errors.loadClients);
         }
         const data = (await response.json()) as CustomerOption[];
         setCustomers(data);
@@ -312,7 +319,7 @@ export const AppointmentsScreen = () => {
         body: JSON.stringify(newCustomer)
       });
       if (!response.ok) {
-        throw new Error("No se pudo crear el cliente.");
+        throw new Error(t.appointments.errors.createClient);
       }
       const created = (await response.json()) as CustomerOption;
       setSelectedCustomer(created);
@@ -379,7 +386,10 @@ export const AppointmentsScreen = () => {
           (typeof appointment.services?.[0]?.service === "string"
             ? appointment.services?.[0]?.service
             : "");
-        const clientName = appointment.clientName ?? (appointment as any)?.customerName ?? "Cita";
+        const clientName =
+          appointment.clientName ??
+          (appointment as any)?.customerName ??
+          t.appointments.defaultAppointmentTitle;
         return {
           id: appointment._id,
           start: start.toDate(),
@@ -636,17 +646,17 @@ export const AppointmentsScreen = () => {
 
   const selectedTimeLabel = useMemo(() => {
     if (!modalProfessional) {
-      return "Selecciona personal";
+      return t.appointments.selectProfessional;
     }
     if (!availableTimeOptions.length) {
-      return "Sin horarios disponibles";
+      return t.appointments.noSlots;
     }
     if (!modalTime) {
-      return "Selecciona hora";
+      return t.appointments.selectTime;
     }
     const match = availableTimeOptions.find((option) => option.value === modalTime);
-    return match ? match.label : "Selecciona hora";
-  }, [availableTimeOptions, modalProfessional, modalTime]);
+    return match ? match.label : t.appointments.selectTime;
+  }, [availableTimeOptions, modalProfessional, modalTime, t]);
 
   const canSubmitAppointment = useMemo(
     () =>
@@ -674,41 +684,41 @@ export const AppointmentsScreen = () => {
     }
     clearAppointmentError();
     if (!clientId) {
-      setAppointmentError("No se encontró el cliente asociado.");
+      setAppointmentError(t.appointments.errors.noClientFound);
       return;
     }
     if (!isEditing && !selectedCustomer) {
-      setAppointmentError("Selecciona un cliente para la cita.");
+      setAppointmentError(t.appointments.errors.missingClient);
       return;
     }
     if (!modalProfessional) {
-      setAppointmentError("Selecciona el personal que atenderá la cita.");
+      setAppointmentError(t.appointments.errors.missingProfessional);
       return;
     }
     if (!modalService) {
-      setAppointmentError("Selecciona el servicio de la cita.");
+      setAppointmentError(t.appointments.errors.missingService);
       return;
     }
     if (!isEditing && !selectedServiceOption) {
-      setAppointmentError("Selecciona un servicio válido.");
+      setAppointmentError(t.appointments.errors.invalidService);
       return;
     }
     if (!modalTime) {
-      setAppointmentError("Selecciona una hora disponible.");
+      setAppointmentError(t.appointments.errors.missingTime);
       return;
     }
     if (!availableTimeOptions.length) {
-      setAppointmentError("No hay horarios disponibles para este día.");
+      setAppointmentError(t.appointments.errors.noSlotsDay);
       return;
     }
     const startMinutes = timeStringToMinutes(modalTime);
     if (startMinutes === null) {
-      setAppointmentError("Selecciona una hora válida.");
+      setAppointmentError(t.appointments.errors.invalidTime);
       return;
     }
     const location = clientPlace?.location;
     if (!location || !Array.isArray(location.coordinates) || location.coordinates.length < 2) {
-      setAppointmentError("Configura la ubicación del cliente antes de crear una cita.");
+      setAppointmentError(t.appointments.errors.missingLocation);
       return;
     }
     const serviceSlots = Math.max(selectedServiceOption?.slot ?? editingAppointment?.slots ?? 1, 1);
@@ -770,7 +780,7 @@ export const AppointmentsScreen = () => {
         body: JSON.stringify(payload)
       });
       if (!response.ok) {
-        let message = "No se pudo crear la cita.";
+        let message = t.appointments.errors.createAppointment;
         try {
           const errorData = await response.json();
           const responseMessage = Array.isArray(errorData?.message)
@@ -815,13 +825,17 @@ export const AppointmentsScreen = () => {
     const confirmed = await new Promise<boolean>((resolve) => {
       if (Platform.OS === "web") {
         const ok =
-          (global as any)?.confirm?.("¿Está seguro de que desea eliminar esta cita?") ?? false;
+          (global as any)?.confirm?.(t.appointments.errors.confirmDelete ?? "") ?? false;
         resolve(ok);
       } else {
-        Alert.alert("Eliminar cita", "¿Está seguro de que desea eliminar esta cita?", [
-          { text: "Cancelar", style: "cancel", onPress: () => resolve(false) },
-          { text: "Eliminar", style: "destructive", onPress: () => resolve(true) }
-        ]);
+        Alert.alert(
+          t.appointments.errors.confirmDeleteTitle ?? "",
+          t.appointments.errors.confirmDelete ?? "",
+          [
+            { text: t.appointments.cancel, style: "cancel", onPress: () => resolve(false) },
+            { text: t.appointments.delete, style: "destructive", onPress: () => resolve(true) }
+          ]
+        );
       }
     });
     if (!confirmed) {
@@ -834,7 +848,7 @@ export const AppointmentsScreen = () => {
         headers
       });
       if (!response.ok) {
-        throw new Error("No se pudo eliminar la cita.");
+        throw new Error(t.appointments.errors.deleteAppointment);
       }
       setAppointments((prev) => prev.filter((appt) => appt._id !== editingAppointment._id));
       setModalVisible(false);
@@ -862,7 +876,7 @@ export const AppointmentsScreen = () => {
           }
         );
         if (!response.ok) {
-          throw new Error("No se pudo cargar el historial de SMS");
+          throw new Error(t.appointments.errors.loadSms);
         }
         const data = (await response.json()) as { messages?: SmsMessage[] };
         setSmsMessages(data.messages ?? []);
@@ -895,7 +909,7 @@ export const AppointmentsScreen = () => {
         }
       );
       if (!resp.ok) {
-        throw new Error("No se pudo enviar el SMS");
+        throw new Error(t.appointments.errors.sendSms);
       }
       await loadSmsHistory(editingAppointment._id, false);
     } catch (err) {
@@ -919,7 +933,7 @@ export const AppointmentsScreen = () => {
           }
         );
         if (!resp.ok) {
-          throw new Error("No se pudo enviar el SMS");
+          throw new Error(t.appointments.errors.sendSms);
         }
         await loadSmsHistory(editingAppointment._id, false);
       } catch (err) {
@@ -943,7 +957,7 @@ export const AppointmentsScreen = () => {
             }
           );
           if (!resp.ok) {
-            throw new Error("No se pudo enviar la confirmación");
+            throw new Error(t.appointments.errors.sendConfirmation);
           }
           await loadSmsHistory(editingAppointment._id, false);
         } catch (err) {
@@ -959,7 +973,7 @@ export const AppointmentsScreen = () => {
             }
           );
           if (!resp.ok) {
-            throw new Error("No se pudo enviar el recordatorio");
+            throw new Error(t.appointments.errors.sendReminder);
           }
           await loadSmsHistory(editingAppointment._id, false);
         } catch (err) {
@@ -1042,7 +1056,7 @@ export const AppointmentsScreen = () => {
     <View style={[styles.container, isMobile && styles.containerMobile]}>
       {isMobile ? (
         <View style={styles.mobileSelectorWrapper}>
-          <Text style={styles.sectionTitle}>Personal</Text>
+          <Text style={styles.sectionTitle}>{t.appointments.personalTitle}</Text>
           <TouchableOpacity
             style={styles.dropdownButton}
             onPress={() => setMobileSelectorOpen((prev) => !prev)}
@@ -1100,7 +1114,7 @@ export const AppointmentsScreen = () => {
         </View>
       ) : (
         <View style={[styles.sidebar, isMobile && styles.sidebarMobile]}>
-          <Text style={styles.sectionTitle}>Personal</Text>
+          <Text style={styles.sectionTitle}>{t.appointments.personalTitle}</Text>
           <ScrollView style={styles.professionalList}>
             <TouchableOpacity
               style={[
@@ -1116,7 +1130,7 @@ export const AppointmentsScreen = () => {
                   !selectedProfessional && styles.professionalNameActive
                 ]}
               >
-                Todo el personal
+                {t.appointments.personalAll}
               </Text>
             </TouchableOpacity>
             {professionals.map((professional) => (
@@ -1148,8 +1162,8 @@ export const AppointmentsScreen = () => {
           <View>
             {!isMobile ? (
               <>
-                <Text style={styles.calendarTitle}>Gestión de Citas</Text>
-                <Text style={styles.calendarSubtitle}>Administra las citas del salón</Text>
+                <Text style={styles.calendarTitle}>{t.appointments.calendarTitle}</Text>
+                <Text style={styles.calendarSubtitle}>{t.appointments.calendarSubtitle}</Text>
               </>
             ) : null}
           </View>
@@ -1175,7 +1189,11 @@ export const AppointmentsScreen = () => {
                       viewMode === mode && styles.switchButtonTextActive
                     ]}
                   >
-                    {mode === "month" ? "Mes" : mode === "week" ? "Semana" : "Día"}
+                    {mode === "month"
+                      ? t.appointments.viewMonth
+                      : mode === "week"
+                        ? t.appointments.viewWeek
+                        : t.appointments.viewDay}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -1194,7 +1212,7 @@ export const AppointmentsScreen = () => {
           {loading ? (
             <View style={styles.loadingState}>
               <ActivityIndicator color="#f43f5e" />
-              <Text style={styles.loadingText}>Cargando citas…</Text>
+              <Text style={styles.loadingText}>{t.appointments.loadingCalendar}</Text>
             </View>
           ) : (
             <Calendar
@@ -1225,9 +1243,11 @@ export const AppointmentsScreen = () => {
                   (typeof event.data?.services?.[0]?.service === "string"
                     ? (event.data?.services?.[0]?.service as string)
                     : undefined) ??
-                  "Servicio";
+                  t.dashboard.defaultService;
                 const clientName =
-                  event.data?.clientName ?? (event.data as any)?.customerName ?? "";
+                  event.data?.clientName ??
+                  (event.data as any)?.customerName ??
+                  t.dashboard.defaultAppointmentTitle;
                 const cardBackground = {
                   backgroundColor: STATUS_COLORS[event.data?.status].badgeBg,
                   borderColor: STATUS_BORDER[event.data?.status],
@@ -1240,7 +1260,7 @@ export const AppointmentsScreen = () => {
                     activeOpacity={0.9}
                   >
                     <Text style={styles.eventTitle} numberOfLines={1} ellipsizeMode="tail">
-                      {clientName || "Cita"}
+                      {clientName || t.appointments.defaultAppointmentTitle}
                     </Text>
                     <Text style={styles.eventSubtitle} numberOfLines={1} ellipsizeMode="tail">
                       {serviceName}
@@ -1283,7 +1303,7 @@ export const AppointmentsScreen = () => {
           >
             <View style={styles.modalCard}>
               <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Nueva Cita</Text>
+                <Text style={styles.modalTitle}>{t.appointments.titleNew}</Text>
                 <TouchableOpacity onPress={handleCloseModal}>
                   <Text style={styles.modalClose}>✕</Text>
                 </TouchableOpacity>
@@ -1413,7 +1433,7 @@ export const AppointmentsScreen = () => {
                           isMobile && styles.fullWidth
                         ]}
                       >
-                        <Text style={styles.fieldLabel}>Estado actual:</Text>
+                        <Text style={styles.fieldLabel}>{t.appointments.statusLabel}:</Text>
                         <View
                           style={[
                             styles.statusBadge,
@@ -1444,7 +1464,7 @@ export const AppointmentsScreen = () => {
                           isMobile && styles.fullWidth
                         ]}
                       >
-                        <Text style={styles.fieldLabel}>Estado de la Cita *</Text>
+                        <Text style={styles.fieldLabel}>{t.appointments.statusLabel} *</Text>
                         <View
                           style={[
                             styles.dropdownField,
@@ -1470,7 +1490,7 @@ export const AppointmentsScreen = () => {
                           </TouchableOpacity>
                           {statusSelectorOpen ? (
                             <View style={styles.autocompleteDropdown}>
-                              {STATUS_OPTIONS.map((option) => (
+                              {statusOptions.map((option) => (
                                 <TouchableOpacity
                                   key={option.value}
                                   style={[styles.dropdownItemInline, styles.statusItem]}
@@ -1500,7 +1520,7 @@ export const AppointmentsScreen = () => {
                       </View>
 
                       <View style={styles.modalSection}>
-                        <Text style={styles.fieldLabel}>Notas</Text>
+                        <Text style={styles.fieldLabel}>{t.appointments.labels.notes}</Text>
                         <TextInput
                           style={[styles.input, styles.notesInput]}
                           multiline
@@ -1509,7 +1529,9 @@ export const AppointmentsScreen = () => {
                             setNotes(value);
                             clearAppointmentError();
                           }}
-                          placeholder="Notas adicionales sobre la cita..."
+                          placeholder={
+                            t.appointments.notesPlaceholder ?? "Notas adicionales sobre la cita..."
+                          }
                         />
                       </View>
 
@@ -1520,25 +1542,29 @@ export const AppointmentsScreen = () => {
 
                     <View style={[styles.smsPanelContainer, isMobile && styles.fullWidth]}>
                       <View style={[styles.smsPanel, isMobile && styles.smsPanelMobile]}>
-                        <Text style={styles.smsTitle}>Historial de SMS</Text>
+                        <Text style={styles.smsTitle}>{t.appointments.smsHistoryTitle}</Text>
                         {smsError ? <Text style={styles.errorText}>{smsError}</Text> : null}
                         <View style={styles.smsContent}>
                           {smsLoading ? (
                             <View style={[styles.smsLoading, styles.smsLoadingFill]}>
                               <ActivityIndicator color="#f43f5e" />
-                              <Text style={styles.smsLoadingText}>Cargando SMS...</Text>
+                              <Text style={styles.smsLoadingText}>
+                                {t.appointments.loadingSms ?? t.common.loading}
+                              </Text>
                             </View>
                           ) : (
-                          <ScrollView
-                            ref={smsListRef}
-                            style={styles.smsList}
-                            contentContainerStyle={styles.smsListContent}
-                            onContentSizeChange={() =>
-                              smsListRef.current?.scrollToEnd({ animated: false })
-                            }
-                          >
+                            <ScrollView
+                              ref={smsListRef}
+                              style={styles.smsList}
+                              contentContainerStyle={styles.smsListContent}
+                              onContentSizeChange={() =>
+                                smsListRef.current?.scrollToEnd({ animated: false })
+                              }
+                            >
                               {smsMessages.length === 0 ? (
-                                <Text style={styles.mutedText}>Sin mensajes</Text>
+                                <Text style={styles.mutedText}>
+                                  {t.appointments.noMessages ?? "Sin mensajes"}
+                                </Text>
                               ) : (
                                 smsMessages.map((msg) => {
                                   const isOutgoing = msg.direction === "outgoing";
@@ -1553,12 +1579,16 @@ export const AppointmentsScreen = () => {
                                       <View
                                         style={[
                                           styles.smsBubble,
-                                          isOutgoing ? styles.smsBubbleOutgoing : styles.smsBubbleIncoming
+                                          isOutgoing
+                                            ? styles.smsBubbleOutgoing
+                                            : styles.smsBubbleIncoming
                                         ]}
                                       >
                                         <Text style={styles.smsBody}>{msg.body}</Text>
                                         <Text style={styles.smsMeta}>
-                                          {isOutgoing ? "Enviado" : "Recibido"}{" "}
+                                          {isOutgoing
+                                            ? t.appointments.smsSent
+                                            : t.appointments.smsReceived}{" "}
                                           {dayjs(msg.date).format("DD/MM/YYYY, hh:mm A")}
                                         </Text>
                                       </View>
@@ -1583,20 +1613,24 @@ export const AppointmentsScreen = () => {
                                   style={styles.smsMenuItem}
                                   onPress={() => handleSendTemplate("confirm")}
                                 >
-                                  <Text style={styles.smsMenuText}>Enviar confirmación</Text>
+                                  <Text style={styles.smsMenuText}>
+                                    {t.appointments.smsSendConfirmation}
+                                  </Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity
                                   style={styles.smsMenuItem}
                                   onPress={() => handleSendTemplate("reminder")}
                                 >
-                                  <Text style={styles.smsMenuText}>Enviar recordatorio</Text>
+                                  <Text style={styles.smsMenuText}>
+                                    {t.appointments.smsSendReminder}
+                                  </Text>
                                 </TouchableOpacity>
                               </View>
                             ) : null}
                           </View>
                           <TextInput
                             style={[styles.modalInput, styles.smsInput]}
-                            placeholder="Escribir un mensaje..."
+                            placeholder={t.appointments.smsPlaceholder}
                             value={smsInput}
                             onChangeText={setSmsInput}
                           />
@@ -1627,7 +1661,7 @@ export const AppointmentsScreen = () => {
                         onPress={handleDeleteAppointment}
                         disabled={creatingAppointment}
                       >
-                        <Text style={styles.dangerButtonText}>Eliminar Cita</Text>
+                        <Text style={styles.dangerButtonText}>{t.appointments.delete}</Text>
                       </TouchableOpacity>
                       <View style={styles.editFooterMobileRow}>
                         <TouchableOpacity
@@ -1639,7 +1673,7 @@ export const AppointmentsScreen = () => {
                           onPress={handleCloseModal}
                           disabled={creatingAppointment}
                         >
-                          <Text style={styles.secondaryButtonText}>Cancelar</Text>
+                          <Text style={styles.secondaryButtonText}>{t.appointments.cancel}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                           style={[
@@ -1652,7 +1686,7 @@ export const AppointmentsScreen = () => {
                           disabled={creatingAppointment || !canSubmitAppointment}
                         >
                           <Text style={styles.primaryButtonText}>
-                            {creatingAppointment ? "Guardando..." : "Guardar Cambios"}
+                            {creatingAppointment ? t.common.loading : t.appointments.save}
                           </Text>
                         </TouchableOpacity>
                       </View>
@@ -1667,7 +1701,7 @@ export const AppointmentsScreen = () => {
                         onPress={handleDeleteAppointment}
                         disabled={creatingAppointment}
                       >
-                        <Text style={styles.dangerButtonText}>Eliminar Cita</Text>
+                        <Text style={styles.dangerButtonText}>{t.appointments.delete}</Text>
                       </TouchableOpacity>
                       <View style={styles.editFooterActions}>
                         <TouchableOpacity
@@ -1678,7 +1712,7 @@ export const AppointmentsScreen = () => {
                           onPress={handleCloseModal}
                           disabled={creatingAppointment}
                         >
-                          <Text style={styles.secondaryButtonText}>Cancelar</Text>
+                          <Text style={styles.secondaryButtonText}>{t.appointments.cancel}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                           style={[
@@ -1690,7 +1724,7 @@ export const AppointmentsScreen = () => {
                           disabled={creatingAppointment || !canSubmitAppointment}
                         >
                           <Text style={styles.primaryButtonText}>
-                            {creatingAppointment ? "Guardando..." : "Guardar Cambios"}
+                            {creatingAppointment ? t.common.loading : t.appointments.save}
                           </Text>
                         </TouchableOpacity>
                       </View>
@@ -1704,11 +1738,11 @@ export const AppointmentsScreen = () => {
                   keyboardShouldPersistTap="handled"
                 >
                   <View style={[styles.modalSectionNoFlex, styles.modalSectionElevated]}>
-                    <Text style={styles.fieldLabel}>Cliente *</Text>
+                    <Text style={styles.fieldLabel}>{t.appointments.labels.client} *</Text>
                     <View style={styles.autocompleteContainer}>
                       <TextInput
                         style={styles.input}
-                        placeholder="Buscar por nombre, teléfono o email..."
+                        placeholder={t.appointments.searchPlaceholder}
                         value={selectedCustomer ? selectedCustomer.name : customerQuery}
                         editable={!selectedCustomer && !isEditing}
                         onFocus={() => {
@@ -1763,7 +1797,9 @@ export const AppointmentsScreen = () => {
                               clearAppointmentError();
                             }}
                           >
-                            <Text style={styles.dropdownCreateText}>+ Crear nuevo cliente</Text>
+                            <Text style={styles.dropdownCreateText}>
+                              + {t.appointments.createNewCustomer}
+                            </Text>
                           </TouchableOpacity>
                         </View>
                       ) : null}
@@ -1787,7 +1823,7 @@ export const AppointmentsScreen = () => {
                             clearAppointmentError();
                           }}
                         >
-                          <Text style={styles.changeLink}>Cambiar</Text>
+                          <Text style={styles.changeLink}>{t.appointments.changeCustomer}</Text>
                         </TouchableOpacity>
                       </View>
                     ) : (
@@ -1795,7 +1831,9 @@ export const AppointmentsScreen = () => {
                         {showNewCustomerForm ? (
                           <View style={styles.newCustomerCard}>
                             <View style={styles.modalRow}>
-                              <Text style={styles.newCustomerTitle}>Nuevo Cliente</Text>
+                              <Text style={styles.newCustomerTitle}>
+                                {t.appointments.newCustomerTitle}
+                              </Text>
                               <TouchableOpacity
                                 onPress={() => {
                                   setShowNewCustomerForm(false);
@@ -1808,7 +1846,7 @@ export const AppointmentsScreen = () => {
                             </View>
                             <TextInput
                               style={styles.input}
-                              placeholder="Nombre completo"
+                              placeholder={t.appointments.newCustomerName}
                               value={newCustomer.name}
                               onChangeText={(text) =>
                                 setNewCustomer((prev) => ({ ...prev, name: text }))
@@ -1816,7 +1854,7 @@ export const AppointmentsScreen = () => {
                             />
                             <TextInput
                               style={styles.input}
-                              placeholder="Teléfono"
+                              placeholder={t.appointments.newCustomerPhone}
                               value={newCustomer.phone}
                               onChangeText={(text) =>
                                 setNewCustomer((prev) => ({ ...prev, phone: text }))
@@ -1824,7 +1862,7 @@ export const AppointmentsScreen = () => {
                             />
                             <TextInput
                               style={styles.input}
-                              placeholder="Email (Opcional)"
+                              placeholder={t.appointments.newCustomerEmail}
                               value={newCustomer.email}
                               onChangeText={(text) =>
                                 setNewCustomer((prev) => ({ ...prev, email: text }))
@@ -1836,7 +1874,9 @@ export const AppointmentsScreen = () => {
                               disabled={savingCustomer}
                             >
                               <Text style={styles.primaryButtonText}>
-                                {savingCustomer ? "Guardando..." : "Crear Cliente"}
+                                {savingCustomer
+                                  ? t.common.loading
+                                  : t.appointments.createCustomerButton}
                               </Text>
                             </TouchableOpacity>
                           </View>
@@ -1859,7 +1899,7 @@ export const AppointmentsScreen = () => {
                         isMobile && styles.fullWidth
                       ]}
                     >
-                      <Text style={styles.fieldLabel}>Personal *</Text>
+                      <Text style={styles.fieldLabel}>{t.appointments.personalTitle} *</Text>
                       <View
                         style={[
                           styles.dropdownField,
@@ -1882,8 +1922,8 @@ export const AppointmentsScreen = () => {
                           <Text style={styles.dropdownButtonText}>
                             {modalProfessional
                               ? (professionals.find((pro) => pro._id === modalProfessional)?.name ??
-                                "Selecciona personal")
-                              : "Selecciona personal"}
+                                t.appointments.selectProfessional)
+                              : t.appointments.selectProfessional}
                           </Text>
                           <Text style={styles.dropdownButtonIcon}>
                             {professionalSelectorOpen ? "▲" : "▼"}
@@ -1907,7 +1947,8 @@ export const AppointmentsScreen = () => {
                                 >
                                   <Text style={styles.dropdownItemText}>{professional.name}</Text>
                                   <Text style={styles.dropdownItemSub}>
-                                    {professional.services?.length ?? 0} servicios
+                                    {professional.services?.length ?? 0}{" "}
+                                    {t.dashboard.defaultService.toLowerCase()}s
                                   </Text>
                                 </TouchableOpacity>
                               ))}
@@ -1923,7 +1964,7 @@ export const AppointmentsScreen = () => {
                         isMobile && styles.fullWidth
                       ]}
                     >
-                      <Text style={styles.fieldLabel}>Servicio *</Text>
+                      <Text style={styles.fieldLabel}>{t.appointments.labels.service} *</Text>
                       <View
                         style={[
                           styles.dropdownField,
@@ -1945,8 +1986,8 @@ export const AppointmentsScreen = () => {
                         >
                           <Text style={styles.dropdownButtonText}>
                             {modalService
-                              ? (selectedServiceOption?.name ?? "Selecciona servicio")
-                              : "Selecciona servicio"}
+                              ? (selectedServiceOption?.name ?? t.dashboard.defaultService)
+                              : t.dashboard.defaultService}
                           </Text>
                           <Text style={styles.dropdownButtonIcon}>
                             {serviceSelectorOpen ? "▲" : "▼"}
@@ -1954,7 +1995,9 @@ export const AppointmentsScreen = () => {
                         </TouchableOpacity>
                         {serviceSelectorOpen ? (
                           professionalServices.length === 0 ? (
-                            <Text style={styles.emptyHint}>Selecciona personal</Text>
+                            <Text style={styles.emptyHint}>
+                              {t.appointments.selectProfessional}
+                            </Text>
                           ) : (
                             <View style={styles.autocompleteDropdown}>
                               <ScrollView style={styles.dropdownScroll}>
@@ -1987,13 +2030,13 @@ export const AppointmentsScreen = () => {
                     style={[styles.modalRow, styles.modalRowLower, isMobile && styles.modalColumn]}
                   >
                     <View style={[styles.modalSection, isMobile && styles.fullWidth]}>
-                      <Text style={styles.fieldLabel}>Fecha *</Text>
+                      <Text style={styles.fieldLabel}>{t.appointments.labels.date} *</Text>
                       <TouchableOpacity style={styles.input} onPress={handleOpenDatePicker}>
                         <Text>{dayjs(modalDate).format("DD/MM/YYYY")}</Text>
                       </TouchableOpacity>
                     </View>
                     <View style={[styles.modalSection, isMobile && styles.fullWidth]}>
-                      <Text style={styles.fieldLabel}>Hora *</Text>
+                      <Text style={styles.fieldLabel}>{t.appointments.labels.time} *</Text>
                       <View style={styles.dropdownField}>
                         <TouchableOpacity
                           style={[
@@ -2035,7 +2078,7 @@ export const AppointmentsScreen = () => {
                                 ))}
                               </ScrollView>
                             ) : (
-                              <Text style={styles.emptyHint}>Sin horarios disponibles</Text>
+                              <Text style={styles.emptyHint}>{t.appointments.noSlots}</Text>
                             )}
                           </View>
                         ) : null}
@@ -2043,19 +2086,8 @@ export const AppointmentsScreen = () => {
                     </View>
                   </View>
 
-                  {isEditing ? (
-                    <View style={[styles.modalSection, isMobile && styles.fullWidth]}>
-                      <Text style={styles.fieldLabel}>Status *</Text>
-                      <TextInput
-                        style={styles.input}
-                        value={modalStatus}
-                        onChangeText={setModalStatus}
-                      />
-                    </View>
-                  ) : null}
-
                   <View style={styles.modalSection}>
-                    <Text style={styles.fieldLabel}>Notas (Opcional)</Text>
+                    <Text style={styles.fieldLabel}>{t.appointments.labels.notes}</Text>
                     <TextInput
                       style={[styles.input, styles.notesInput]}
                       multiline
@@ -2064,7 +2096,9 @@ export const AppointmentsScreen = () => {
                         setNotes(value);
                         clearAppointmentError();
                       }}
-                      placeholder="Notas adicionales sobre la cita..."
+                      placeholder={
+                        t.appointments.notesPlaceholder ?? "Notas adicionales sobre la cita..."
+                      }
                     />
                   </View>
 
@@ -2092,7 +2126,7 @@ export const AppointmentsScreen = () => {
                       disabled={creatingAppointment || !canSubmitAppointment}
                     >
                       <Text style={styles.primaryButtonText}>
-                        {creatingAppointment ? "Creando..." : "Crear Cita"}
+                        {creatingAppointment ? t.common.loading : t.appointments.save}
                       </Text>
                     </TouchableOpacity>
                   </View>

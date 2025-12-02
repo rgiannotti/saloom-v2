@@ -4,6 +4,7 @@ import { ActivityIndicator, SafeAreaView, StyleSheet, Text } from "react-native"
 import { AuthProvider, useAuth } from "./src/auth/AuthContext";
 import { HomeScreen } from "./src/screens/HomeScreen";
 import { LoginScreen } from "./src/screens/LoginScreen";
+import { LanguageProvider } from "./src/i18n/LanguageContext";
 
 const BootstrappedApp = () => {
   const { session, initializing } = useAuth();
@@ -23,8 +24,10 @@ const BootstrappedApp = () => {
 export function App() {
   return (
     <AuthProvider>
-      <StatusBar style="dark" />
-      <BootstrappedApp />
+      <LanguageProvider>
+        <StatusBar style="dark" />
+        <BootstrappedApp />
+      </LanguageProvider>
     </AuthProvider>
   );
 }

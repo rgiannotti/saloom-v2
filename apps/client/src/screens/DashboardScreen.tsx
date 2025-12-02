@@ -10,6 +10,7 @@ import {
 
 import { useAuth } from "../auth/AuthContext";
 import { API_BASE_URL } from "../config";
+import { useLanguage } from "../i18n/LanguageContext";
 
 interface StatCard {
   title: string;
@@ -52,6 +53,7 @@ export const DashboardScreen = () => {
   const {
     session: { tokens }
   } = useAuth();
+  const { t, language } = useLanguage();
   const token = tokens.accessToken;
 
   const [data, setData] = useState<DashboardResponse | null>(null);
@@ -91,58 +93,58 @@ export const DashboardScreen = () => {
   const formattedStats: StatCard[] = useMemo(
     () => [
       {
-        title: "Citas Hoy",
-        value: formatNumber(data?.todayAppointments),
-        subtitle: "Citas programadas para hoy",
+        title: t.dashboard.todayAppointments,
+        value: formatNumber(data?.todayAppointments, 0, language),
+        subtitle: t.dashboard.todaySubtitle,
         icon: "📅"
       },
       {
-        title: "Ingresos Semana",
-        value: data ? `$${formatNumber(data.weekRevenue, 0)}` : "—",
-        subtitle: "Ingresos de esta semana",
+        title: t.dashboard.weekRevenue,
+        value: data ? `$${formatNumber(data.weekRevenue, 0, language)}` : "—",
+        subtitle: t.dashboard.weekSubtitle,
         icon: "💵"
       },
       {
-        title: "Personal Disponible",
-        value: formatNumber(data?.availableStaff),
-        subtitle: "Miembros del personal activos",
+        title: t.dashboard.availableStaff,
+        value: formatNumber(data?.availableStaff, 0, language),
+        subtitle: t.dashboard.availableSubtitle,
         icon: "🧑‍🤝‍🧑"
       },
       {
-        title: "Próximas Citas",
-        value: formatNumber(data?.upcomingAppointments?.length),
-        subtitle: "Citas pendientes hoy",
+        title: t.dashboard.upcoming,
+        value: formatNumber(data?.upcomingAppointments?.length, 0, language),
+        subtitle: t.dashboard.upcomingSubtitle,
         icon: "⏱️"
       }
     ],
-    [data]
+    [data, language, t]
   );
 
   const appointments: Appointment[] = useMemo(
     () =>
       (data?.upcomingAppointments ?? []).map((appt) => ({
-        name: appt.clientName || "Cliente",
-        service: appt.serviceName || "Servicio",
+        name: appt.clientName || t.dashboard.defaultClient,
+        service: appt.serviceName || t.dashboard.defaultService,
         time: appt.time,
-        status: appt.status ?? "Programada"
+        status: appt.status ?? t.dashboard.statusScheduled
       })),
-    [data]
+    [data, t]
   );
 
   const summary: SummaryItem[] = useMemo(
     () => [
-      { label: "Total Clientes", value: formatNumber(data?.clients), icon: "👥" },
-      { label: "Citas Este Mes", value: formatNumber(data?.monthAppointments), icon: "📅" },
-      { label: "Nuevos Clientes Este Mes", value: formatNumber(data?.monthNewClients), icon: "📈" }
+      { label: t.dashboard.totalClients, value: formatNumber(data?.clients, 0, language), icon: "👥" },
+      { label: t.dashboard.monthAppointments, value: formatNumber(data?.monthAppointments, 0, language), icon: "📅" },
+      { label: t.dashboard.monthNewClients, value: formatNumber(data?.monthNewClients, 0, language), icon: "📈" }
     ],
-    [data]
+    [data, language, t]
   );
 
   return (
     <ScrollView contentContainerStyle={styles.page} showsVerticalScrollIndicator={false}>
       <View style={styles.headerRow}>
-        <Text style={styles.title}>{!isMobile ? "Dashboard" : null}</Text>
-        <Text style={styles.datePill}>martes, 25 de noviembre de 2025</Text>
+        <Text style={styles.title}>{!isMobile ? t.menu.dashboard : null}</Text>
+        <Text style={styles.datePill}>{t.dashboard.fakeDate}</Text>
       </View>
 
       <View style={styles.statsRow}>
@@ -161,14 +163,12 @@ export const DashboardScreen = () => {
       <View style={styles.columns}>
         <View style={styles.leftColumn}>
           <View style={styles.sectionCard}>
-            <Text style={styles.sectionTitle}>Próximas Citas de Hoy</Text>
-            <Text style={styles.sectionSubtitle}>
-              Lista de citas programadas para el día de hoy
-            </Text>
+            <Text style={styles.sectionTitle}>{t.dashboard.nextToday}</Text>
+            <Text style={styles.sectionSubtitle}>{t.dashboard.nextTodaySubtitle}</Text>
             {loading ? (
               <View style={styles.loadingRow}>
                 <ActivityIndicator color="#f43f5e" />
-                <Text style={styles.loadingText}>Cargando...</Text>
+                <Text style={styles.loadingText}>{t.common.loading}</Text>
               </View>
             ) : error ? (
               <Text style={styles.errorText}>{error}</Text>
@@ -190,7 +190,7 @@ export const DashboardScreen = () => {
                     </View>
                   ))
                 ) : (
-                  <Text style={styles.mutedText}>Sin citas programadas para hoy</Text>
+                  <Text style={styles.mutedText}>{t.dashboard.noAppointments}</Text>
                 )}
               </View>
             )}
@@ -199,12 +199,12 @@ export const DashboardScreen = () => {
 
         <View style={styles.rightColumn}>
           <View style={styles.sectionCard}>
-            <Text style={styles.sectionTitle}>Resumen Rápido</Text>
-            <Text style={styles.sectionSubtitle}>Estadísticas importantes del salón</Text>
+            <Text style={styles.sectionTitle}>{t.dashboard.quickSummary}</Text>
+            <Text style={styles.sectionSubtitle}>{t.dashboard.quickSummarySubtitle}</Text>
             {loading ? (
               <View style={styles.loadingRow}>
                 <ActivityIndicator color="#f43f5e" />
-                <Text style={styles.loadingText}>Cargando...</Text>
+                <Text style={styles.loadingText}>{t.common.loading}</Text>
               </View>
             ) : error ? (
               <Text style={styles.errorText}>{error}</Text>
@@ -228,11 +228,11 @@ export const DashboardScreen = () => {
   );
 };
 
-const formatNumber = (value?: number | null, minimumFractionDigits = 0) => {
+const formatNumber = (value?: number | null, minimumFractionDigits = 0, locale = "es-ES") => {
   if (value === undefined || value === null || Number.isNaN(value)) {
     return "—";
   }
-  return new Intl.NumberFormat("es-ES", { minimumFractionDigits }).format(value);
+  return new Intl.NumberFormat(locale, { minimumFractionDigits }).format(value);
 };
 
 const styles = StyleSheet.create({

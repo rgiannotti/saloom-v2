@@ -11,6 +11,7 @@ import {
 } from "react-native";
 
 import { SidebarLogo } from "./SidebarLogo";
+import { useLanguage } from "../i18n/LanguageContext";
 
 export interface SidebarItem {
   key: string;
@@ -37,6 +38,7 @@ export const Sidebar = ({
   showBorder = true,
   onLogout
 }: SidebarProps) => {
+  const { language, setLanguage, t } = useLanguage();
   const animatedWidth = React.useRef(new Animated.Value(collapsed ? 60 : 260)).current;
 
   React.useEffect(() => {
@@ -100,6 +102,33 @@ export const Sidebar = ({
           <View style={styles.footerLogo}>
             <SidebarLogo collapsed widthOverride={28} heightOverride={28} />
           </View>
+          <View
+            style={[
+              styles.flagsContainer,
+              collapsed ? styles.flagsContainerCollapsed : styles.flagsContainerExpanded
+            ]}
+          >
+            <TouchableOpacity
+              onPress={() => setLanguage("es")}
+              style={[
+                styles.flagButton,
+                language === "es" && styles.flagButtonActive,
+                collapsed && styles.flagButtonCollapsed
+              ]}
+            >
+              <Text style={styles.flagText}>🇪🇸</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setLanguage("en")}
+              style={[
+                styles.flagButton,
+                language === "en" && styles.flagButtonActive,
+                collapsed && styles.flagButtonCollapsed
+              ]}
+            >
+              <Text style={styles.flagText}>🇺🇸</Text>
+            </TouchableOpacity>
+          </View>
           <TouchableOpacity
             style={[
               styles.logoutButton,
@@ -109,7 +138,7 @@ export const Sidebar = ({
             onPress={onLogout}
           >
             <Text style={[styles.logoutText, collapsed && styles.logoutTextCollapsed]}>
-              {collapsed ? "⏻" : "Cerrar sesión"}
+              {collapsed ? "⏻" : t.logout}
             </Text>
           </TouchableOpacity>
         </View>
@@ -121,6 +150,9 @@ export const Sidebar = ({
 const styles = StyleSheet.create({
   sidebar: {
     width: 260,
+    maxWidth: 260,
+    flexShrink: 0,
+    height: "100%",
     backgroundColor: "#ffffff",
     borderRightColor: "#e2e8f0",
     borderRightWidth: 1,
@@ -209,7 +241,6 @@ const styles = StyleSheet.create({
     color: "#be123c"
   },
   logoutButton: {
-    marginTop: 12,
     borderWidth: 1,
     borderColor: "#e2e8f0",
     borderRadius: 12,
@@ -229,13 +260,51 @@ const styles = StyleSheet.create({
   },
   footer: {
     alignItems: "center",
-    gap: 10
+    gap: 10,
+    marginTop: "auto"
   },
   footerLogo: {
     alignItems: "center",
     justifyContent: "center"
   },
+  flagsContainer: {
+    flexDirection: "row",
+    gap: 8,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  flagsContainerExpanded: {
+    flexDirection: "row"
+  },
+  flagsContainerCollapsed: {
+    flexDirection: "column"
+  },
   logoutButtonFull: {
     alignSelf: "stretch"
+  },
+  languageRow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 8,
+    marginBottom: 8
+  },
+  flagButton: {
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+    borderRadius: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    backgroundColor: "#fff"
+  },
+  flagButtonActive: {
+    borderColor: "#ef4444",
+    backgroundColor: "rgba(239,68,68,0.1)"
+  },
+  flagText: {
+    fontSize: 16
+  },
+  flagButtonCollapsed: {
+    paddingVertical: 4,
+    paddingHorizontal: 6
   }
 });

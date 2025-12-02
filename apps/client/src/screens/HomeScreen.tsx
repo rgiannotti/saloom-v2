@@ -1,9 +1,10 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { useAuth } from "../auth/AuthContext";
 import { DashboardLayout } from "../components/DashboardLayout";
 import type { SidebarItem } from "../components/Sidebar";
+import { useLanguage } from "../i18n/LanguageContext";
 import { AppointmentsScreen } from "./AppointmentsScreen";
 import { ClientsScreen } from "./ClientsScreen";
 import { DashboardScreen } from "./DashboardScreen";
@@ -12,18 +13,7 @@ import { ReportsScreen } from "./ReportsScreen";
 import { ClientReportScreen } from "./ClientReportScreen";
 import { StaffScreen } from "./StaffScreen";
 
-const modules: SidebarItem[] = [
-  { key: "dashboard", label: "Dashboard", icon: "🏠" },
-  { key: "appointments", label: "Agenda", icon: "📅" },
-  { key: "staff", label: "Personal", icon: "👤" },
-  { key: "clients", label: "Clientes", icon: "👥" },
-  { key: "overview", label: "Reporte por Citas", icon: "📊" },
-  { key: "clientReport", label: "Reporte por Cliente", icon: "📋" },
-  { key: "messages", label: "Mensajes", icon: "💬" },
-  { key: "settings", label: "Configuración", icon: "⚙️" }
-];
-
-const moduleDescriptions: Record<string, string> = {
+const DEFAULT_DESCRIPTIONS: Record<string, string> = {
   overview: "Reporte por citas con indicadores rápidos de tu operación diaria y tareas pendientes.",
   clients: "Consulta y gestiona tu base de clientes registrados.",
   clientReport: "Agrupa y resume las citas por cliente y estado.",
@@ -37,6 +27,7 @@ const moduleDescriptions: Record<string, string> = {
 export const HomeScreen = () => {
   const { session, logout } = useAuth();
   const [activeModule, setActiveModule] = useState("dashboard");
+  const { t } = useLanguage();
 
   if (!session) {
     return null;
@@ -44,14 +35,28 @@ export const HomeScreen = () => {
 
   const { user } = session;
 
+  const modules: SidebarItem[] = useMemo(
+    () => [
+      { key: "dashboard", label: t.menu.dashboard, icon: "🏠" },
+      { key: "appointments", label: t.menu.appointments, icon: "📅" },
+      { key: "staff", label: t.menu.staff, icon: "👤" },
+      { key: "clients", label: t.menu.clients, icon: "👥" },
+      { key: "overview", label: t.menu.overview, icon: "📊" },
+      { key: "clientReport", label: t.menu.clientReport, icon: "📋" },
+      { key: "messages", label: t.menu.messages, icon: "💬" },
+      { key: "settings", label: t.menu.settings, icon: "⚙️" }
+    ],
+    [t]
+  );
+
   const headerLabels: Record<string, string> = {
-    staff: "Gestión de Personal",
-    clients: "Gestión de Clientes",
-    appointments: "Gestión de Citas",
-    dashboard: "Dashboard",
-    settings: "Configuración",
-    overview: "Reporte por Citas",
-    clientReport: "Reporte por Cliente"
+    staff: t.menu.staff,
+    clients: t.menu.clients,
+    appointments: t.menu.appointments,
+    dashboard: t.menu.dashboard,
+    settings: t.menu.settings,
+    overview: t.menu.overview,
+    clientReport: t.menu.clientReport
   };
   const headerContent = headerLabels[activeModule] ? (
     <View style={styles.headerTextInline}>
@@ -89,7 +94,7 @@ export const HomeScreen = () => {
               {modules.find((m) => m.key === activeModule)?.label}
             </Text>
             <Text style={styles.moduleDescription}>
-              {moduleDescriptions[activeModule] ?? moduleDescriptions.overview}
+              {DEFAULT_DESCRIPTIONS[activeModule] ?? DEFAULT_DESCRIPTIONS.overview}
             </Text>
             <View style={styles.metaRow}>
               <View style={styles.metaCard}>

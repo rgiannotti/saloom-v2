@@ -13,6 +13,7 @@ import dayjs from "dayjs";
 
 import { useAuth } from "../auth/AuthContext";
 import { API_BASE_URL } from "../config";
+import { useLanguage } from "../i18n/LanguageContext";
 
 type AppointmentRow = {
   _id: string;
@@ -47,6 +48,7 @@ export const ClientReportScreen = () => {
   const {
     session: { tokens }
   } = useAuth();
+  const { t } = useLanguage();
   const [appointments, setAppointments] = useState<AppointmentRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -68,7 +70,7 @@ export const ClientReportScreen = () => {
           }
         });
         if (!resp.ok) {
-          throw new Error("No se pudieron cargar las citas");
+          throw new Error(t.reportsClients.errorLoad);
         }
         const data = (await resp.json()) as AppointmentRow[];
         setAppointments(data);
@@ -80,7 +82,7 @@ export const ClientReportScreen = () => {
       }
     };
     load();
-  }, [tokens.accessToken]);
+  }, [t.reportsClients.errorLoad, tokens.accessToken]);
 
   const grouped = useMemo(() => {
     const map = new Map<string, ClientGroup>();
@@ -151,15 +153,15 @@ export const ClientReportScreen = () => {
     <ScrollView style={styles.container} contentContainerStyle={{}}>
       {!isMobile ? (
         <View style={styles.headerTitle}>
-          <Text style={styles.title}>Reporte de Clientes</Text>
-          <Text style={styles.subtitle}>Resumen de clientes</Text>
+          <Text style={styles.title}>{t.reportsClients.title}</Text>
+          <Text style={styles.subtitle}>{t.reportsClients.subtitle}</Text>
         </View>
       ) : null}
 
       <View style={styles.searchBar}>
         <TextInput
           style={styles.searchInput}
-          placeholder="Buscar por nombre o teléfono..."
+          placeholder={t.reportsClients.searchPlaceholder}
           value={search}
           onChangeText={setSearch}
         />
@@ -174,20 +176,20 @@ export const ClientReportScreen = () => {
       >
         <View style={[styles.table, !isMobile && styles.tableFullWidth]}>
           <View style={[styles.row, styles.header]}>
-            <Text style={[styles.cell, styles.cellClient]}>Cliente</Text>
-            <Text style={[styles.cell, styles.cellPhone]}>Teléfono</Text>
-            {renderSortableHeader("Total", "total", styles.cellTotal)}
-            {renderSortableHeader("Programada", "scheduled", styles.cellStatus)}
-            {renderSortableHeader("Confirmada", "confirmed", styles.cellStatus)}
-            {renderSortableHeader("Presentado", "show", styles.cellStatus)}
-            {renderSortableHeader("No Presentado", "no_show", styles.cellStatus)}
-            {renderSortableHeader("Cancelada", "canceled", styles.cellStatus)}
-            {renderSortableHeader("Completada", "completed", styles.cellStatus)}
+            <Text style={[styles.cell, styles.cellClient]}>{t.reportsClients.table.client}</Text>
+            <Text style={[styles.cell, styles.cellPhone]}>{t.reportsClients.table.phone}</Text>
+            {renderSortableHeader(t.reportsClients.table.total, "total", styles.cellTotal)}
+            {renderSortableHeader(t.reportsClients.table.scheduled, "scheduled", styles.cellStatus)}
+            {renderSortableHeader(t.reportsClients.table.confirmed, "confirmed", styles.cellStatus)}
+            {renderSortableHeader(t.reportsClients.table.show, "show", styles.cellStatus)}
+            {renderSortableHeader(t.reportsClients.table.no_show, "no_show", styles.cellStatus)}
+            {renderSortableHeader(t.reportsClients.table.canceled, "canceled", styles.cellStatus)}
+            {renderSortableHeader(t.reportsClients.table.completed, "completed", styles.cellStatus)}
           </View>
           {loading ? (
             <View style={styles.loadingRow}>
               <ActivityIndicator color="#f43f5e" />
-              <Text style={styles.loadingText}>Cargando...</Text>
+              <Text style={styles.loadingText}>{t.reportsClients.loading}</Text>
             </View>
           ) : error ? (
             <View style={styles.loadingRow}>
@@ -195,7 +197,7 @@ export const ClientReportScreen = () => {
             </View>
           ) : grouped.length === 0 ? (
             <View style={styles.loadingRow}>
-              <Text style={styles.muted}>Sin resultados</Text>
+              <Text style={styles.muted}>{t.reportsClients.empty}</Text>
             </View>
           ) : (
             grouped.map((g, idx) => (

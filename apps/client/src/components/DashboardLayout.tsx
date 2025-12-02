@@ -196,11 +196,12 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(15, 23, 42, 0.35)"
   },
   mobileSidebar: {
+    width: 260,
+    maxWidth: 260,
     position: "absolute",
     top: 0,
     bottom: 0,
     backgroundColor: "#fff",
-    paddingTop: 32,
     shadowColor: "#0f172a",
     shadowOpacity: 0.2,
     shadowRadius: 24,

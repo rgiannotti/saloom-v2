@@ -15,6 +15,7 @@ import {
 
 import { useAuth } from "../auth/AuthContext";
 import { API_BASE_URL } from "../config";
+import { useLanguage } from "../i18n/LanguageContext";
 import { User } from "../types/user";
 
 const PAGE_CHUNK = 20;
@@ -23,6 +24,7 @@ export const ClientsScreen = () => {
   const {
     session: { tokens }
   } = useAuth();
+  const { t, language } = useLanguage();
   const token = tokens.accessToken;
   const { width } = useWindowDimensions();
   const isMobile = width < 1024;
@@ -54,7 +56,7 @@ export const ClientsScreen = () => {
         }
       });
       if (!response.ok) {
-        throw new Error("No se pudieron cargar los clientes");
+        throw new Error(t.clients.errors.load);
       }
       const data = (await response.json()) as User[];
       const sortedData = [...data].sort((a, b) =>
@@ -69,7 +71,7 @@ export const ClientsScreen = () => {
       setLoadingInitial(false);
       setRefreshing(false);
     }
-  }, [token]);
+  }, [t, token]);
 
   useEffect(() => {
     loadClients();
@@ -111,15 +113,15 @@ export const ClientsScreen = () => {
 
   const handleSaveClient = async () => {
     if (!form.name.trim()) {
-      setFormError("El nombre es obligatorio.");
+      setFormError(t.clients.errors.nameRequired);
       return;
     }
     if (!form.phone.trim()) {
-      setFormError("El teléfono es obligatorio.");
+      setFormError(t.clients.errors.phoneRequired);
       return;
     }
     if (!token) {
-      setFormError("Sesión inválida. Inicia sesión nuevamente.");
+      setFormError(t.clients.errors.invalidSession);
       return;
     }
     setSaving(true);
@@ -143,7 +145,7 @@ export const ClientsScreen = () => {
         body: JSON.stringify(payload)
       });
       if (!response.ok) {
-        throw new Error("No se pudo guardar el cliente.");
+        throw new Error(t.clients.errors.save);
       }
       await loadClients();
       closeModal();
@@ -160,11 +162,11 @@ export const ClientsScreen = () => {
     }
     const confirmed =
       Platform.OS === "web"
-        ? window.confirm("¿Eliminar este cliente?")
+        ? window.confirm(t.clients.confirmDelete)
         : await new Promise<boolean>((resolve) => {
-            Alert.alert("Eliminar", "¿Eliminar este cliente?", [
-              { text: "Cancelar", style: "cancel", onPress: () => resolve(false) },
-              { text: "Eliminar", style: "destructive", onPress: () => resolve(true) }
+            Alert.alert(t.clients.confirmDeleteTitle, t.clients.confirmDelete, [
+              { text: t.clients.cancel, style: "cancel", onPress: () => resolve(false) },
+              { text: t.clients.delete, style: "destructive", onPress: () => resolve(true) }
             ]);
           });
     if (!confirmed) {
@@ -180,7 +182,7 @@ export const ClientsScreen = () => {
         }
       });
       if (!response.ok) {
-        throw new Error("No se pudo eliminar el cliente.");
+        throw new Error(t.clients.errors.delete);
       }
       await loadClients();
       closeModal();
@@ -191,39 +193,45 @@ export const ClientsScreen = () => {
     }
   };
 
-  const renderItem = ({ item }: { item: User }) => (
-    <TouchableOpacity
-      style={[styles.card, isMobile ? styles.cardFull : styles.cardThird]}
-      onPress={() => openEditModal(item)}
-      activeOpacity={0.85}
-    >
-      <Text style={styles.cardName}>{item.name}</Text>
-      {item.email ? (
-        <View style={styles.contactRow}>
-          <Text style={styles.contactIcon}>✉️</Text>
-          <Text style={styles.cardDetail}>{item.email}</Text>
-        </View>
-      ) : (
-        <View style={styles.contactRow}>
-          <Text style={styles.contactIconMuted}>✉️</Text>
-          <Text style={styles.cardDetailMuted}>Sin correo</Text>
-        </View>
-      )}
-      {item.phone ? (
-        <View style={styles.contactRow}>
-          <Text style={styles.contactIcon}>📞</Text>
-          <Text style={styles.cardDetail}>{item.phone}</Text>
-        </View>
-      ) : null}
-      <Text style={styles.registeredText}>
-        Registrado:{" "}
-        {new Date(item.createdAt ?? item.updatedAt ?? Date.now()).toLocaleDateString("es-ES", {
-          day: "2-digit",
-          month: "short",
-          year: "numeric"
-        })}
-      </Text>
-    </TouchableOpacity>
+  const renderItem = useCallback(
+    ({ item }: { item: User }) => (
+      <TouchableOpacity
+        style={[styles.card, isMobile ? styles.cardFull : styles.cardThird]}
+        onPress={() => openEditModal(item)}
+        activeOpacity={0.85}
+      >
+        <Text style={styles.cardName}>{item.name}</Text>
+        {item.email ? (
+          <View style={styles.contactRow}>
+            <Text style={styles.contactIcon}>✉️</Text>
+            <Text style={styles.cardDetail}>{item.email}</Text>
+          </View>
+        ) : (
+          <View style={styles.contactRow}>
+            <Text style={styles.contactIconMuted}>✉️</Text>
+            <Text style={styles.cardDetailMuted}>{t.clients.noEmail}</Text>
+          </View>
+        )}
+        {item.phone ? (
+          <View style={styles.contactRow}>
+            <Text style={styles.contactIcon}>📞</Text>
+            <Text style={styles.cardDetail}>{item.phone}</Text>
+          </View>
+        ) : null}
+        <Text style={styles.registeredText}>
+          {t.clients.registered}:{" "}
+          {new Date(item.createdAt ?? item.updatedAt ?? Date.now()).toLocaleDateString(
+            language === "en" ? "en-US" : "es-ES",
+            {
+              day: "2-digit",
+              month: "short",
+              year: "numeric"
+            }
+          )}
+        </Text>
+      </TouchableOpacity>
+    ),
+    [isMobile, language, openEditModal, t.clients.noEmail, t.clients.registered]
   );
 
   const filteredClients = useMemo(() => {
@@ -271,7 +279,7 @@ export const ClientsScreen = () => {
       return (
         <View style={styles.stateView}>
           <ActivityIndicator color="#f43f5e" />
-          <Text style={styles.stateText}>Cargando clientes…</Text>
+          <Text style={styles.stateText}>{t.common.loading}</Text>
         </View>
       );
     }
@@ -280,32 +288,32 @@ export const ClientsScreen = () => {
         <View style={styles.stateView}>
           <Text style={[styles.stateText, styles.errorText]}>Error: {error}</Text>
           <TouchableOpacity style={styles.retryButton} onPress={() => loadClients()}>
-            <Text style={styles.retryText}>Reintentar</Text>
+            <Text style={styles.retryText}>{t.clients.retry ?? "Reintentar"}</Text>
           </TouchableOpacity>
         </View>
       );
     }
     return (
       <View style={styles.stateView}>
-        <Text style={styles.stateText}>Sin clientes para mostrar</Text>
+        <Text style={styles.stateText}>{t.clients.empty ?? "Sin clientes para mostrar"}</Text>
       </View>
     );
-  }, [loadingInitial, error, loadClients]);
+  }, [loadingInitial, error, loadClients, t]);
 
   return (
     <View style={styles.container}>
       <View style={[styles.headerRow, isMobile && styles.headerRowMobile]}>
         {!isMobile ? (
           <View style={styles.headerText}>
-            <Text style={styles.title}>Gestión de Clientes</Text>
-            <Text style={styles.subtitle}>Gestiona tu lista de clientes</Text>
+            <Text style={styles.title}>{t.clients.title}</Text>
+            <Text style={styles.subtitle}>{t.clients.subtitle}</Text>
           </View>
         ) : null}
         <TouchableOpacity
           style={[styles.addButton, isMobile && styles.addButtonMobile]}
           onPress={openCreateModal}
         >
-          <Text style={styles.addButtonText}>+ Nuevo Cliente</Text>
+          <Text style={styles.addButtonText}>{t.clients.addButton}</Text>
         </TouchableOpacity>
       </View>
       <View
@@ -316,7 +324,7 @@ export const ClientsScreen = () => {
         ]}
       >
         <TextInput
-          placeholder="Buscar por nombre, email o teléfono"
+          placeholder={t.clients.searchPlaceholder}
           value={searchInput}
           onChangeText={setSearchInput}
           style={styles.searchInput}
@@ -360,7 +368,7 @@ export const ClientsScreen = () => {
           <View style={[styles.modalCard, isMobile && styles.modalCardMobile]}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>
-                {editingUser ? "Editar Cliente" : "Nuevo Cliente"}
+                {editingUser ? t.clients.editTitle : t.clients.newTitle}
               </Text>
               <TouchableOpacity onPress={closeModal}>
                 <Text style={styles.closeIcon}>✕</Text>
@@ -368,21 +376,21 @@ export const ClientsScreen = () => {
             </View>
             {formError ? <Text style={styles.modalError}>{formError}</Text> : null}
             <View style={styles.modalBody}>
-              <Text style={styles.inputLabel}>Nombre *</Text>
+              <Text style={styles.inputLabel}>{t.clients.name} *</Text>
               <TextInput
                 style={styles.modalInput}
-                placeholder="Nombre completo"
+                placeholder={t.clients.name}
                 value={form.name}
                 onChangeText={(text) => setForm((prev) => ({ ...prev, name: text }))}
               />
-              <Text style={styles.inputLabel}>Teléfono *</Text>
+              <Text style={styles.inputLabel}>{t.clients.phone} *</Text>
               <TextInput
                 style={styles.modalInput}
                 placeholder="+58 000 000 0000"
                 value={form.phone}
                 onChangeText={(text) => setForm((prev) => ({ ...prev, phone: text }))}
               />
-              <Text style={styles.inputLabel}>Email (opcional)</Text>
+              <Text style={styles.inputLabel}>{t.clients.email} (opcional)</Text>
               <TextInput
                 style={styles.modalInput}
                 placeholder="correo@cliente.com"
@@ -399,14 +407,16 @@ export const ClientsScreen = () => {
                   onPress={handleDeleteClient}
                   disabled={saving}
                 >
-                  <Text style={[styles.secondaryButtonText, styles.dangerText]}>Eliminar</Text>
+                  <Text style={[styles.secondaryButtonText, styles.dangerText]}>
+                    {t.clients.delete}
+                  </Text>
                 </TouchableOpacity>
               ) : (
                 <View />
               )}
               <View style={styles.modalFooterActions}>
                 <TouchableOpacity style={styles.secondaryButton} onPress={closeModal}>
-                  <Text style={styles.secondaryButtonText}>Cancelar</Text>
+                  <Text style={styles.secondaryButtonText}>{t.clients.cancel}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.primaryButton, saving && styles.primaryButtonDisabled]}
@@ -414,7 +424,7 @@ export const ClientsScreen = () => {
                   disabled={saving}
                 >
                   <Text style={styles.primaryButtonText}>
-                    {saving ? "Guardando..." : "Guardar"}
+                    {saving ? t.common.loading : t.clients.save}
                   </Text>
                 </TouchableOpacity>
               </View>

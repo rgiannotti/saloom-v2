@@ -15,6 +15,7 @@ import {
 
 import { useAuth } from "../auth/AuthContext";
 import { API_BASE_URL } from "../config";
+import { useLanguage } from "../i18n/LanguageContext";
 
 type ProUser = {
   _id: string;
@@ -46,6 +47,7 @@ export const SettingsScreen = () => {
     session: { user, tokens },
     updateSessionUser
   } = useAuth();
+  const { t } = useLanguage();
   const { width } = useWindowDimensions();
   const isMobile = width < 1024;
   const clientId = user.client;
@@ -83,7 +85,7 @@ export const SettingsScreen = () => {
     try {
       const resp = await fetch(`${API_BASE_URL}/app/clients/me`, { headers });
       if (!resp.ok) {
-        throw new Error("No se pudo cargar la información del cliente");
+        throw new Error(t.settings.profile.errors.load);
       }
       const data = (await resp.json()) as ClientInfo;
       setClientForm(data);
@@ -95,7 +97,7 @@ export const SettingsScreen = () => {
     } catch (err) {
       setProfileError((err as Error).message);
     }
-  }, [API_BASE_URL, headers, user.email, user.name, user.phone]);
+  }, [headers, t.settings.profile.errors.load, user.email, user.name, user.phone]);
 
   const loadProUsers = useCallback(async () => {
     if (!clientId) {
@@ -109,7 +111,7 @@ export const SettingsScreen = () => {
         headers
       });
       if (!response.ok) {
-        throw new Error("No se pudieron cargar los usuarios PRO");
+        throw new Error(t.settings.users.errorLoad);
       }
       const data = (await response.json()) as ProUser[];
       setProUsers(data);
@@ -119,7 +121,7 @@ export const SettingsScreen = () => {
     } finally {
       setLoadingUsers(false);
     }
-  }, [clientId, headers]);
+  }, [clientId, headers, t.settings.users.errorLoad]);
 
   useEffect(() => {
     if (activeSection === "users") {
@@ -156,15 +158,15 @@ export const SettingsScreen = () => {
 
   const handleSaveUser = async () => {
     if (!form.name.trim()) {
-      setFormError("El nombre es obligatorio.");
+      setFormError(t.settings.users.errors.nameRequired);
       return;
     }
     if (!form.phone.trim()) {
-      setFormError("El teléfono es obligatorio.");
+      setFormError(t.settings.users.errors.phoneRequired);
       return;
     }
     if (!clientId) {
-      setFormError("Sesión inválida: cliente no encontrado.");
+      setFormError(t.settings.users.errors.invalidSession);
       return;
     }
     setSaving(true);
@@ -192,7 +194,7 @@ export const SettingsScreen = () => {
         body: JSON.stringify(payload)
       });
       if (!resp.ok) {
-        throw new Error("No se pudo guardar el usuario.");
+        throw new Error(t.settings.users.errors.save);
       }
       await loadProUsers();
       closeModal();
@@ -206,11 +208,11 @@ export const SettingsScreen = () => {
   const handleDeleteUser = async (userToDelete: ProUser) => {
     const confirmed = await new Promise<boolean>((resolve) => {
       Alert.alert(
-        "Eliminar usuario",
-        `¿Eliminar a ${userToDelete.name}?`,
+        t.settings.users.deleteConfirmTitle,
+        t.settings.users.deleteConfirm(userToDelete.name),
         [
-          { text: "Cancelar", style: "cancel", onPress: () => resolve(false) },
-          { text: "Eliminar", style: "destructive", onPress: () => resolve(true) }
+          { text: t.settings.users.cancel, style: "cancel", onPress: () => resolve(false) },
+          { text: t.settings.users.deleteConfirmTitle, style: "destructive", onPress: () => resolve(true) }
         ],
         { cancelable: true }
       );
@@ -223,7 +225,7 @@ export const SettingsScreen = () => {
         headers
       });
       if (!resp.ok) {
-        throw new Error("No se pudo eliminar el usuario.");
+        throw new Error(t.settings.users.errors.delete);
       }
       await loadProUsers();
     } catch (err) {
@@ -233,35 +235,35 @@ export const SettingsScreen = () => {
 
   const renderProfile = () => (
     <View style={[styles.card, styles.section]}>
-      <Text style={styles.sectionTitle}>Perfil</Text>
-      <Text style={styles.sectionSubtitle}>Actualiza tu información personal.</Text>
+      <Text style={styles.sectionTitle}>{t.settings.profile.title}</Text>
+      <Text style={styles.sectionSubtitle}>{t.settings.profile.subtitle}</Text>
       {profileError ? <Text style={styles.errorText}>{profileError}</Text> : null}
       <View style={[styles.infoGrid, { rowGap: 12 }]}>
         <View style={[styles.infoItem, styles.infoItemHalf]}>
-          <Text style={styles.infoLabel}>Tu nombre</Text>
+          <Text style={styles.infoLabel}>{t.settings.profile.name}</Text>
           <TextInput
             style={styles.input}
             value={profileForm.name}
             onChangeText={(text) => setProfileForm((prev) => ({ ...prev, name: text }))}
-            placeholder="Nombre completo"
+            placeholder={t.settings.profile.namePlaceholder}
           />
         </View>
         <View style={[styles.infoItem, styles.infoItemHalf]}>
-          <Text style={styles.infoLabel}>Tu teléfono</Text>
+          <Text style={styles.infoLabel}>{t.settings.profile.phone}</Text>
           <TextInput
             style={styles.input}
             value={profileForm.phone}
             onChangeText={(text) => setProfileForm((prev) => ({ ...prev, phone: text }))}
-            placeholder="+58 000 0000000"
+            placeholder={t.settings.profile.phonePlaceholder}
           />
         </View>
         <View style={[styles.infoItem, styles.infoItemFull]}>
-          <Text style={styles.infoLabel}>Tu correo</Text>
+          <Text style={styles.infoLabel}>{t.settings.profile.email}</Text>
           <TextInput
             style={styles.input}
             value={profileForm.email}
             onChangeText={(text) => setProfileForm((prev) => ({ ...prev, email: text }))}
-            placeholder="correo@correo.com"
+            placeholder={t.settings.profile.emailPlaceholder}
             autoCapitalize="none"
             keyboardType="email-address"
           />
@@ -287,7 +289,7 @@ export const SettingsScreen = () => {
               await updateSessionUser(userPayload);
               loadProfileData();
             } catch (err) {
-              setProfileError((err as Error).message);
+              setProfileError(t.settings.profile.errors.save);
             } finally {
               setSavingProfile(false);
             }
@@ -295,7 +297,7 @@ export const SettingsScreen = () => {
           disabled={savingProfile}
         >
           <Text style={styles.primaryButtonText}>
-            {savingProfile ? "Guardando..." : "Guardar cambios"}
+            {savingProfile ? t.settings.profile.saving : t.settings.profile.save}
           </Text>
         </TouchableOpacity>
       </View>
@@ -306,29 +308,27 @@ export const SettingsScreen = () => {
     <View style={[styles.card, styles.section]}>
       <View style={styles.sectionHeader}>
         <View style={styles.sectionHeaderText}>
-          <Text style={styles.sectionTitle}>Usuarios Administrativos</Text>
-          <Text style={styles.sectionSubtitle}>
-            Administra los usuarios con rol PRO asociados a este cliente.
-          </Text>
+          <Text style={styles.sectionTitle}>{t.settings.users.title}</Text>
+          <Text style={styles.sectionSubtitle}>{t.settings.users.subtitle}</Text>
           {isMobile ? (
             <TouchableOpacity
               style={[styles.primaryButton, styles.primaryButtonFull]}
               onPress={openCreateModal}
             >
-              <Text style={styles.primaryButtonText}>+ Nuevo usuario</Text>
+              <Text style={styles.primaryButtonText}>{t.settings.users.add}</Text>
             </TouchableOpacity>
           ) : null}
         </View>
         {!isMobile ? (
           <TouchableOpacity style={styles.primaryButton} onPress={openCreateModal}>
-            <Text style={styles.primaryButtonText}>+ Nuevo usuario</Text>
+            <Text style={styles.primaryButtonText}>{t.settings.users.add}</Text>
           </TouchableOpacity>
         ) : null}
       </View>
       {loadingUsers ? (
         <View style={styles.loadingRow}>
           <ActivityIndicator color="#f43f5e" />
-          <Text style={styles.loadingText}>Cargando usuarios...</Text>
+          <Text style={styles.loadingText}>{t.settings.users.loading}</Text>
         </View>
       ) : usersError ? (
         <Text style={styles.errorText}>{usersError}</Text>
@@ -338,21 +338,21 @@ export const SettingsScreen = () => {
             <View key={item._id} style={styles.userCard}>
               <View style={styles.userInfo}>
                 <Text style={styles.userName}>{item.name}</Text>
-                <Text style={styles.userDetail}>{item.email || "Sin correo"}</Text>
+                <Text style={styles.userDetail}>{item.email || t.settings.users.noEmail}</Text>
                 <Text style={styles.userDetail}>{item.phone}</Text>
               </View>
               <View style={[styles.userActions, isMobile && styles.userActionsMobile]}>
                 <TouchableOpacity
                   style={[styles.iconButton, styles.secondaryButton]}
                   onPress={() => openEditModal(item)}
-                  accessibilityLabel={`Editar ${item.name}`}
+                  accessibilityLabel={`${t.settings.users.editTitle} ${item.name}`}
                 >
                   <Text style={styles.actionIcon}>✏️</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.iconButton, styles.secondaryButton]}
                   onPress={() => handleDeleteUser(item)}
-                  accessibilityLabel={`Eliminar ${item.name}`}
+                  accessibilityLabel={`${t.settings.users.deleteConfirmTitle} ${item.name}`}
                 >
                   <Text style={[styles.actionIcon, styles.dangerText]}>🗑️</Text>
                 </TouchableOpacity>
@@ -361,7 +361,7 @@ export const SettingsScreen = () => {
           ))}
         </View>
       ) : (
-        <Text style={styles.mutedText}>No hay usuarios PRO registrados.</Text>
+        <Text style={styles.mutedText}>{t.settings.users.empty}</Text>
       )}
     </View>
   );
@@ -370,7 +370,7 @@ export const SettingsScreen = () => {
     <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
       {!isMobile ? (
         <View style={styles.headerRow}>
-          <Text style={styles.title}>Configuración</Text>
+          <Text style={styles.title}>{t.settings.title}</Text>
         </View>
       ) : null}
 
@@ -382,7 +382,7 @@ export const SettingsScreen = () => {
           <Text
             style={[styles.subnavLabel, activeSection === "profile" && styles.subnavLabelActive]}
           >
-            Perfil
+            {t.settings.tabs.profile}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -390,7 +390,7 @@ export const SettingsScreen = () => {
           onPress={() => setActiveSection("users")}
         >
           <Text style={[styles.subnavLabel, activeSection === "users" && styles.subnavLabelActive]}>
-            Usuarios
+            {t.settings.tabs.users}
           </Text>
         </TouchableOpacity>
       </View>
@@ -402,7 +402,7 @@ export const SettingsScreen = () => {
           <View style={[styles.modalCard, isMobile && styles.modalCardMobile]}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>
-                {editingUser ? "Editar usuario PRO" : "Nuevo usuario PRO"}
+                {editingUser ? t.settings.users.editTitle : t.settings.users.newTitle}
               </Text>
               <TouchableOpacity onPress={closeModal}>
                 <Text style={styles.closeIcon}>✕</Text>
@@ -410,33 +410,33 @@ export const SettingsScreen = () => {
             </View>
             {formError ? <Text style={styles.modalError}>{formError}</Text> : null}
             <View style={styles.modalBody}>
-              <Text style={styles.inputLabel}>Nombre *</Text>
+              <Text style={styles.inputLabel}>{t.settings.users.name}</Text>
               <TextInput
                 style={styles.modalInput}
-                placeholder="Nombre completo"
+                placeholder={t.settings.profile.namePlaceholder}
                 value={form.name}
                 onChangeText={(text) => setForm((prev) => ({ ...prev, name: text }))}
               />
-              <Text style={styles.inputLabel}>Correo</Text>
+              <Text style={styles.inputLabel}>{t.settings.users.email}</Text>
               <TextInput
                 style={styles.modalInput}
-                placeholder="correo@empresa.com"
+                placeholder={t.settings.profile.emailPlaceholder}
                 value={form.email}
                 autoCapitalize="none"
                 keyboardType="email-address"
                 onChangeText={(text) => setForm((prev) => ({ ...prev, email: text }))}
               />
-              <Text style={styles.inputLabel}>Teléfono *</Text>
+              <Text style={styles.inputLabel}>{t.settings.users.phone}</Text>
               <TextInput
                 style={styles.modalInput}
-                placeholder="+58 000 000 0000"
+                placeholder={t.settings.profile.phonePlaceholder}
                 value={form.phone}
                 onChangeText={(text) => setForm((prev) => ({ ...prev, phone: text }))}
               />
-              <Text style={styles.inputLabel}>Contraseña</Text>
+              <Text style={styles.inputLabel}>{t.settings.users.password}</Text>
               <TextInput
                 style={styles.modalInput}
-                placeholder="Deja en blanco para mantener"
+                placeholder={t.settings.users.passwordPlaceholder}
                 secureTextEntry
                 value={form.password}
                 onChangeText={(text) => setForm((prev) => ({ ...prev, password: text }))}
@@ -444,14 +444,16 @@ export const SettingsScreen = () => {
             </View>
             <View style={styles.modalFooter}>
               <TouchableOpacity style={styles.secondaryButton} onPress={closeModal}>
-                <Text style={styles.secondaryButtonText}>Cancelar</Text>
+                <Text style={styles.secondaryButtonText}>{t.settings.users.cancel}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.primaryButton, saving && styles.primaryButtonDisabled]}
                 onPress={handleSaveUser}
                 disabled={saving}
               >
-                <Text style={styles.primaryButtonText}>{saving ? "Guardando..." : "Guardar"}</Text>
+                <Text style={styles.primaryButtonText}>
+                  {saving ? t.settings.users.saving : t.settings.users.save}
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
