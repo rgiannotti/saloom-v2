@@ -674,9 +674,7 @@ export const ClientsPage = () => {
     if (client) {
       setEditingId(client._id);
       const categoryIds = (client.categories ?? [])
-        .map((category) =>
-          typeof category === "string" ? category : category?._id ?? ""
-        )
+        .map((category) => (typeof category === "string" ? category : (category?._id ?? "")))
         .filter(Boolean);
       setForm({
         rif: client.rif,
@@ -1186,7 +1184,9 @@ export const ClientsPage = () => {
                     <input
                       id="client-fiscal-address"
                       value={form.fiscalAddress}
-                      onChange={(e) => setForm((prev) => ({ ...prev, fiscalAddress: e.target.value }))}
+                      onChange={(e) =>
+                        setForm((prev) => ({ ...prev, fiscalAddress: e.target.value }))
+                      }
                       required
                     />
                   </div>
@@ -1338,7 +1338,9 @@ export const ClientsPage = () => {
                   <div className="clients-category-section__header">
                     <div>
                       <h4>Categorías del cliente</h4>
-                      <p className="muted-text">Asigna las categorías relevantes para este cliente.</p>
+                      <p className="muted-text">
+                        Asigna las categorías relevantes para este cliente.
+                      </p>
                     </div>
                     <button
                       type="button"
@@ -1579,7 +1581,9 @@ export const ClientsPage = () => {
                                 <p className="muted-text">Sin servicios configurados.</p>
                               ) : (
                                 pro.services.map((service, serviceIndex) => {
-                                  const serviceOptions = getServiceOptionsForSelect(service.serviceId);
+                                  const serviceOptions = getServiceOptionsForSelect(
+                                    service.serviceId
+                                  );
                                   const key = `${proIndex}-${serviceIndex}`;
                                   const term = (serviceSearch[key] ?? "").toLowerCase();
                                   const filteredServiceOptions = serviceOptions.filter((option) =>
@@ -1599,12 +1603,13 @@ export const ClientsPage = () => {
                                           <button
                                             type="button"
                                             className="select-button"
-                                            onClick={() =>
+                                            onClick={() => {
+                                              console.log("toggle", key);
                                               setServiceDropdownOpen((prev) => ({
                                                 ...prev,
                                                 [key]: !prev[key]
-                                              }))
-                                            }
+                                              }));
+                                            }}
                                           >
                                             {currentName}
                                           </button>
@@ -1626,18 +1631,22 @@ export const ClientsPage = () => {
                                                 <button
                                                   type="button"
                                                   className="select-option"
-                                                  onClick={() => {
+                                                  onClick={(e) => {
+                                                    e.preventDefault();
                                                     updateProfessionalService(
                                                       proIndex,
                                                       serviceIndex,
                                                       "serviceId",
                                                       ""
                                                     );
-                                                    setServiceDropdownOpen((prev) => ({
+                                                    setServiceDropdownOpen({});
+                                                    setServiceSearch((prev) => ({
                                                       ...prev,
-                                                      [key]: false
+                                                      [key]: ""
                                                     }));
                                                   }}
+                                                  disabled
+                                                  style={{ opacity: 0.6, cursor: "default" }}
                                                 >
                                                   Selecciona un servicio
                                                 </button>
@@ -1646,16 +1655,18 @@ export const ClientsPage = () => {
                                                     type="button"
                                                     key={option._id}
                                                     className="select-option"
-                                                    onClick={() => {
+                                                    onClick={(e) => {
+                                                      e.preventDefault();
                                                       updateProfessionalService(
                                                         proIndex,
                                                         serviceIndex,
                                                         "serviceId",
                                                         option._id
                                                       );
-                                                      setServiceDropdownOpen((prev) => ({
+                                                      setServiceDropdownOpen({});
+                                                      setServiceSearch((prev) => ({
                                                         ...prev,
-                                                        [key]: false
+                                                        [key]: ""
                                                       }));
                                                     }}
                                                   >
@@ -1671,19 +1682,19 @@ export const ClientsPage = () => {
                                         <span>Precio</span>
                                         <input
                                           type="number"
-                                        min="0"
-                                        step="0.01"
-                                        value={service.price}
-                                        onChange={(e) =>
-                                          updateProfessionalService(
-                                            proIndex,
-                                            serviceIndex,
-                                            "price",
-                                            e.target.value
-                                          )
-                                        }
-                                      />
-                                    </label>
+                                          min="0"
+                                          step="0.01"
+                                          value={service.price}
+                                          onChange={(e) =>
+                                            updateProfessionalService(
+                                              proIndex,
+                                              serviceIndex,
+                                              "price",
+                                              e.target.value
+                                            )
+                                          }
+                                        />
+                                      </label>
                                       <label className="professional-field professional-field--compact">
                                         <span>Duración (min)</span>
                                         <select
@@ -1704,17 +1715,17 @@ export const ClientsPage = () => {
                                           ))}
                                         </select>
                                       </label>
-                                    <button
-                                      type="button"
-                                      className="icon-button icon-button--danger"
-                                      onClick={() =>
-                                        removeProfessionalService(proIndex, serviceIndex)
-                                      }
-                                      aria-label="Eliminar servicio profesional"
-                                    >
-                                      🗑️
-                                    </button>
-                                  </div>
+                                      <button
+                                        type="button"
+                                        className="icon-button icon-button--danger"
+                                        onClick={() =>
+                                          removeProfessionalService(proIndex, serviceIndex)
+                                        }
+                                        aria-label="Eliminar servicio profesional"
+                                      >
+                                        🗑️
+                                      </button>
+                                    </div>
                                   );
                                 })
                               )}
