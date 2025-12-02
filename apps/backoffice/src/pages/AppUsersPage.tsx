@@ -1,4 +1,4 @@
-import React, { FormEvent, useEffect, useMemo, useState } from "react";
+import React, { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 
 import { useAuth } from "../auth/AuthProvider";
 import { API_BASE_URL } from "../config";
@@ -10,6 +10,7 @@ interface AppUser {
   email: string;
   phone: string;
   client?: string | { _id?: string; name?: string };
+  professionalId?: string;
   createdAt?: string;
 }
 
@@ -25,6 +26,7 @@ interface ClientOption {
   _id: string;
   name: string;
 }
+
 
 const defaultForm: AppUserForm = {
   name: "",
@@ -46,6 +48,10 @@ export const AppUsersPage = () => {
   const [formError, setFormError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [hasFetched, setHasFetched] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(20);
+  const tableScrollRef = useRef<HTMLDivElement | null>(null);
+  const [filterClient, setFilterClient] = useState("all");
+  const [filterQuery, setFilterQuery] = useState("");
 
   const showEmptyState = hasFetched && !loading && users.length === 0;
 
@@ -58,6 +64,8 @@ export const AppUsersPage = () => {
       "Content-Type": "application/json"
     } as const;
   }, [token]);
+
+  const PAGE_SIZE = 20;
 
   const fetchUsers = async () => {
     if (!authHeaders) {
@@ -74,6 +82,7 @@ export const AppUsersPage = () => {
       }
       const data = (await response.json()) as AppUser[];
       setUsers(data);
+      setVisibleCount(Math.min(PAGE_SIZE, data.length));
     } catch (error) {
       setListError((error as Error).message);
     } finally {
@@ -109,7 +118,7 @@ export const AppUsersPage = () => {
   };
 
   useEffect(() => {
-    fetchUsers();
+    fetchUsers({ reset: true });
     fetchClients();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authHeaders]);
@@ -226,6 +235,51 @@ export const AppUsersPage = () => {
     return user.client.name ?? "Sin asignar";
   };
 
+  useEffect(() => {
+    const el = tableScrollRef.current;
+    if (!el) return;
+    const onScroll = () => {
+      const hasMore = visibleCount < users.length;
+      if (loading || !hasMore) return;
+      if (el.scrollTop + el.clientHeight >= el.scrollHeight - 50) {
+        setVisibleCount((prev) => Math.min(prev + PAGE_SIZE, users.length));
+      }
+    };
+    el.addEventListener("scroll", onScroll);
+    return () => el.removeEventListener("scroll", onScroll);
+  }, [loading, users.length, visibleCount]);
+
+  useEffect(() => {
+    const onWindowScroll = () => {
+      const hasMore = visibleCount < users.length;
+      if (loading || !hasMore) return;
+      if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 200) {
+        setVisibleCount((prev) => Math.min(prev + PAGE_SIZE, users.length));
+      }
+    };
+    window.addEventListener("scroll", onWindowScroll);
+    return () => window.removeEventListener("scroll", onWindowScroll);
+  }, [loading, users.length, visibleCount]);
+
+  const filteredUsers = useMemo(() => {
+    return users.filter((user) => {
+      const clientId =
+        typeof user.client === "string"
+          ? user.client
+          : typeof user.client === "object"
+            ? user.client?._id
+            : "";
+      const matchesClient = filterClient === "all" || clientId === filterClient;
+      const term = filterQuery.trim().toLowerCase();
+      const matchesQuery =
+        !term ||
+        (user.name || "").toLowerCase().includes(term) ||
+        (user.email || "").toLowerCase().includes(term) ||
+        (user.phone || "").toLowerCase().includes(term);
+      return matchesClient && matchesQuery;
+    });
+  }, [filterClient, filterQuery, users]);
+
   return (
     <section className="app-users">
       <header className="app-users__header">
@@ -239,6 +293,29 @@ export const AppUsersPage = () => {
       </header>
 
       <div className="app-users__content">
+        <div className="app-users__filters">
+          <label>
+            Cliente
+            <select value={filterClient} onChange={(e) => setFilterClient(e.target.value)}>
+              <option value="all">Todos</option>
+              {clients.map((client) => (
+                <option key={client._id} value={client._id}>
+                  {client.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="filter-search">
+            Buscar
+            <input
+              type="text"
+              placeholder="Nombre, email o teléfono"
+              value={filterQuery}
+              onChange={(e) => setFilterQuery(e.target.value)}
+            />
+          </label>
+        </div>
+
         {listError ? (
           <p className="error" role="alert">
             {listError}
@@ -250,14 +327,14 @@ export const AppUsersPage = () => {
             <button
               type="button"
               className="icon-button icon-button--ghost"
-              onClick={fetchUsers}
+              onClick={() => fetchUsers({ reset: true })}
               disabled={loading}
               aria-label="Actualizar usuarios"
             >
               {loading ? "…" : "⟳"}
             </button>
           </div>
-          <div className="table-scroll">
+          <div className="table-scroll" ref={tableScrollRef}>
             <table>
               <thead>
                 <tr>
@@ -276,11 +353,7 @@ export const AppUsersPage = () => {
                     </td>
                   </tr>
                 ) : (
-                  [...users]
-                    .sort((a, b) =>
-                      (a.name || "").localeCompare(b.name || "", "es", { sensitivity: "base" })
-                    )
-                    .map((user) => (
+                  filteredUsers.slice(0, visibleCount).map((user) => (
                     <tr key={user._id}>
                       <td>{user.name}</td>
                       <td>{user.email}</td>
@@ -307,7 +380,23 @@ export const AppUsersPage = () => {
                 )}
               </tbody>
             </table>
+            {visibleCount < filteredUsers.length && !loading ? (
+              <div className="table-loading">Cargando más usuarios…</div>
+            ) : null}
           </div>
+          {visibleCount < filteredUsers.length ? (
+            <div className="table-load-more">
+              <button
+                type="button"
+                className="ghost-button"
+                onClick={() =>
+                  setVisibleCount((prev) => Math.min(prev + PAGE_SIZE, filteredUsers.length))
+                }
+              >
+                Cargar más
+              </button>
+            </div>
+          ) : null}
         </div>
       </div>
 

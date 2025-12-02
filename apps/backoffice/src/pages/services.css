@@ -102,6 +102,9 @@
   align-items: center;
   gap: 0.5rem;
 }
+.category-select-wide select {
+  min-width: 260px;
+}
 
 .category-inline {
   display: flex;

@@ -365,7 +365,7 @@ export const ServicesPage = () => {
               />
 
               <label htmlFor="service-category">Categoría</label>
-              <div className="category-select-group">
+              <div className="category-select-group category-select-wide">
                 <select
                   id="service-category"
                   value={form.categoryId}
@@ -380,7 +380,7 @@ export const ServicesPage = () => {
                 </select>
                 <button
                   type="button"
-                  className="link-button"
+                  className="primary-button"
                   onClick={() => {
                     setShowCategoryForm((prev) => !prev);
                     setCategoryError(null);
