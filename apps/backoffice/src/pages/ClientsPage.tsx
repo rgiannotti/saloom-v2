@@ -166,6 +166,8 @@ export const ClientsPage = () => {
   const [addressState, setAddressState] = useState<AddressState>(defaultAddress);
   const [professionals, setProfessionals] = useState<ClientProfessionalForm[]>([]);
   const [activeTab, setActiveTab] = useState<"general" | "personal">("general");
+  const [serviceDropdownOpen, setServiceDropdownOpen] = useState<Record<string, boolean>>({});
+  const [serviceSearch, setServiceSearch] = useState<Record<string, string>>({});
   const [catalogs, setCatalogs] = useState<{
     professionals: ProfessionalOption[];
     services: ServiceOption[];
@@ -190,6 +192,7 @@ export const ClientsPage = () => {
   const [newProError, setNewProError] = useState<string | null>(null);
   const [newProSubmitting, setNewProSubmitting] = useState(false);
   const professionalsEndRef = useRef<HTMLDivElement | null>(null);
+  const slotOptions = useMemo(() => Array.from({ length: 32 }, (_, i) => (i + 1) * 15), []);
   const toggleProfessionalExpanded = (index: number) => {
     setProfessionals((prev) =>
       prev.map((pro, i) => (i === index ? { ...pro, uiExpanded: !pro.uiExpanded } : pro))
@@ -484,6 +487,17 @@ export const ClientsPage = () => {
   useEffect(() => {
     loadCatalogs();
   }, [loadCatalogs]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest(".select-wrapper")) {
+        setServiceDropdownOpen({});
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   useEffect(() => {
     if (!catalogs.professionals.length) {
@@ -1566,6 +1580,14 @@ export const ClientsPage = () => {
                               ) : (
                                 pro.services.map((service, serviceIndex) => {
                                   const serviceOptions = getServiceOptionsForSelect(service.serviceId);
+                                  const key = `${proIndex}-${serviceIndex}`;
+                                  const term = (serviceSearch[key] ?? "").toLowerCase();
+                                  const filteredServiceOptions = serviceOptions.filter((option) =>
+                                    option.name.toLowerCase().includes(term)
+                                  );
+                                  const currentName =
+                                    serviceLookup.get(service.serviceId)?.name ||
+                                    "Selecciona un servicio";
                                   return (
                                     <div
                                       className="professional-service-row"
@@ -1573,33 +1595,82 @@ export const ClientsPage = () => {
                                     >
                                       <label className="professional-field">
                                         <span>Servicio</span>
-                                        <select
-                                          value={
-                                            serviceLookup.has(service.serviceId)
-                                              ? service.serviceId
-                                              : ""
-                                          }
-                                          onChange={(e) =>
-                                            updateProfessionalService(
-                                              proIndex,
-                                              serviceIndex,
-                                              "serviceId",
-                                              e.target.value
-                                            )
-                                          }
-                                        >
-                                          <option value="">Selecciona un servicio</option>
-                                            {serviceOptions.map((option) => (
-                                              <option key={option._id} value={option._id}>
-                                                {option.name}
-                                              </option>
-                                            ))}
-                                        </select>
-                                    </label>
-                                    <label className="professional-field professional-field--compact">
-                                      <span>Precio</span>
-                                      <input
-                                        type="number"
+                                        <div className="select-wrapper">
+                                          <button
+                                            type="button"
+                                            className="select-button"
+                                            onClick={() =>
+                                              setServiceDropdownOpen((prev) => ({
+                                                ...prev,
+                                                [key]: !prev[key]
+                                              }))
+                                            }
+                                          >
+                                            {currentName}
+                                          </button>
+                                          {serviceDropdownOpen[key] ? (
+                                            <div className="select-dropdown">
+                                              <input
+                                                type="text"
+                                                placeholder="Buscar servicio..."
+                                                value={serviceSearch[key] ?? ""}
+                                                onChange={(e) =>
+                                                  setServiceSearch((prev) => ({
+                                                    ...prev,
+                                                    [key]: e.target.value
+                                                  }))
+                                                }
+                                                className="select-search"
+                                              />
+                                              <div className="select-options">
+                                                <button
+                                                  type="button"
+                                                  className="select-option"
+                                                  onClick={() => {
+                                                    updateProfessionalService(
+                                                      proIndex,
+                                                      serviceIndex,
+                                                      "serviceId",
+                                                      ""
+                                                    );
+                                                    setServiceDropdownOpen((prev) => ({
+                                                      ...prev,
+                                                      [key]: false
+                                                    }));
+                                                  }}
+                                                >
+                                                  Selecciona un servicio
+                                                </button>
+                                                {filteredServiceOptions.map((option) => (
+                                                  <button
+                                                    type="button"
+                                                    key={option._id}
+                                                    className="select-option"
+                                                    onClick={() => {
+                                                      updateProfessionalService(
+                                                        proIndex,
+                                                        serviceIndex,
+                                                        "serviceId",
+                                                        option._id
+                                                      );
+                                                      setServiceDropdownOpen((prev) => ({
+                                                        ...prev,
+                                                        [key]: false
+                                                      }));
+                                                    }}
+                                                  >
+                                                    {option.name}
+                                                  </button>
+                                                ))}
+                                              </div>
+                                            </div>
+                                          ) : null}
+                                        </div>
+                                      </label>
+                                      <label className="professional-field professional-field--compact">
+                                        <span>Precio</span>
+                                        <input
+                                          type="number"
                                         min="0"
                                         step="0.01"
                                         value={service.price}
@@ -1613,22 +1684,26 @@ export const ClientsPage = () => {
                                         }
                                       />
                                     </label>
-                                    <label className="professional-field professional-field--compact">
-                                      <span>Slots</span>
-                                      <input
-                                        type="number"
-                                        min="1"
-                                        value={service.slot}
-                                        onChange={(e) =>
-                                          updateProfessionalService(
-                                            proIndex,
-                                            serviceIndex,
-                                            "slot",
-                                            e.target.value
-                                          )
-                                        }
-                                      />
-                                    </label>
+                                      <label className="professional-field professional-field--compact">
+                                        <span>Duración (min)</span>
+                                        <select
+                                          value={service.slot}
+                                          onChange={(e) =>
+                                            updateProfessionalService(
+                                              proIndex,
+                                              serviceIndex,
+                                              "slot",
+                                              e.target.value
+                                            )
+                                          }
+                                        >
+                                          {slotOptions.map((minutes) => (
+                                            <option key={minutes} value={minutes.toString()}>
+                                              {minutes} min
+                                            </option>
+                                          ))}
+                                        </select>
+                                      </label>
                                     <button
                                       type="button"
                                       className="icon-button icon-button--danger"
