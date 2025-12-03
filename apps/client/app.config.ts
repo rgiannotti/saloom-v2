@@ -9,6 +9,9 @@ const config: ExpoConfig = {
   userInterfaceStyle: "light",
   platforms: ["ios", "android", "web"],
   jsEngine: "hermes",
+  web: {
+    favicon: "./assets/favicon.png"
+  },
   updates: {
     enabled: true
   },
