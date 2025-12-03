@@ -139,6 +139,18 @@ type TranslationMap = Record<
         completed: string;
       };
     };
+    login: {
+      title: string;
+      subtitle: string;
+      emailPlaceholder: string;
+      passwordPlaceholder: string;
+      submit: string;
+      toggleShow: string;
+      toggleHide: string;
+      errors: {
+        generic: string;
+      };
+    };
     appointments: {
       titleNew: string;
       loadingCalendar: string;
@@ -461,6 +473,18 @@ const translations: TranslationMap = {
         no_show: "No Presentado",
         canceled: "Cancelada",
         completed: "Completada"
+      }
+    },
+    login: {
+      title: "Ingreso para profesionales",
+      subtitle: "Usa tu correo y contraseña. Solo usuarios configurados pueden continuar.",
+      emailPlaceholder: "Correo",
+      passwordPlaceholder: "Contraseña",
+      submit: "Iniciar sesión",
+      toggleShow: "Mostrar clave",
+      toggleHide: "Ocultar clave",
+      errors: {
+        generic: "No se pudo iniciar sesión. Verifica tus credenciales."
       }
     },
     appointments: {
@@ -800,6 +824,18 @@ const translations: TranslationMap = {
         completed: "Completed"
       }
     },
+    login: {
+      title: "Professional Login",
+      subtitle: "Use your email and password. Only configured users can continue.",
+      emailPlaceholder: "Email",
+      passwordPlaceholder: "Password",
+      submit: "Sign in",
+      toggleShow: "Show password",
+      toggleHide: "Hide password",
+      errors: {
+        generic: "Could not sign in. Check your credentials."
+      }
+    },
     appointments: {
       titleNew: "New Appointment",
       loadingCalendar: "Loading appointments…",
@@ -1022,9 +1058,9 @@ interface LanguageContextValue {
 }
 
 const LanguageContext = createContext<LanguageContextValue>({
-  language: "es",
+  language: "en",
   setLanguage: () => {},
-  t: translations.es
+  t: translations.en
 });
 
 export const LanguageProvider = ({ children }: { children: React.ReactNode }) => {

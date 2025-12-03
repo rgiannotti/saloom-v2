@@ -8,15 +8,32 @@ interface SidebarLogoProps {
   theme?: "light" | "dark";
   widthOverride?: number;
   heightOverride?: number;
+  customLogo?: string;
 }
 
 export const SidebarLogo = ({
   collapsed = false,
   theme = "light",
   widthOverride,
-  heightOverride
+  heightOverride,
+  customLogo
 }: SidebarLogoProps) => {
   const isIcon = collapsed;
+
+  if (customLogo) {
+    const size = widthOverride ?? (isIcon ? 56 : 140);
+    return (
+      <img
+        src={customLogo}
+        alt="Logo"
+        style={{
+          width: size,
+          objectFit: "contain"
+        }}
+      />
+    );
+  }
+
   const color = theme === "dark" ? "#f3f2f1" : "#ff3636";
   const data = isIcon ? ICON_LOGO : FULL_LOGO;
   const width = widthOverride ?? (isIcon ? 56 : 140);

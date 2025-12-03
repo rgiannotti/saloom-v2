@@ -37,6 +37,8 @@ interface Client {
     schedule: Array<{ day: string; start: string; end: string }>;
   }>;
   categories?: Array<{ _id: string; name: string } | string>;
+  slug?: string;
+  logo?: string;
 }
 
 interface ClientFormState {
@@ -44,6 +46,7 @@ interface ClientFormState {
   denomination: string;
   fiscalAddress: string;
   name: string;
+  slug: string;
   person: string;
   email: string;
   phone: string;
@@ -53,6 +56,7 @@ interface ClientFormState {
   blocked: boolean;
   categories: string[];
   communicationChannels: string[];
+  logo?: string;
 }
 
 interface AddressState {
@@ -108,6 +112,7 @@ const defaultForm: ClientFormState = {
   denomination: "",
   fiscalAddress: "",
   name: "",
+  slug: "",
   person: "",
   email: "",
   phone: "",
@@ -116,7 +121,8 @@ const defaultForm: ClientFormState = {
   home: false,
   blocked: false,
   categories: [],
-  communicationChannels: []
+  communicationChannels: [],
+  logo: ""
 };
 
 const defaultAddress: AddressState = {
@@ -191,6 +197,8 @@ export const ClientsPage = () => {
   });
   const [newProError, setNewProError] = useState<string | null>(null);
   const [newProSubmitting, setNewProSubmitting] = useState(false);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string>("");
   const professionalsEndRef = useRef<HTMLDivElement | null>(null);
   const slotOptions = useMemo(() => Array.from({ length: 32 }, (_, i) => (i + 1) * 15), []);
   const toggleProfessionalExpanded = (index: number) => {
@@ -215,6 +223,14 @@ export const ClientsPage = () => {
     catalogs.services.forEach((service) => map.set(service._id, service));
     return map;
   }, [catalogs.services]);
+
+  const resolveLogoSrc = (src?: string) => {
+    if (!src) return "";
+    if (src.startsWith("blob:") || src.startsWith("data:") || src.startsWith("http")) {
+      return src;
+    }
+    return `${API_BASE_URL}${src}`;
+  };
 
   const getServiceCategoryId = useCallback((service: ServiceOption | undefined) => {
     if (!service) {
@@ -681,6 +697,7 @@ export const ClientsPage = () => {
         denomination: client.denomination,
         fiscalAddress: client.fiscalAddress ?? "",
         name: client.name,
+        slug: client.slug ?? "",
         person: client.person,
         email: client.email,
         phone: client.phone,
@@ -689,8 +706,11 @@ export const ClientsPage = () => {
         home: client.home,
         blocked: client.blocked,
         categories: categoryIds,
-        communicationChannels: client.communicationChannels ?? []
+        communicationChannels: client.communicationChannels ?? [],
+        logo: client.logo ?? ""
       });
+      setLogoPreview(resolveLogoSrc(client.logo ?? ""));
+      setLogoFile(null);
       setAddressState(
         client.useGoogleMap && client.address?.placeId
           ? {
@@ -751,6 +771,8 @@ export const ClientsPage = () => {
       setForm(defaultForm);
       setAddressState(defaultAddress);
       setProfessionals([]);
+      setLogoFile(null);
+      setLogoPreview("");
     }
     setActiveTab("general");
     setEditorOpen(true);
@@ -762,6 +784,8 @@ export const ClientsPage = () => {
     setForm(defaultForm);
     setAddressState(defaultAddress);
     setProfessionals([]);
+    setLogoFile(null);
+    setLogoPreview("");
     setError(null);
     setActiveTab("general");
     setProfessionalPickerOpen(false);
@@ -978,6 +1002,27 @@ export const ClientsPage = () => {
       });
       if (!response.ok) {
         throw new Error("No se pudo guardar el cliente");
+      }
+      const savedClient = (await response.json()) as Client;
+      if (logoFile && savedClient?._id) {
+        const formData = new FormData();
+        formData.append("file", logoFile);
+        const uploadResp = await fetch(`${API_BASE_URL}/backoffice/clients/${savedClient._id}/logo`, {
+          method: "POST",
+          headers: {
+            Authorization: authHeaders.Authorization
+          },
+          body: formData
+        });
+        if (uploadResp.ok) {
+          const uploadData = (await uploadResp.json()) as { logo?: string };
+          if (uploadData.logo) {
+            const resolved = resolveLogoSrc(uploadData.logo);
+            setForm((prev) => ({ ...prev, logo: uploadData.logo }));
+            setLogoPreview(resolved);
+            setLogoFile(null);
+          }
+        }
       }
       await fetchClients();
       closeEditor();
@@ -1239,6 +1284,48 @@ export const ClientsPage = () => {
                       value={form.website}
                       onChange={(e) => setForm((prev) => ({ ...prev, website: e.target.value }))}
                     />
+                  </div>
+
+                  <div className="form-field">
+                    <label htmlFor="client-slug">Slug</label>
+                    <input
+                      id="client-slug"
+                      value={form.slug}
+                      onChange={(e) => setForm((prev) => ({ ...prev, slug: e.target.value }))}
+                      placeholder="ej. mi-salon"
+                    />
+                    <small className="muted-text">
+                      Texto corto para URL o identificador. Debe ser único.
+                    </small>
+                  </div>
+
+                  <div className="form-field">
+                    <label htmlFor="client-logo">Logo</label>
+                    <input
+                      id="client-logo"
+                      type="file"
+                      accept="image/*"
+                      disabled={!form.slug.trim()}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          setLogoFile(file);
+                          setLogoPreview(URL.createObjectURL(file));
+                        }
+                      }}
+                    />
+                    {(logoPreview || form.logo) && (
+                      <div style={{ marginTop: 8 }}>
+                        <img
+                          src={resolveLogoSrc(logoPreview || form.logo)}
+                          alt="Logo del cliente"
+                          style={{ maxHeight: 80, objectFit: "contain" }}
+                        />
+                      </div>
+                    )}
+                    <small className="muted-text">
+                      El logo se usará en la aplicación. Formatos comunes (PNG/JPG/SVG).
+                    </small>
                   </div>
                 </div>
 

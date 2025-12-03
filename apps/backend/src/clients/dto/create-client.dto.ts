@@ -104,6 +104,10 @@ export class CreateClientDto {
   @IsNotEmpty()
   name!: string;
 
+  @IsOptional()
+  @IsString()
+  slug?: string;
+
   @IsString()
   @IsNotEmpty()
   fiscalAddress!: string;
@@ -178,4 +182,8 @@ export class CreateClientDto {
   @Type(() => ClientProfessionalDto)
   @IsOptional()
   professionals?: ClientProfessionalDto[];
+
+  @IsOptional()
+  @IsString()
+  logo?: string;
 }

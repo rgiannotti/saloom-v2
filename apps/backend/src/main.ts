@@ -2,15 +2,20 @@ import "reflect-metadata";
 
 import { Logger, ValidationPipe } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
+import { NestExpressApplication } from "@nestjs/platform-express";
+import { join } from "path";
 
 import { AppModule } from "./app.module";
 
 const logger = new Logger("Bootstrap");
 
 export async function bootstrap(port = Number(process.env.PORT ?? 3000)) {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  app.useStaticAssets(join(process.cwd(), "uploads"), {
+    prefix: "/uploads"
+  });
   app.enableCors({
-    origin: ["http://localhost:19006", "http://localhost:8080"],
+    origin: true,
     credentials: true
   });
   app.useGlobalPipes(

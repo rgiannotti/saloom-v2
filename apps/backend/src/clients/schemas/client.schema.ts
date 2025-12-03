@@ -105,11 +105,17 @@ export class Client {
   @Prop({ required: true, trim: true })
   name: string;
 
+  @Prop({ trim: true, lowercase: true, unique: true, sparse: true })
+  slug?: string;
+
   @Prop({ required: true, trim: true })
   fiscalAddress: string;
 
   @Prop({ required: true, trim: true })
   person: string;
+
+  @Prop({ default: "", trim: true })
+  logo: string;
 
   @Prop({ default: "", trim: true })
   website: string;

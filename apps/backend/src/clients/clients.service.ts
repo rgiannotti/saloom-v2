@@ -69,6 +69,18 @@ export class ClientsService {
     return client;
   }
 
+  async findBySlug(slug: string): Promise<Client> {
+    const client = await this.clientModel
+      .findOne({ slug: slug?.toLowerCase?.() })
+      .populate("categories")
+      .lean()
+      .exec();
+    if (!client || client.active === false) {
+      throw new NotFoundException(`Client with slug ${slug} not found`);
+    }
+    return client;
+  }
+
   async update(id: string, updateClientDto: UpdateClientDto): Promise<Client> {
     const payload: Record<string, unknown> = { ...updateClientDto };
     if (Object.prototype.hasOwnProperty.call(updateClientDto, "categories")) {
@@ -93,6 +105,24 @@ export class ClientsService {
         }
       )
       .populate("categories")
+      .lean()
+      .exec();
+    if (!client || client.active === false) {
+      throw new NotFoundException(`Client with id ${id} not found`);
+    }
+    return client;
+  }
+
+  async updateLogo(id: string, logo: string): Promise<Client> {
+    const client = await this.clientModel
+      .findByIdAndUpdate(
+        id,
+        { $set: { logo } },
+        {
+          new: true,
+          runValidators: true
+        }
+      )
       .lean()
       .exec();
     if (!client || client.active === false) {

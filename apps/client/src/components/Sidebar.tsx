@@ -12,6 +12,8 @@ import {
 
 import { SidebarLogo } from "./SidebarLogo";
 import { useLanguage } from "../i18n/LanguageContext";
+import { useAuth } from "../auth/AuthContext";
+import { API_BASE_URL } from "../config";
 
 export interface SidebarItem {
   key: string;
@@ -39,7 +41,59 @@ export const Sidebar = ({
   onLogout
 }: SidebarProps) => {
   const { language, setLanguage, t } = useLanguage();
+  const { session } = useAuth();
+  const [clientLogo, setClientLogo] = React.useState<string>("");
   const animatedWidth = React.useRef(new Animated.Value(collapsed ? 60 : 260)).current;
+
+  const resolveLogo = React.useCallback((src?: string) => {
+    if (!src) return "";
+    if (src.startsWith("http") || src.startsWith("data:") || src.startsWith("blob:")) {
+      return src;
+    }
+    return `${API_BASE_URL}${src}`;
+  }, []);
+
+  React.useEffect(() => {
+    let active = true;
+    const fetchLogo = async () => {
+      const clientId = session?.user?.client;
+      const token = session?.tokens?.accessToken;
+      if (!clientId || !token) {
+        if (active) setClientLogo("");
+        return;
+      }
+      try {
+        const resp = await fetch(`${API_BASE_URL}/app/clients/me`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        if (!resp.ok) {
+          if (active) setClientLogo("");
+          return;
+        }
+        const data = await resp.json();
+        if (!active) return;
+        const resolved = resolveLogo(data?.logo);
+        setClientLogo(resolved);
+        if (resolved && Platform.OS === "web") {
+          try {
+            if (data?.slug) {
+              window.localStorage.setItem("saloom_client_slug", data.slug);
+            }
+          } catch {
+            // ignore storage errors
+          }
+        }
+      } catch {
+        if (active) setClientLogo("");
+      }
+    };
+    fetchLogo();
+    return () => {
+      active = false;
+    };
+  }, [resolveLogo, session?.tokens?.accessToken, session?.user?.client]);
 
   React.useEffect(() => {
     Animated.timing(animatedWidth, {
@@ -66,7 +120,7 @@ export const Sidebar = ({
         ) : null}
         {!collapsed ? (
           <View style={styles.logoWrapper}>
-            <SidebarLogo collapsed={collapsed} />
+            <SidebarLogo collapsed={collapsed} customLogo={clientLogo} />
           </View>
         ) : null}
       </View>
