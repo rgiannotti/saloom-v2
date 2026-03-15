@@ -170,3 +170,5 @@ export class Client {
 }
 
 export const ClientSchema = SchemaFactory.createForClass(Client);
+
+ClientSchema.index({ location: "2dsphere" });

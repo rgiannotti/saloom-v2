@@ -81,6 +81,37 @@ export class ClientsService {
     return client;
   }
 
+  async findRecommendedNearby(
+    latitude: number,
+    longitude: number,
+    radiusKm = 10,
+    limit = 10
+  ) {
+    return this.clientModel
+      .find({
+        active: true,
+        blocked: { $ne: true },
+        location: {
+          $near: {
+            $geometry: {
+              type: "Point",
+              coordinates: [longitude, latitude]
+            },
+            $maxDistance: radiusKm * 1000
+          }
+        }
+      })
+      .limit(limit)
+      .select("name denomination address location logo categories professionals")
+      .populate("categories", "name")
+      .populate([
+        { path: "professionals.professional", select: "name email phone" },
+        { path: "professionals.services.service", select: "name" }
+      ])
+      .lean()
+      .exec();
+  }
+
   async update(id: string, updateClientDto: UpdateClientDto): Promise<Client> {
     const payload: Record<string, unknown> = { ...updateClientDto };
     if (Object.prototype.hasOwnProperty.call(updateClientDto, "categories")) {

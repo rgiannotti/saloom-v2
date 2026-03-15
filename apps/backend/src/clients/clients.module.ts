@@ -5,6 +5,7 @@ import { ClientsController } from "./clients.controller";
 import { ClientsService } from "./clients.service";
 import { Client, ClientSchema } from "./schemas/client.schema";
 import { AppClientsController } from "./app-clients.controller";
+import { AppRecommendationsController } from "./app-recommendations.controller";
 import { User, UserSchema } from "../users/schemas/user.schema";
 import { Service, ServiceSchema } from "../services/schemas/service.schema";
 import { PublicClientsController } from "./public-clients.controller";
@@ -17,7 +18,12 @@ import { PublicClientsController } from "./public-clients.controller";
       { name: Service.name, schema: ServiceSchema }
     ])
   ],
-  controllers: [ClientsController, AppClientsController, PublicClientsController],
+  controllers: [
+    ClientsController,
+    AppClientsController,
+    AppRecommendationsController,
+    PublicClientsController
+  ],
   providers: [ClientsService]
 })
 export class ClientsModule {}

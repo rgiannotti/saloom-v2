@@ -22,12 +22,13 @@ export class AppointmentsService {
       ...payload,
       code
     });
+    const createdIdValue = (created as { _id?: unknown })._id;
     const createdId =
-      typeof created._id === "string"
-        ? created._id
-        : created._id instanceof this.appointmentModel.db.base.Types.ObjectId
-          ? created._id.toHexString()
-          : created._id?.toString?.();
+      typeof createdIdValue === "string"
+        ? createdIdValue
+        : createdIdValue instanceof Types.ObjectId
+          ? createdIdValue.toHexString()
+          : createdIdValue?.toString?.();
     const appointment = await this.findOne(createdId as string);
     await this.communicationsService.notifyAppointmentChange(appointment, "created");
     return appointment;
