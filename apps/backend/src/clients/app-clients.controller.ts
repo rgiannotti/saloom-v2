@@ -1,4 +1,5 @@
 import { Body, Controller, Delete, ForbiddenException, Get, Param, Patch, Post } from "@nestjs/common";
+import { ApiBearerAuth, ApiOperation, ApiTags } from "@nestjs/swagger";
 
 import { CurrentUser } from "../auth/decorators/current-user.decorator";
 import { Roles } from "../auth/decorators/roles.decorator";
@@ -8,12 +9,15 @@ import { ClientsService } from "./clients.service";
 import { UpsertClientProfessionalDto } from "./dto/upsert-client-professional.dto";
 import { UpdateClientDto } from "./dto/update-client.dto";
 
+@ApiTags("App – Clients")
+@ApiBearerAuth("access-token")
 @Controller("app/clients")
 @Roles(UserRole.PRO, UserRole.OWNER)
 export class AppClientsController {
   constructor(private readonly clientsService: ClientsService) {}
 
   @Get("me")
+  @ApiOperation({ summary: "Obtener mi cliente" })
   getClientInfo(@CurrentUser("client") clientId?: string) {
     if (!clientId) {
       throw new ForbiddenException("No puedes acceder a este cliente");
@@ -22,6 +26,7 @@ export class AppClientsController {
   }
 
   @Patch("me")
+  @ApiOperation({ summary: "Actualizar mi cliente" })
   updateClient(
     @CurrentUser("client") clientId: string | undefined,
     @Body() payload: UpdateClientDto
@@ -33,6 +38,7 @@ export class AppClientsController {
   }
 
   @Get(":id/professionals")
+  @ApiOperation({ summary: "Listar profesionales del cliente" })
   findProfessionals(@Param("id") id: string, @CurrentUser("client") clientId?: string) {
     if (!clientId || clientId !== id) {
       throw new ForbiddenException("No puedes acceder a este cliente");
@@ -41,6 +47,7 @@ export class AppClientsController {
   }
 
   @Post(":id/professionals")
+  @ApiOperation({ summary: "Agregar o actualizar profesional del cliente" })
   upsertProfessional(
     @Param("id") id: string,
     @CurrentUser("client") clientId: string,
@@ -53,6 +60,7 @@ export class AppClientsController {
   }
 
   @Delete(":id/professionals/:professionalId")
+  @ApiOperation({ summary: "Eliminar profesional del cliente" })
   removeProfessional(
     @Param("id") id: string,
     @Param("professionalId") professionalId: string,

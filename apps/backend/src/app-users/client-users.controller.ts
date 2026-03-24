@@ -9,6 +9,7 @@ import {
   Post,
   Query
 } from "@nestjs/common";
+import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from "@nestjs/swagger";
 import { FilterQuery, Types } from "mongoose";
 
 import { CurrentUser } from "../auth/decorators/current-user.decorator";
@@ -19,12 +20,16 @@ import { UsersService } from "../users/users.service";
 import { CreateClientUserDto } from "./dto/create-client-user.dto";
 import { UpdateClientUserDto } from "./dto/update-client-user.dto";
 
+@ApiTags("Client – Users")
+@ApiBearerAuth("access-token")
 @Controller("client/users")
 @Roles(UserRole.PRO, UserRole.OWNER)
 export class ClientUsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get()
+  @ApiOperation({ summary: "Listar usuarios del cliente autenticado" })
+  @ApiQuery({ name: "search", required: false, description: "Buscar por nombre, email o teléfono" })
   findAll(
     @CurrentUser("client") clientId: string | undefined,
     @Query("search") search?: string
@@ -44,6 +49,7 @@ export class ClientUsersController {
   }
 
   @Post()
+  @ApiOperation({ summary: "Crear usuario del cliente" })
   create(
     @CurrentUser("client") clientId: string | undefined,
     @Body() dto: CreateClientUserDto
@@ -59,6 +65,7 @@ export class ClientUsersController {
   }
 
   @Patch(":userId")
+  @ApiOperation({ summary: "Actualizar usuario del cliente" })
   async update(
     @Param("userId") userId: string,
     @CurrentUser("client") clientId: string | undefined,
@@ -79,6 +86,7 @@ export class ClientUsersController {
   }
 
   @Delete(":userId")
+  @ApiOperation({ summary: "Eliminar usuario del cliente" })
   async remove(
     @Param("userId") userId: string,
     @CurrentUser("client") clientId: string | undefined

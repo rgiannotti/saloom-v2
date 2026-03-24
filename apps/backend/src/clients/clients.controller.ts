@@ -14,6 +14,8 @@ import { diskStorage } from "multer";
 import { extname, join } from "path";
 import * as fs from "fs";
 
+import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiTags } from "@nestjs/swagger";
+
 import { Roles } from "../auth/decorators/roles.decorator";
 import { UserRole } from "../users/schemas/user.schema";
 
@@ -21,38 +23,47 @@ import { ClientsService } from "./clients.service";
 import { CreateClientDto } from "./dto/create-client.dto";
 import { UpdateClientDto } from "./dto/update-client.dto";
 
+@ApiTags("Backoffice – Clients")
+@ApiBearerAuth("access-token")
 @Controller("backoffice/clients")
 @Roles(UserRole.ADMIN, UserRole.STAFF)
 export class ClientsController {
   constructor(private readonly clientsService: ClientsService) {}
 
   @Post()
+  @ApiOperation({ summary: "Crear cliente" })
   create(@Body() dto: CreateClientDto) {
     return this.clientsService.create(dto);
   }
 
   @Get()
+  @ApiOperation({ summary: "Listar clientes" })
   findAll() {
     return this.clientsService.findAll();
   }
 
   @Get(":id")
+  @ApiOperation({ summary: "Obtener cliente por ID" })
   findOne(@Param("id") id: string) {
     return this.clientsService.findOne(id);
   }
 
   @Patch(":id")
+  @ApiOperation({ summary: "Actualizar cliente" })
   update(@Param("id") id: string, @Body() dto: UpdateClientDto) {
     return this.clientsService.update(id, dto);
   }
 
   @Delete(":id")
+  @ApiOperation({ summary: "Eliminar cliente" })
   async remove(@Param("id") id: string) {
     await this.clientsService.remove(id);
     return { success: true };
   }
 
   @Post(":id/logo")
+  @ApiOperation({ summary: "Subir logo del cliente" })
+  @ApiConsumes("multipart/form-data")
   @UseInterceptors(
     FileInterceptor("file", {
       storage: diskStorage({

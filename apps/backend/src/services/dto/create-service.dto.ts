@@ -1,29 +1,16 @@
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { IsBoolean, IsMongoId, IsNumber, IsOptional, IsString, MinLength } from "class-validator";
 import { Type } from "class-transformer";
 
 export class CreateServiceDto {
-  @IsString()
-  @MinLength(2)
-  name!: string;
+  @ApiProperty({ example: "Corte de cabello", minLength: 2 })
+  @IsString() @MinLength(2) name!: string;
 
-  @IsOptional()
-  @IsString()
-  notes?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() notes?: string;
+  @ApiPropertyOptional() @IsOptional() @Type(() => Number) @IsNumber() order?: number;
+  @ApiPropertyOptional() @IsOptional() @IsBoolean() home?: boolean;
+  @ApiPropertyOptional() @IsOptional() @IsBoolean() active?: boolean;
 
-  @IsOptional()
-  @Type(() => Number)
-  @IsNumber()
-  order?: number;
-
-  @IsOptional()
-  @IsBoolean()
-  home?: boolean;
-
-  @IsOptional()
-  @IsBoolean()
-  active?: boolean;
-
-  @IsOptional()
-  @IsMongoId()
-  categoryId?: string;
+  @ApiPropertyOptional({ description: "ServiceCategory ObjectId" })
+  @IsOptional() @IsMongoId() categoryId?: string;
 }

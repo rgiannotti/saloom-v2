@@ -1,9 +1,12 @@
 import { Controller, Get, ParseFloatPipe, Query } from "@nestjs/common";
+import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from "@nestjs/swagger";
 
 import { Roles } from "../auth/decorators/roles.decorator";
 import { UserRole } from "../users/schemas/user.schema";
 import { ClientsService } from "./clients.service";
 
+@ApiTags("App – Recommendations")
+@ApiBearerAuth("access-token")
 @Controller("app/recommendations")
 @Roles(UserRole.USER)
 export class AppRecommendationsController {

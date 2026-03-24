@@ -8,6 +8,7 @@ import {
   Patch,
   Post
 } from "@nestjs/common";
+import { ApiBearerAuth, ApiOperation, ApiTags } from "@nestjs/swagger";
 
 import { Roles } from "../auth/decorators/roles.decorator";
 import { CreateUserDto } from "../users/dto/create-user.dto";
@@ -18,18 +19,22 @@ import { UsersService } from "../users/users.service";
 
 const BACKOFFICE_ROLES = [UserRole.ADMIN];
 
+@ApiTags("Backoffice – Users")
+@ApiBearerAuth("access-token")
 @Controller("backoffice/users")
 export class BackofficeUsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get()
   @Roles(UserRole.ADMIN, UserRole.STAFF)
+  @ApiOperation({ summary: "Listar usuarios del backoffice" })
   findAll() {
     return this.usersService.findAll({ roles: { $in: BACKOFFICE_ROLES } });
   }
 
   @Get(":id")
   @Roles(UserRole.ADMIN, UserRole.STAFF)
+  @ApiOperation({ summary: "Obtener usuario por ID" })
   async findOne(@Param("id") id: string) {
     const user = await this.usersService.findOne(id);
     this.ensureBackofficeUser(user);
@@ -38,6 +43,7 @@ export class BackofficeUsersController {
 
   @Post()
   @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: "Crear usuario" })
   create(@Body() dto: CreateUserDto) {
     return this.usersService.create({
       ...dto,
@@ -47,6 +53,7 @@ export class BackofficeUsersController {
 
   @Patch(":id")
   @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: "Actualizar usuario" })
   async update(@Param("id") id: string, @Body() dto: UpdateUserDto) {
     const payload: UpdateUserDto = { ...dto };
     if (dto.roles) {
@@ -59,6 +66,7 @@ export class BackofficeUsersController {
 
   @Delete(":id")
   @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: "Eliminar usuario" })
   async remove(@Param("id") id: string) {
     const user = await this.usersService.findOne(id);
     this.ensureBackofficeUser(user);
@@ -68,6 +76,7 @@ export class BackofficeUsersController {
 
   @Post(":id/reset-password")
   @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: "Resetear contraseña" })
   async resetPassword(@Param("id") id: string, @Body() dto: ResetPasswordDto) {
     const user = await this.usersService.findOne(id);
     this.ensureBackofficeUser(user);

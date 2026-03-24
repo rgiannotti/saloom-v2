@@ -1,54 +1,27 @@
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { IsArray, IsMongoId, IsNotEmpty, IsNumber, IsOptional, IsString, Min } from "class-validator";
 
 export class UpsertClientProfessionalServiceDto {
-  @IsMongoId()
-  serviceId: string;
-
-  @IsNumber()
-  @Min(0)
-  price: number;
-
-  @IsNumber()
-  @Min(1)
-  slot: number;
+  @ApiProperty() @IsMongoId() serviceId!: string;
+  @ApiProperty({ minimum: 0 }) @IsNumber() @Min(0) price!: number;
+  @ApiProperty({ minimum: 1 }) @IsNumber() @Min(1) slot!: number;
 }
 
 export class UpsertClientProfessionalScheduleDto {
-  @IsString()
-  @IsNotEmpty()
-  day: string;
-
-  @IsString()
-  @IsNotEmpty()
-  start: string; // HH:mm
-
-  @IsString()
-  @IsNotEmpty()
-  end: string; // HH:mm
+  @ApiProperty({ example: "monday" }) @IsString() @IsNotEmpty() day!: string;
+  @ApiProperty({ example: "09:00" }) @IsString() @IsNotEmpty() start!: string;
+  @ApiProperty({ example: "18:00" }) @IsString() @IsNotEmpty() end!: string;
 }
 
 export class UpsertClientProfessionalDto {
-  @IsMongoId()
-  @IsOptional()
-  professionalId?: string;
+  @ApiPropertyOptional() @IsMongoId() @IsOptional() professionalId?: string;
+  @ApiPropertyOptional() @IsString() @IsOptional() name?: string;
+  @ApiPropertyOptional() @IsString() @IsOptional() email?: string;
+  @ApiPropertyOptional() @IsString() @IsOptional() phone?: string;
 
-  @IsString()
-  @IsOptional()
-  name?: string;
+  @ApiPropertyOptional({ type: [UpsertClientProfessionalServiceDto] })
+  @IsArray() @IsOptional() services?: UpsertClientProfessionalServiceDto[];
 
-  @IsString()
-  @IsOptional()
-  email?: string;
-
-  @IsString()
-  @IsOptional()
-  phone?: string;
-
-  @IsArray()
-  @IsOptional()
-  services?: UpsertClientProfessionalServiceDto[];
-
-  @IsArray()
-  @IsOptional()
-  schedule?: UpsertClientProfessionalScheduleDto[];
+  @ApiPropertyOptional({ type: [UpsertClientProfessionalScheduleDto] })
+  @IsArray() @IsOptional() schedule?: UpsertClientProfessionalScheduleDto[];
 }

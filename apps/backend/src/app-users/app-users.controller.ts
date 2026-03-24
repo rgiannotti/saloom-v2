@@ -10,6 +10,7 @@ import {
   Post,
   Query
 } from "@nestjs/common";
+import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from "@nestjs/swagger";
 import { FilterQuery, Types } from "mongoose";
 
 import { CurrentUser } from "../auth/decorators/current-user.decorator";
@@ -21,11 +22,16 @@ import { UsersService } from "../users/users.service";
 
 const APP_ALLOWED_ROLES = [UserRole.USER, UserRole.PRO, UserRole.STAFF];
 
+@ApiTags("App – Users")
+@ApiBearerAuth("access-token")
 @Controller("app/users")
 export class AppUsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get()
+  @ApiOperation({ summary: "Listar usuarios de la app" })
+  @ApiQuery({ name: "clientId", required: false })
+  @ApiQuery({ name: "roles", required: false, description: "Roles separados por coma" })
   findAll(@Query("clientId") clientId?: string, @Query("roles") roles?: string | string[]) {
     const requestedRoles = this.getRolesFromQuery(roles);
     const filter: FilterQuery<UserDocument> = { roles: { $in: requestedRoles } };
@@ -41,6 +47,7 @@ export class AppUsersController {
 
   @Get(":id")
   @Roles(UserRole.ADMIN, UserRole.STAFF)
+  @ApiOperation({ summary: "Obtener usuario por ID" })
   async findOne(@Param("id") id: string) {
     const user = await this.usersService.findOne(id);
     this.ensureAppUser(user);
@@ -49,6 +56,7 @@ export class AppUsersController {
 
   @Post()
   @Roles(UserRole.ADMIN, UserRole.STAFF, UserRole.PRO, UserRole.OWNER)
+  @ApiOperation({ summary: "Crear usuario" })
   create(@CurrentUser("client") clientId: string | undefined, @Body() dto: CreateUserDto) {
     this.ensureClientMatch(clientId, dto.client);
     return this.usersService.create({
@@ -60,6 +68,7 @@ export class AppUsersController {
 
   @Patch(":id")
   @Roles(UserRole.ADMIN, UserRole.STAFF, UserRole.PRO, UserRole.OWNER)
+  @ApiOperation({ summary: "Actualizar usuario" })
   async update(
     @Param("id") id: string,
     @CurrentUser("client") clientId: string | undefined,
@@ -84,6 +93,7 @@ export class AppUsersController {
 
   @Delete(":id")
   @Roles(UserRole.ADMIN, UserRole.STAFF, UserRole.PRO, UserRole.OWNER)
+  @ApiOperation({ summary: "Eliminar usuario" })
   async remove(@Param("id") id: string, @CurrentUser("client") clientId: string | undefined) {
     const user = await this.usersService.findOne(id);
     if (!this.isSameClient(clientId, user.client)) {

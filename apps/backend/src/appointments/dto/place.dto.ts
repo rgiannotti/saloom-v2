@@ -1,3 +1,4 @@
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { Type } from "class-transformer";
 import {
   ArrayMaxSize,
@@ -11,58 +12,32 @@ import {
 } from "class-validator";
 
 class AppointmentPlaceAddressDto {
-  @IsOptional()
-  @IsString()
-  full?: string;
-
-  @IsOptional()
-  @IsString()
-  placeId?: string;
-
-  @IsOptional()
-  @IsString()
-  street?: string;
-
-  @IsOptional()
-  @IsString()
-  number?: string;
-
-  @IsOptional()
-  @IsString()
-  province?: string;
-
-  @IsOptional()
-  @IsString()
-  comunity?: string;
-
-  @IsOptional()
-  @IsString()
-  city?: string;
-
-  @IsOptional()
-  @IsString()
-  postal?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() full?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() placeId?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() street?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() number?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() province?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() comunity?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() city?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() postal?: string;
 }
 
 class AppointmentPlaceLocationDto {
+  @ApiProperty({ enum: ["Point"], default: "Point" })
   @IsEnum(["Point"])
   type: "Point" = "Point";
 
-  @IsArray()
-  @ArrayMinSize(2)
-  @ArrayMaxSize(2)
-  @Type(() => Number)
-  @IsNumber({}, { each: true })
+  @ApiProperty({ type: [Number], example: [-66.9036, 10.4806] })
+  @IsArray() @ArrayMinSize(2) @ArrayMaxSize(2) @Type(() => Number) @IsNumber({}, { each: true })
   coordinates!: number[];
 }
 
 export class AppointmentPlaceDto {
-  @IsOptional()
-  @ValidateNested()
-  @Type(() => AppointmentPlaceAddressDto)
+  @ApiPropertyOptional({ type: AppointmentPlaceAddressDto })
+  @IsOptional() @ValidateNested() @Type(() => AppointmentPlaceAddressDto)
   address?: AppointmentPlaceAddressDto;
 
-  @ValidateNested()
-  @Type(() => AppointmentPlaceLocationDto)
+  @ApiProperty({ type: AppointmentPlaceLocationDto })
+  @ValidateNested() @Type(() => AppointmentPlaceLocationDto)
   location!: AppointmentPlaceLocationDto;
 }
