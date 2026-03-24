@@ -1,0 +1,1553 @@
+openapi: 3.0.3
+info:
+  title: Saloom API
+  version: 1.0.0
+  description: |
+    API REST para la plataforma Saloom. Soporta tres audiencias:
+    - **user** – usuarios finales (app mobile)
+    - **client** – profesionales/dueños de clientes (app mobile)
+    - **backoffice** – administradores y staff (panel web)
+
+servers:
+  - url: http://localhost:3000
+    description: Desarrollo local
+
+# ─────────────────────────────────────────────
+# SECURITY
+# ─────────────────────────────────────────────
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  # ─────────────────────────────────────────────
+  # SCHEMAS
+  # ─────────────────────────────────────────────
+  schemas:
+
+    # ── Enums ──────────────────────────────────
+    UserRole:
+      type: string
+      enum: [user, pro, owner, admin, staff]
+
+    AppAudience:
+      type: string
+      enum: [user, client, backoffice]
+
+    CommunicationChannel:
+      type: string
+      enum: [whatsapp, sms, email]
+
+    # ── Common ─────────────────────────────────
+    GeoPoint:
+      type: object
+      required: [type, coordinates]
+      properties:
+        type:
+          type: string
+          enum: [Point]
+        coordinates:
+          type: array
+          items:
+            type: number
+          minItems: 2
+          maxItems: 2
+          example: [-66.9036, 10.4806]
+
+    Address:
+      type: object
+      required: [full, street, number, comunity, province, city, placeId]
+      properties:
+        full:        { type: string }
+        street:      { type: string }
+        number:      { type: string }
+        comunity:    { type: string }
+        province:    { type: string }
+        city:        { type: string }
+        postal:      { type: string }
+        placeId:     { type: string }
+
+    AuthTokens:
+      type: object
+      properties:
+        accessToken:  { type: string }
+        refreshToken: { type: string }
+
+    # ── User ───────────────────────────────────
+    User:
+      type: object
+      properties:
+        _id:       { type: string }
+        name:      { type: string }
+        email:     { type: string, format: email }
+        phone:     { type: string }
+        roles:
+          type: array
+          items: { $ref: '#/components/schemas/UserRole' }
+        client:    { type: string, nullable: true }
+        active:    { type: boolean }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    AuthResponse:
+      type: object
+      properties:
+        user:   { $ref: '#/components/schemas/User' }
+        tokens: { $ref: '#/components/schemas/AuthTokens' }
+
+    # ── Client ─────────────────────────────────
+    ProfessionalService:
+      type: object
+      required: [service, price, slot]
+      properties:
+        service: { type: string, description: Service ObjectId }
+        price:   { type: number, minimum: 0 }
+        slot:    { type: number, minimum: 1 }
+
+    ProfessionalWorkDay:
+      type: object
+      required: [day, start, end]
+      properties:
+        day:   { type: string, example: monday }
+        start: { type: string, pattern: '^\d{2}:\d{2}$', example: '09:00' }
+        end:   { type: string, pattern: '^\d{2}:\d{2}$', example: '18:00' }
+
+    ClientProfessional:
+      type: object
+      properties:
+        professional: { type: string }
+        services:
+          type: array
+          items: { $ref: '#/components/schemas/ProfessionalService' }
+        schedule:
+          type: array
+          items: { $ref: '#/components/schemas/ProfessionalWorkDay' }
+
+    Client:
+      type: object
+      properties:
+        _id:            { type: string }
+        code:           { type: number }
+        rif:            { type: string }
+        denomination:   { type: string }
+        name:           { type: string }
+        slug:           { type: string }
+        fiscalAddress:  { type: string }
+        person:         { type: string }
+        logo:           { type: string }
+        website:        { type: string }
+        useGoogleMap:   { type: boolean }
+        address:        { $ref: '#/components/schemas/Address' }
+        location:       { $ref: '#/components/schemas/GeoPoint' }
+        baddress:       { type: string }
+        email:          { type: string, format: email }
+        phone:          { type: string }
+        home:           { type: boolean }
+        online:         { type: boolean }
+        onlineHome:     { type: boolean }
+        blocked:        { type: boolean }
+        active:         { type: boolean }
+        communicationChannels:
+          type: array
+          items: { $ref: '#/components/schemas/CommunicationChannel' }
+        payments:
+          type: array
+          items: { type: string }
+        professionals:
+          type: array
+          items: { $ref: '#/components/schemas/ClientProfessional' }
+        categories:
+          type: array
+          items: { type: string }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    # ── Service / Category ─────────────────────
+    Service:
+      type: object
+      properties:
+        _id:      { type: string }
+        name:     { type: string }
+        notes:    { type: string }
+        order:    { type: number }
+        home:     { type: boolean }
+        active:   { type: boolean }
+        category: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    ServiceCategory:
+      type: object
+      properties:
+        _id:         { type: string }
+        name:        { type: string }
+        description: { type: string }
+        order:       { type: number }
+        active:      { type: boolean }
+        createdAt:   { type: string, format: date-time }
+        updatedAt:   { type: string, format: date-time }
+
+    # ── Appointment ────────────────────────────
+    AppointmentServiceItem:
+      type: object
+      required: [service]
+      properties:
+        service: { type: string }
+        price:   { type: number, minimum: 0 }
+
+    AppointmentStatusHistory:
+      type: object
+      required: [status]
+      properties:
+        status:  { type: string }
+        date:    { type: string, format: date-time }
+        comment: { type: string }
+
+    AppointmentPlace:
+      type: object
+      required: [location]
+      properties:
+        address:
+          type: object
+          properties:
+            full:      { type: string }
+            street:    { type: string }
+            number:    { type: string }
+            province:  { type: string }
+            comunity:  { type: string }
+            city:      { type: string }
+            postal:    { type: string }
+            placeId:   { type: string }
+        location: { $ref: '#/components/schemas/GeoPoint' }
+
+    Appointment:
+      type: object
+      properties:
+        _id:          { type: string }
+        code:         { type: string }
+        startDate:    { type: string, format: date-time }
+        endDate:      { type: string, format: date-time }
+        services:
+          type: array
+          items: { $ref: '#/components/schemas/AppointmentServiceItem' }
+        slots:        { type: number }
+        slotStart:    { type: number }
+        slotEnd:      { type: number }
+        status:       { type: string }
+        amount:       { type: number }
+        notes:        { type: string }
+        active:       { type: boolean }
+        client:       { type: string }
+        professional: { type: string, nullable: true }
+        user:         { type: string, nullable: true }
+        statuses:
+          type: array
+          items: { $ref: '#/components/schemas/AppointmentStatusHistory' }
+        place:        { $ref: '#/components/schemas/AppointmentPlace' }
+        type:         { type: string }
+        reminderSent: { type: boolean }
+        createdAt:    { type: string, format: date-time }
+        updatedAt:    { type: string, format: date-time }
+
+    # ── Dashboard ──────────────────────────────
+    Dashboard:
+      type: object
+      description: Métricas y datos de resumen del cliente autenticado
+
+    # ── Messages ───────────────────────────────
+    Message:
+      type: object
+      properties:
+        _id:           { type: string }
+        appointmentId: { type: string }
+        body:          { type: string }
+        createdAt:     { type: string, format: date-time }
+
+    # ── Error ──────────────────────────────────
+    Error:
+      type: object
+      properties:
+        statusCode: { type: integer }
+        message:    { type: string }
+        error:      { type: string }
+
+    SuccessResponse:
+      type: object
+      properties:
+        success: { type: boolean, example: true }
+
+  # ── Request Bodies ─────────────────────────
+  requestBodies:
+
+    LoginBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [email, password]
+            properties:
+              email:    { type: string, format: email }
+              password: { type: string, minLength: 8 }
+
+    RegisterBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [name, phone]
+            properties:
+              name:     { type: string, minLength: 2 }
+              email:    { type: string, format: email }
+              phone:    { type: string }
+              password: { type: string, minLength: 8 }
+              roles:
+                type: array
+                items: { $ref: '#/components/schemas/UserRole' }
+              client:   { type: string, description: Client ObjectId }
+
+    RefreshTokenBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [userId, refreshToken]
+            properties:
+              userId:       { type: string }
+              refreshToken: { type: string }
+
+    ResetPasswordBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [password]
+            properties:
+              password: { type: string, minLength: 8 }
+
+    CreateUserBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [name, phone]
+            properties:
+              name:     { type: string, minLength: 2 }
+              email:    { type: string, format: email }
+              phone:    { type: string }
+              password: { type: string, minLength: 8 }
+              roles:
+                type: array
+                items: { $ref: '#/components/schemas/UserRole' }
+              client:   { type: string }
+
+    UpdateUserBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              name:     { type: string, minLength: 2 }
+              email:    { type: string, format: email }
+              phone:    { type: string }
+              password: { type: string, minLength: 8 }
+              roles:
+                type: array
+                items: { $ref: '#/components/schemas/UserRole' }
+              client:   { type: string }
+
+    CreateClientUserBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [name, phone]
+            properties:
+              name:     { type: string, minLength: 2 }
+              email:    { type: string, format: email }
+              phone:    { type: string }
+              password: { type: string, minLength: 8 }
+
+    CreateClientBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [rif, denomination, name, fiscalAddress, person, email, phone, address, location]
+            properties:
+              rif:           { type: string }
+              denomination:  { type: string }
+              name:          { type: string }
+              slug:          { type: string }
+              fiscalAddress: { type: string }
+              person:        { type: string }
+              website:       { type: string }
+              useGoogleMap:  { type: boolean }
+              address:       { $ref: '#/components/schemas/Address' }
+              location:      { $ref: '#/components/schemas/GeoPoint' }
+              baddress:      { type: string }
+              email:         { type: string, format: email }
+              phone:         { type: string }
+              home:          { type: boolean }
+              online:        { type: boolean }
+              onlineHome:    { type: boolean }
+              blocked:       { type: boolean }
+              active:        { type: boolean }
+              payments:
+                type: array
+                items: { type: string }
+              communicationChannels:
+                type: array
+                items: { $ref: '#/components/schemas/CommunicationChannel' }
+              categories:
+                type: array
+                items: { type: string }
+
+    UpsertClientProfessionalBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              professionalId: { type: string }
+              name:  { type: string }
+              email: { type: string }
+              phone: { type: string }
+              services:
+                type: array
+                items:
+                  type: object
+                  required: [serviceId, price, slot]
+                  properties:
+                    serviceId: { type: string }
+                    price:     { type: number, minimum: 0 }
+                    slot:      { type: number, minimum: 1 }
+              schedule:
+                type: array
+                items: { $ref: '#/components/schemas/ProfessionalWorkDay' }
+
+    CreateAppointmentBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [startDate, endDate, services, slots, slotStart, slotEnd, status, client, place]
+            properties:
+              startDate:    { type: string, format: date-time }
+              endDate:      { type: string, format: date-time }
+              services:
+                type: array
+                minItems: 1
+                items: { $ref: '#/components/schemas/AppointmentServiceItem' }
+              slots:        { type: number, minimum: 1 }
+              slotStart:    { type: number, minimum: 0 }
+              slotEnd:      { type: number, minimum: 0 }
+              status:       { type: string }
+              amount:       { type: number }
+              notes:        { type: string }
+              active:       { type: boolean }
+              client:       { type: string }
+              professional: { type: string }
+              user:         { type: string }
+              statuses:
+                type: array
+                items: { $ref: '#/components/schemas/AppointmentStatusHistory' }
+              place:        { $ref: '#/components/schemas/AppointmentPlace' }
+              type:         { type: string }
+
+    CreateServiceBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [name]
+            properties:
+              name:       { type: string, minLength: 2 }
+              notes:      { type: string }
+              order:      { type: number }
+              home:       { type: boolean }
+              active:     { type: boolean }
+              categoryId: { type: string }
+
+    CreateServiceCategoryBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [name]
+            properties:
+              name:        { type: string, minLength: 2 }
+              description: { type: string }
+              order:       { type: number }
+              active:      { type: boolean }
+
+    SendMessageBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [body]
+            properties:
+              body: { type: string }
+
+  # ── Responses ──────────────────────────────
+  responses:
+    Unauthorized:
+      description: Token JWT faltante o inválido
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Forbidden:
+      description: Sin permisos suficientes
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    NotFound:
+      description: Recurso no encontrado
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+
+# ─────────────────────────────────────────────
+# PATHS
+# ─────────────────────────────────────────────
+paths:
+
+  # ── Health ────────────────────────────────
+  /health:
+    get:
+      tags: [Health]
+      summary: Health check
+      responses:
+        '200':
+          description: OK
+
+  # ── Auth ──────────────────────────────────
+  /auth/{audience}/register:
+    post:
+      tags: [Auth]
+      summary: Registrar usuario
+      parameters:
+        - name: audience
+          in: path
+          required: true
+          schema: { $ref: '#/components/schemas/AppAudience' }
+      requestBody: { $ref: '#/components/requestBodies/RegisterBody' }
+      responses:
+        '201':
+          description: Usuario registrado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthResponse' }
+        '400':
+          description: Datos inválidos
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /auth/{audience}/login:
+    post:
+      tags: [Auth]
+      summary: Iniciar sesión
+      parameters:
+        - name: audience
+          in: path
+          required: true
+          schema: { $ref: '#/components/schemas/AppAudience' }
+      requestBody: { $ref: '#/components/requestBodies/LoginBody' }
+      responses:
+        '200':
+          description: Sesión iniciada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthResponse' }
+        '401':
+          description: Credenciales inválidas
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Renovar access token
+      requestBody: { $ref: '#/components/requestBodies/RefreshTokenBody' }
+      responses:
+        '200':
+          description: Tokens renovados
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthTokens' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Cerrar sesión
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Sesión cerrada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  # ── Backoffice Users ──────────────────────
+  /backoffice/users:
+    get:
+      tags: [Backoffice – Users]
+      summary: Listar usuarios (admin/staff)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista de usuarios
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/User' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+    post:
+      tags: [Backoffice – Users]
+      summary: Crear usuario
+      security:
+        - bearerAuth: []
+      requestBody: { $ref: '#/components/requestBodies/CreateUserBody' }
+      responses:
+        '201':
+          description: Usuario creado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /backoffice/users/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: string }
+
+    get:
+      tags: [Backoffice – Users]
+      summary: Obtener usuario por ID
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Usuario encontrado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+    patch:
+      tags: [Backoffice – Users]
+      summary: Actualizar usuario
+      security:
+        - bearerAuth: []
+      requestBody: { $ref: '#/components/requestBodies/UpdateUserBody' }
+      responses:
+        '200':
+          description: Usuario actualizado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+    delete:
+      tags: [Backoffice – Users]
+      summary: Eliminar usuario
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Usuario eliminado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /backoffice/users/{id}/reset-password:
+    post:
+      tags: [Backoffice – Users]
+      summary: Resetear contraseña de usuario
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody: { $ref: '#/components/requestBodies/ResetPasswordBody' }
+      responses:
+        '200':
+          description: Contraseña reseteada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  # ── App Users ─────────────────────────────
+  /app/users:
+    get:
+      tags: [App – Users]
+      summary: Listar usuarios de la app
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: clientId
+          in: query
+          schema: { type: string }
+        - name: roles
+          in: query
+          description: Roles separados por coma
+          schema: { type: string, example: 'pro,owner' }
+      responses:
+        '200':
+          description: Lista de usuarios
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/User' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+    post:
+      tags: [App – Users]
+      summary: Crear usuario de la app
+      security:
+        - bearerAuth: []
+      requestBody: { $ref: '#/components/requestBodies/CreateUserBody' }
+      responses:
+        '201':
+          description: Usuario creado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /app/users/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: string }
+
+    get:
+      tags: [App – Users]
+      summary: Obtener usuario por ID
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Usuario encontrado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+    patch:
+      tags: [App – Users]
+      summary: Actualizar usuario
+      security:
+        - bearerAuth: []
+      requestBody: { $ref: '#/components/requestBodies/UpdateUserBody' }
+      responses:
+        '200':
+          description: Usuario actualizado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+    delete:
+      tags: [App – Users]
+      summary: Eliminar usuario
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Usuario eliminado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  # ── Client Users ──────────────────────────
+  /client/users:
+    get:
+      tags: [Client – Users]
+      summary: Listar usuarios del cliente autenticado
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: search
+          in: query
+          description: Buscar por nombre, email o teléfono
+          schema: { type: string }
+      responses:
+        '200':
+          description: Lista de usuarios
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/User' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+    post:
+      tags: [Client – Users]
+      summary: Crear usuario del cliente
+      security:
+        - bearerAuth: []
+      requestBody: { $ref: '#/components/requestBodies/CreateClientUserBody' }
+      responses:
+        '201':
+          description: Usuario creado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /client/users/{userId}:
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        schema: { type: string }
+
+    patch:
+      tags: [Client – Users]
+      summary: Actualizar usuario del cliente
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:     { type: string }
+                email:    { type: string, format: email }
+                phone:    { type: string }
+                password: { type: string, minLength: 8 }
+      responses:
+        '200':
+          description: Usuario actualizado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+    delete:
+      tags: [Client – Users]
+      summary: Eliminar usuario del cliente
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Usuario eliminado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  # ── Backoffice Clients ────────────────────
+  /backoffice/clients:
+    get:
+      tags: [Backoffice – Clients]
+      summary: Listar clientes
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista de clientes
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Client' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+    post:
+      tags: [Backoffice – Clients]
+      summary: Crear cliente
+      security:
+        - bearerAuth: []
+      requestBody: { $ref: '#/components/requestBodies/CreateClientBody' }
+      responses:
+        '201':
+          description: Cliente creado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Client' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /backoffice/clients/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: string }
+
+    get:
+      tags: [Backoffice – Clients]
+      summary: Obtener cliente por ID
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Cliente encontrado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Client' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+    patch:
+      tags: [Backoffice – Clients]
+      summary: Actualizar cliente
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Client' }
+      responses:
+        '200':
+          description: Cliente actualizado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Client' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+    delete:
+      tags: [Backoffice – Clients]
+      summary: Eliminar cliente
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Cliente eliminado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /backoffice/clients/{id}/logo:
+    post:
+      tags: [Backoffice – Clients]
+      summary: Subir logo del cliente
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          description: Logo subido
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  logo:    { type: string }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  # ── App Clients ───────────────────────────
+  /app/clients/me:
+    get:
+      tags: [App – Clients]
+      summary: Obtener mi cliente (PRO/OWNER)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Cliente del usuario autenticado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Client' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+    patch:
+      tags: [App – Clients]
+      summary: Actualizar mi cliente
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Client' }
+      responses:
+        '200':
+          description: Cliente actualizado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Client' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /app/clients/{id}/professionals:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: string }
+
+    get:
+      tags: [App – Clients]
+      summary: Listar profesionales del cliente
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista de profesionales
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/ClientProfessional' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+    post:
+      tags: [App – Clients]
+      summary: Agregar o actualizar profesional del cliente
+      security:
+        - bearerAuth: []
+      requestBody: { $ref: '#/components/requestBodies/UpsertClientProfessionalBody' }
+      responses:
+        '201':
+          description: Profesional registrado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ClientProfessional' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /app/clients/{id}/professionals/{professionalId}:
+    delete:
+      tags: [App – Clients]
+      summary: Eliminar profesional del cliente
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+        - name: professionalId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Profesional eliminado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ClientProfessional' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  # ── Public Clients ────────────────────────
+  /public/clients/logo/{slug}:
+    get:
+      tags: [Public]
+      summary: Obtener logo de un cliente por slug
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: URL del logo
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  logo: { type: string }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ── Recommendations ───────────────────────
+  /app/recommendations:
+    get:
+      tags: [App – Recommendations]
+      summary: Buscar clientes cercanos (geoespacial)
+      description: Requiere rol `user`. Retorna clientes dentro del radio indicado ordenados por distancia.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: lat
+          in: query
+          required: true
+          schema: { type: number, format: float }
+          description: Latitud
+        - name: lng
+          in: query
+          required: true
+          schema: { type: number, format: float }
+          description: Longitud
+        - name: radiusKm
+          in: query
+          schema: { type: number, default: 10, maximum: 20 }
+          description: Radio en kilómetros
+        - name: limit
+          in: query
+          schema: { type: integer, default: 10, maximum: 20 }
+      responses:
+        '200':
+          description: Clientes cercanos
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Client' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  # ── Appointments ──────────────────────────
+  /appointments:
+    get:
+      tags: [Appointments]
+      summary: Listar citas
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista de citas
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Appointment' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+    post:
+      tags: [Appointments]
+      summary: Crear cita
+      security:
+        - bearerAuth: []
+      requestBody: { $ref: '#/components/requestBodies/CreateAppointmentBody' }
+      responses:
+        '201':
+          description: Cita creada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Appointment' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /appointments/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: string }
+
+    get:
+      tags: [Appointments]
+      summary: Obtener cita por ID
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Cita encontrada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Appointment' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+    patch:
+      tags: [Appointments]
+      summary: Actualizar cita
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Appointment' }
+      responses:
+        '200':
+          description: Cita actualizada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Appointment' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+    delete:
+      tags: [Appointments]
+      summary: Eliminar cita
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Cita eliminada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ── Services ──────────────────────────────
+  /services:
+    get:
+      tags: [Services]
+      summary: Listar servicios
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista de servicios
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Service' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+    post:
+      tags: [Services]
+      summary: Crear servicio
+      security:
+        - bearerAuth: []
+      requestBody: { $ref: '#/components/requestBodies/CreateServiceBody' }
+      responses:
+        '201':
+          description: Servicio creado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Service' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /services/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: string }
+
+    get:
+      tags: [Services]
+      summary: Obtener servicio por ID
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Servicio encontrado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Service' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+    patch:
+      tags: [Services]
+      summary: Actualizar servicio
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Service' }
+      responses:
+        '200':
+          description: Servicio actualizado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Service' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+    delete:
+      tags: [Services]
+      summary: Eliminar servicio
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Servicio eliminado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  # ── Service Categories ─────────────────────
+  /service-categories:
+    get:
+      tags: [Service Categories]
+      summary: Listar categorías de servicio
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista de categorías
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/ServiceCategory' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+    post:
+      tags: [Service Categories]
+      summary: Crear categoría
+      security:
+        - bearerAuth: []
+      requestBody: { $ref: '#/components/requestBodies/CreateServiceCategoryBody' }
+      responses:
+        '201':
+          description: Categoría creada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ServiceCategory' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /service-categories/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: string }
+
+    get:
+      tags: [Service Categories]
+      summary: Obtener categoría por ID
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Categoría encontrada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ServiceCategory' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+    patch:
+      tags: [Service Categories]
+      summary: Actualizar categoría
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ServiceCategory' }
+      responses:
+        '200':
+          description: Categoría actualizada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ServiceCategory' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+    delete:
+      tags: [Service Categories]
+      summary: Eliminar categoría
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Categoría eliminada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  # ── Dashboard ─────────────────────────────
+  /client/dashboard:
+    get:
+      tags: [Dashboard]
+      summary: Métricas del cliente autenticado
+      description: Requiere rol `pro` u `owner` con `client` en el JWT.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Datos del dashboard
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Dashboard' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  # ── Communications ────────────────────────
+  /communications/appointments/{appointmentId}/messages:
+    parameters:
+      - name: appointmentId
+        in: path
+        required: true
+        schema: { type: string }
+
+    get:
+      tags: [Communications]
+      summary: Listar mensajes de una cita
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista de mensajes
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Message' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+    post:
+      tags: [Communications]
+      summary: Enviar mensaje a la cita
+      security:
+        - bearerAuth: []
+      requestBody: { $ref: '#/components/requestBodies/SendMessageBody' }
+      responses:
+        '201':
+          description: Mensaje enviado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Message' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /communications/appointments/{appointmentId}/messages/confirm:
+    post:
+      tags: [Communications]
+      summary: Enviar confirmación de cita
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: appointmentId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '201':
+          description: Confirmación enviada
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /communications/appointments/{appointmentId}/messages/reminder:
+    post:
+      tags: [Communications]
+      summary: Enviar recordatorio de cita
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: appointmentId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '201':
+          description: Recordatorio enviado
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+# ─────────────────────────────────────────────
+# TAG DESCRIPTIONS
+# ─────────────────────────────────────────────
+tags:
+  - name: Health
+    description: Estado del servidor
+  - name: Auth
+    description: Registro, login, refresh y logout
+  - name: Backoffice – Users
+    description: Gestión de usuarios (requiere roles admin/staff)
+  - name: Backoffice – Clients
+    description: Gestión de clientes desde el backoffice (requiere roles admin/staff)
+  - name: App – Users
+    description: Usuarios dentro de la app (requiere autenticación)
+  - name: Client – Users
+    description: Usuarios del cliente autenticado (requiere roles pro/owner)
+  - name: App – Clients
+    description: Gestión del propio cliente (requiere roles pro/owner)
+  - name: Public
+    description: Endpoints públicos sin autenticación
+  - name: App – Recommendations
+    description: Búsqueda geoespacial de clientes (requiere rol user)
+  - name: Appointments
+    description: Gestión de citas (requiere roles admin/staff/pro)
+  - name: Services
+    description: Catálogo de servicios (requiere roles admin/staff)
+  - name: Service Categories
+    description: Categorías de servicios (requiere roles admin/staff)
+  - name: Dashboard
+    description: Métricas del cliente autenticado (requiere roles pro/owner)
+  - name: Communications
+    description: Mensajes y notificaciones de citas (requiere roles pro/owner/admin/staff)
