@@ -4,6 +4,18 @@ package-lock.json
 pnpm-lock.yaml
 yarn.lock
 
+# iOS
+ios/Pods/
+ios/build/
+ios/*.xcworkspace
+!ios/*.xcworkspace/contents.xcworkspacedata
+ios/DerivedData/
+
+# Android
+android/.gradle/
+android/build/
+android/app/build/
+
 # Builds y caches
 dist/
 .turbo/
