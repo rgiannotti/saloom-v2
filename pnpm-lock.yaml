@@ -1,5 +1,10 @@
 lockfileVersion: 5.4
 
+patchedDependencies:
+  react-native@0.71.14:
+    hash: cksxmhtfdyfk5nzwl5jutxjgxa
+    path: patches/react-native@0.71.14.patch
+
 importers:
 
   .:
@@ -199,7 +204,7 @@ importers:
       postcss-value-parser: 4.2.0
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
-      react-native: 0.71.14_54vsopisd4sxme2ltbo2mwp3ci
+      react-native: 0.71.14_cksxmhtfdyfk5nzwl5jutxjgxa_54vsopisd4sxme2ltbo2mwp3ci
       react-native-big-calendar: 4.19.0_qhtyet5c2bvu2ozvxljowe5lke
       react-native-modal-datetime-picker: 17.1.0_ueijur6kbmjpuob3geechpzhgu
       react-native-svg: 13.4.0_qhtyet5c2bvu2ozvxljowe5lke
@@ -253,7 +258,7 @@ importers:
       jwt-decode: 4.0.0
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
-      react-native: 0.71.14_54vsopisd4sxme2ltbo2mwp3ci
+      react-native: 0.71.14_cksxmhtfdyfk5nzwl5jutxjgxa_54vsopisd4sxme2ltbo2mwp3ci
       react-native-web: 0.18.12_biqbaboplfbrettd7655fr4n2y
       react-test-renderer: 18.2.0_react@18.2.0
     devDependencies:
@@ -3739,7 +3744,7 @@ packages:
       jest-matcher-utils: 29.7.0
       pretty-format: 29.7.0
       react: 18.2.0
-      react-native: 0.71.14_54vsopisd4sxme2ltbo2mwp3ci
+      react-native: 0.71.14_cksxmhtfdyfk5nzwl5jutxjgxa_54vsopisd4sxme2ltbo2mwp3ci
       react-test-renderer: 18.2.0_react@18.2.0
       redent: 3.0.0
     dev: true
@@ -3760,7 +3765,7 @@ packages:
       picocolors: 1.1.1
       pretty-format: 30.3.0
       react: 18.2.0
-      react-native: 0.71.14_54vsopisd4sxme2ltbo2mwp3ci
+      react-native: 0.71.14_cksxmhtfdyfk5nzwl5jutxjgxa_54vsopisd4sxme2ltbo2mwp3ci
       react-test-renderer: 18.2.0_react@18.2.0
       redent: 3.0.0
     dev: true
@@ -11609,7 +11614,7 @@ packages:
       calendarize: 1.1.1
       dayjs: 1.11.20
       react: 18.2.0
-      react-native: 0.71.14_54vsopisd4sxme2ltbo2mwp3ci
+      react-native: 0.71.14_cksxmhtfdyfk5nzwl5jutxjgxa_54vsopisd4sxme2ltbo2mwp3ci
     dev: false
 
   /react-native-codegen/0.71.6:
@@ -11634,7 +11639,7 @@ packages:
     dependencies:
       '@react-native-community/datetimepicker': 6.7.3
       prop-types: 15.8.1
-      react-native: 0.71.14_54vsopisd4sxme2ltbo2mwp3ci
+      react-native: 0.71.14_cksxmhtfdyfk5nzwl5jutxjgxa_54vsopisd4sxme2ltbo2mwp3ci
     dev: false
 
   /react-native-svg/13.4.0_qhtyet5c2bvu2ozvxljowe5lke:
@@ -11646,7 +11651,7 @@ packages:
       css-select: 5.2.2
       css-tree: 1.1.3
       react: 18.2.0
-      react-native: 0.71.14_54vsopisd4sxme2ltbo2mwp3ci
+      react-native: 0.71.14_cksxmhtfdyfk5nzwl5jutxjgxa_54vsopisd4sxme2ltbo2mwp3ci
     dev: false
 
   /react-native-web/0.18.12_biqbaboplfbrettd7655fr4n2y:
@@ -11668,7 +11673,7 @@ packages:
       - encoding
     dev: false
 
-  /react-native/0.71.14_54vsopisd4sxme2ltbo2mwp3ci:
+  /react-native/0.71.14_cksxmhtfdyfk5nzwl5jutxjgxa_54vsopisd4sxme2ltbo2mwp3ci:
     resolution: {integrity: sha512-7uhzas8aKpU2EARhlONt7yiclh+7PXEOJk469ewpQyId8Owq5WNtZvQm/z3k4mHUriMeQ37vgSGkOInSKcCazw==}
     engines: {node: '>=14'}
     hasBin: true
@@ -11718,6 +11723,7 @@ packages:
       - encoding
       - supports-color
       - utf-8-validate
+    patched: true
 
   /react-native/0.71.8_54vsopisd4sxme2ltbo2mwp3ci:
     resolution: {integrity: sha512-ftMAuhpgTkbHU9brrqsEyxcNrpYvXKeATY+if22Nfhhg1zW+6wn95w9otwTnA3xHkljPCbng8mUhmmERjGEl7g==}

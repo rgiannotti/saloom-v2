@@ -38,5 +38,10 @@
     "tsx": "^4.21.0",
     "turbo": "^2.8.20",
     "typescript": "^5.9.3"
+  },
+  "pnpm": {
+    "patchedDependencies": {
+      "react-native@0.71.14": "patches/react-native@0.71.14.patch"
+    }
   }
 }
