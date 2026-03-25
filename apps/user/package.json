@@ -1,5 +1,5 @@
 {
-  "name": "@saloom/client",
+  "name": "@saloom/user",
   "version": "0.1.0",
   "private": true,
   "main": "index.js",
@@ -16,10 +16,6 @@
   "dependencies": {
     "@babel/runtime": "^7.28.4",
     "@expo/webpack-config": "^18.0.1",
-    "@react-native-community/datetimepicker": "^6.7.3",
-    "calendarize": "^1.1.1",
-    "create-react-class": "^15.7.0",
-    "css-in-js-utils": "^3.1.0",
     "dayjs": "^1.11.13",
     "expo": "48.0.21",
     "expo-constants": "^14.2.1",
@@ -27,24 +23,12 @@
     "expo-modules-core": "^1.2.7",
     "expo-secure-store": "~12.1.1",
     "expo-status-bar": "1.4.4",
-    "fbjs": "^3.0.5",
-    "hyphenate-style-name": "^1.1.0",
-    "inline-style-prefixer": "^6.0.1",
-    "invariant": "^2.2.4",
     "jwt-decode": "^4.0.0",
-    "normalize-css-color": "^1.0.2",
-    "object-assign": "^4.1.1",
-    "postcss-value-parser": "^4.2.0",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "react-native": "0.71.14",
-    "react-native-big-calendar": "^4.5.4",
-    "react-native-modal-datetime-picker": "^17.1.0",
-    "react-native-svg": "^13.4.0",
     "react-native-web": "~0.18.10",
-    "react-test-renderer": "18.2.0",
-    "scheduler": "^0.27.0",
-    "styleq": "^0.1.1"
+    "react-test-renderer": "18.2.0"
   },
   "devDependencies": {
     "@testing-library/jest-native": "^5.4.3",
