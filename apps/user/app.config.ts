@@ -20,6 +20,12 @@ const config: ExpoConfig = {
     EXPO_PUBLIC_API_BASE_URL: "http://localhost:3000",
     EXPO_PUBLIC_SOCKET_URL: "http://localhost:3000",
     EXPO_PUBLIC_ENV: "dev"
+  },
+  android: {
+    package: "io.saloom.user"
+  },
+  ios: {
+    bundleIdentifier: "io.saloom.user"
   }
 };
 

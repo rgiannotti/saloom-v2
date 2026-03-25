@@ -1,3 +1,13 @@
+import { decode as atob, encode as btoa } from "base-64";
+
+if (typeof globalThis.atob === "undefined") {
+  globalThis.atob = atob;
+}
+
+if (typeof globalThis.btoa === "undefined") {
+  globalThis.btoa = btoa;
+}
+
 import { StatusBar } from "expo-status-bar";
 import { ActivityIndicator, SafeAreaView, StyleSheet, Text } from "react-native";
 
