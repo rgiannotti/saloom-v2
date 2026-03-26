@@ -33,7 +33,6 @@ export class AuthController {
     @Param("audience", new ParseEnumPipe(AppAudience)) audience: AppAudience,
     @Body() dto: LoginDto
   ) {
-    console.log("Login attempt for audience:", audience);
     return this.authService.login(dto, audience);
   }
 
