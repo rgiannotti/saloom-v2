@@ -147,7 +147,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const login = useCallback(
     async ({ email, password }: LoginParams) => {
-      const response = await fetch(`${API_BASE_URL}/auth/login`, {
+      const response = await fetch(`${API_BASE_URL}/auth/user/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"

@@ -39,3 +39,5 @@ apps/*/.expo/web/cache/
 .DS_Store
 *.log
 pnpm-debug.log
+
+mockup/
