@@ -57,11 +57,18 @@ export class AppUsersController {
   @Post()
   @Roles(UserRole.ADMIN, UserRole.STAFF, UserRole.PRO, UserRole.OWNER)
   @ApiOperation({ summary: "Crear usuario" })
-  create(@CurrentUser("client") clientId: string | undefined, @Body() dto: CreateUserDto) {
-    this.ensureClientMatch(clientId, dto.client);
+  create(
+    @CurrentUser("client") clientId: string | undefined,
+    @CurrentUser("roles") userRoles: UserRole[] | undefined,
+    @Body() dto: CreateUserDto
+  ) {
+    const isAdmin = userRoles?.includes(UserRole.ADMIN);
+    if (!isAdmin) {
+      this.ensureClientMatch(clientId, dto.client);
+    }
     return this.usersService.create({
       ...dto,
-      client: clientId ?? dto.client,
+      client: isAdmin ? (dto.client ?? clientId) : (clientId ?? dto.client),
       roles: this.filterAllowedRoles(dto.roles, [UserRole.PRO])
     });
   }

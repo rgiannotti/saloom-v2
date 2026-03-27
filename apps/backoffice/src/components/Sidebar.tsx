@@ -1,5 +1,16 @@
 import React, { useMemo } from "react";
 import { NavLink } from "react-router-dom";
+import {
+  MdDashboard,
+  MdBusiness,
+  MdContentCut,
+  MdPeople,
+  MdManageAccounts,
+  MdBarChart,
+  MdSettings,
+  MdChevronLeft,
+  MdChevronRight
+} from "react-icons/md";
 
 import redFullLogo from "../assets/logo/rojo-saloom.svg";
 import redIconLogo from "../assets/logo/rojo-icon.svg";
@@ -16,18 +27,18 @@ interface SidebarProps {
 
 type NavItem = {
   label: string;
-  icon: string;
+  icon: React.ReactNode;
   to?: string;
 };
 
 const navItems: NavItem[] = [
-  { label: "Dashboard", icon: "🏠", to: "/" },
-  { label: "Profesionales", icon: "🏢", to: "/clients" },
-  { label: "Servicios", icon: "💈", to: "/services" },
-  { label: "Usuarios", icon: "🧑‍🤝‍🧑", to: "/app/users" },
-  { label: "Usuarios Saloom", icon: "👥", to: "/backoffice/users" },
-  { label: "Reportes", icon: "📊" },
-  { label: "Configuración", icon: "⚙️" }
+  { label: "Dashboard", icon: <MdDashboard />, to: "/" },
+  { label: "Profesionales", icon: <MdBusiness />, to: "/clients" },
+  { label: "Servicios", icon: <MdContentCut />, to: "/services" },
+  { label: "Usuarios", icon: <MdPeople />, to: "/app/users" },
+  { label: "Usuarios Saloom", icon: <MdManageAccounts />, to: "/backoffice/users" },
+  { label: "Reportes", icon: <MdBarChart /> },
+  { label: "Configuración", icon: <MdSettings /> }
 ];
 
 export const Sidebar = ({ collapsed, onToggle, mobileOpen, onNavigate }: SidebarProps) => {
@@ -77,7 +88,7 @@ export const Sidebar = ({ collapsed, onToggle, mobileOpen, onNavigate }: Sidebar
           aria-label={collapsed ? "Expandir menú" : "Colapsar menú"}
           aria-pressed={collapsed}
         >
-          {collapsed ? "⤢" : "⤡"}
+          {collapsed ? <MdChevronRight /> : <MdChevronLeft />}
         </button>
       </div>
       <nav className="sidebar__nav">

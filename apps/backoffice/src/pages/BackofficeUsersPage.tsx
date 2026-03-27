@@ -1,4 +1,5 @@
 import React, { FormEvent, useEffect, useMemo, useState } from "react";
+import { MdEdit, MdDelete, MdRefresh, MdClose, MdLockReset } from "react-icons/md";
 
 import { useAuth } from "../auth/AuthProvider";
 import { API_BASE_URL } from "../config";
@@ -269,7 +270,7 @@ export const BackofficeUsersPage = () => {
               disabled={loading}
               aria-label="Refrescar lista de usuarios"
             >
-              {loading ? "…" : "⟳"}
+              {loading ? "…" : <MdRefresh />}
             </button>
           </div>
           <div className="table-scroll">
@@ -304,7 +305,7 @@ export const BackofficeUsersPage = () => {
                         onClick={() => openEditModal(user)}
                         aria-label={`Editar ${user.name}`}
                       >
-                        ✏️
+                        <MdEdit />
                       </button>
                       <button
                         type="button"
@@ -313,7 +314,7 @@ export const BackofficeUsersPage = () => {
                         title="Resetear contraseña"
                         aria-label={`Resetear contraseña de ${user.name}`}
                       >
-                        🔑
+                        <MdLockReset />
                       </button>
                       <button
                         type="button"
@@ -322,7 +323,7 @@ export const BackofficeUsersPage = () => {
                         title="Eliminar"
                         aria-label={`Eliminar ${user.name}`}
                       >
-                        🗑️
+                        <MdDelete />
                       </button>
                     </td>
                   </tr>
@@ -350,7 +351,7 @@ export const BackofficeUsersPage = () => {
                 onClick={closeModal}
                 aria-label="Cerrar modal"
               >
-                ✕
+                <MdClose />
               </button>
             </header>
             <form onSubmit={handleSubmit} className="backoffice-users__form">
@@ -428,7 +429,7 @@ export const BackofficeUsersPage = () => {
                 onClick={closeResetModal}
                 aria-label="Cerrar modal"
               >
-                ✕
+                <MdClose />
               </button>
             </header>
             <form onSubmit={handleResetSubmit} className="backoffice-users__form">
