@@ -8,7 +8,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 
 import { fonts } from "../theme/fonts";
@@ -40,21 +40,21 @@ const INITIAL_MESSAGES: Message[] = [
     id: "1",
     role: "ai",
     text: "¡Hola! Soy Saloom AI. ¿En qué puedo ayudarte hoy? ¿Te gustaría agendar una cita para el cabello?",
-    time: "10:00 AM",
+    time: "10:00 AM"
   },
   {
     id: "2",
     role: "user",
     text: "Sí, me gustaría reservar un corte y tinte para este viernes.",
-    time: "10:01 AM",
+    time: "10:01 AM"
   },
   {
     id: "3",
     role: "ai",
     text: "¡Perfecto! Tengo disponibilidad el viernes. ¿Cuál de estos horarios prefieres?",
     time: "10:01 AM",
-    quickReplies: ["10:00 AM", "3:00 PM"],
-  },
+    quickReplies: ["10:00 AM", "3:00 PM"]
+  }
 ];
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -79,7 +79,7 @@ export const AiAssistantScreen = () => {
       id: Date.now().toString(),
       role: "user",
       text: trimmed,
-      time: now(),
+      time: now()
     };
     setMessages((prev) => [...prev, newMsg]);
     setInputText("");
@@ -110,7 +110,9 @@ export const AiAssistantScreen = () => {
             </View>
           )}
 
-          <View style={[styles.bubbleWrapper, isAi ? styles.bubbleWrapperAi : styles.bubbleWrapperUser]}>
+          <View
+            style={[styles.bubbleWrapper, isAi ? styles.bubbleWrapperAi : styles.bubbleWrapperUser]}
+          >
             {/* Bubble */}
             <View style={[styles.bubble, isAi ? styles.bubbleAi : styles.bubbleUser]}>
               <Text style={[styles.bubbleText, isAi ? styles.bubbleTextAi : styles.bubbleTextUser]}>
@@ -190,7 +192,7 @@ export const AiAssistantScreen = () => {
             returnKeyType="send"
             onSubmitEditing={() => sendMessage(inputText)}
             multiline
-            {...(Platform.OS === "web" ? { outlineWidth: 0 } as any : {})}
+            {...(Platform.OS === "web" ? ({ outlineWidth: 0 } as any) : {})}
           />
           <TouchableOpacity
             style={styles.sendBtn}
@@ -210,7 +212,7 @@ export const AiAssistantScreen = () => {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: "#f8fafc",
+    backgroundColor: "#f8fafc"
   },
 
   /* Header */
@@ -223,7 +225,7 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: "#f3f4f6",
-    gap: 12,
+    gap: 12
   },
   aiAvatarLarge: {
     width: 44,
@@ -233,71 +235,71 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: `${LILAC}66`,
     alignItems: "center",
-    justifyContent: "center",
+    justifyContent: "center"
   },
   headerInfo: {
     flex: 1,
-    gap: 2,
+    gap: 2
   },
   headerTitle: {
     fontSize: 17,
     fontFamily: fonts.bold,
-    color: TEXT_MAIN,
+    color: TEXT_MAIN
   },
   onlineRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 5,
+    gap: 5
   },
   onlineDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: "#22c55e",
+    backgroundColor: "#22c55e"
   },
   onlineText: {
     fontSize: 12,
     fontFamily: fonts.medium,
-    color: TEXT_SEC,
+    color: TEXT_SEC
   },
   moreBtn: {
     width: 36,
     height: 36,
     borderRadius: 18,
     alignItems: "center",
-    justifyContent: "center",
+    justifyContent: "center"
   },
 
   /* Chat */
   chatContent: {
     padding: 16,
     paddingBottom: 12,
-    gap: 0,
+    gap: 0
   },
   timestampRow: {
     alignItems: "center",
-    marginBottom: 20,
+    marginBottom: 20
   },
   timestamp: {
     fontSize: 11,
     fontFamily: fonts.semiBold,
     color: "#94a3b8",
     textTransform: "uppercase",
-    letterSpacing: 0.8,
+    letterSpacing: 0.8
   },
   messageRow: {
     flexDirection: "row",
     alignItems: "flex-end",
     marginBottom: 16,
-    gap: 8,
+    gap: 8
   },
   messageRowAi: {
-    maxWidth: "85%",
+    maxWidth: "85%"
   },
   messageRowUser: {
     flexDirection: "row-reverse",
     maxWidth: "85%",
-    alignSelf: "flex-end",
+    alignSelf: "flex-end"
   },
   aiAvatar: {
     width: 32,
@@ -308,7 +310,7 @@ const styles = StyleSheet.create({
     borderColor: `${LILAC}55`,
     alignItems: "center",
     justifyContent: "center",
-    flexShrink: 0,
+    flexShrink: 0
   },
   userAvatar: {
     width: 32,
@@ -319,22 +321,22 @@ const styles = StyleSheet.create({
     borderColor: `${PRIMARY}30`,
     alignItems: "center",
     justifyContent: "center",
-    flexShrink: 0,
+    flexShrink: 0
   },
   bubbleWrapper: {
     gap: 4,
-    flex: 1,
+    flex: 1
   },
   bubbleWrapperAi: {
-    alignItems: "flex-start",
+    alignItems: "flex-start"
   },
   bubbleWrapperUser: {
-    alignItems: "flex-end",
+    alignItems: "flex-end"
   },
   bubble: {
     paddingHorizontal: 14,
     paddingVertical: 10,
-    borderRadius: 18,
+    borderRadius: 18
   },
   bubbleAi: {
     backgroundColor: "#ffffff",
@@ -345,7 +347,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
     elevation: 1,
     borderWidth: 1,
-    borderColor: "#f1f5f9",
+    borderColor: "#f1f5f9"
   },
   bubbleUser: {
     backgroundColor: PRIMARY,
@@ -354,29 +356,29 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
+    elevation: 2
   },
   bubbleText: {
     fontSize: 14,
-    lineHeight: 20,
+    lineHeight: 20
   },
   bubbleTextAi: {
     fontFamily: fonts.regular,
-    color: TEXT_MAIN,
+    color: TEXT_MAIN
   },
   bubbleTextUser: {
     fontFamily: fonts.medium,
-    color: "#ffffff",
+    color: "#ffffff"
   },
   messageTime: {
     fontSize: 10,
     fontFamily: fonts.medium,
     color: "#94a3b8",
-    marginLeft: 2,
+    marginLeft: 2
   },
   messageTimeUser: {
     marginLeft: 0,
-    marginRight: 2,
+    marginRight: 2
   },
 
   /* Quick replies */
@@ -384,7 +386,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
-    marginTop: 4,
+    marginTop: 4
   },
   quickReplyBtn: {
     paddingHorizontal: 16,
@@ -392,12 +394,12 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     borderWidth: 1.5,
     borderColor: LILAC_DARK,
-    backgroundColor: "#ffffff",
+    backgroundColor: "#ffffff"
   },
   quickReplyText: {
     fontSize: 13,
     fontFamily: fonts.semiBold,
-    color: LILAC_DARK,
+    color: LILAC_DARK
   },
 
   /* Input */
@@ -406,7 +408,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: "#f3f4f6",
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingVertical: 10
   },
   inputRow: {
     flexDirection: "row",
@@ -415,13 +417,13 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     paddingHorizontal: 12,
     paddingVertical: 6,
-    gap: 8,
+    gap: 8
   },
   addBtn: {
     width: 32,
     height: 32,
     alignItems: "center",
-    justifyContent: "center",
+    justifyContent: "center"
   },
   textInput: {
     flex: 1,
@@ -430,7 +432,7 @@ const styles = StyleSheet.create({
     color: TEXT_MAIN,
     maxHeight: 100,
     paddingVertical: 6,
-    ...Platform.select({ web: { outlineWidth: 0 } as any }),
+    ...Platform.select({ web: { outlineWidth: 0 } as any })
   },
   sendBtn: {
     width: 36,
@@ -443,6 +445,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 2 },
-    elevation: 3,
-  },
+    elevation: 3
+  }
 });

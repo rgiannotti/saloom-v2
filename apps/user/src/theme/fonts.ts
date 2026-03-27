@@ -4,5 +4,5 @@ export const fonts = {
   semiBold: "Manrope_600SemiBold",
   bold: "Manrope_700Bold",
   extraBold: "Manrope_800ExtraBold",
-  serifItalic: "DMSerifDisplay_400Regular_Italic",
+  serifItalic: "DMSerifDisplay_400Regular_Italic"
 } as const;

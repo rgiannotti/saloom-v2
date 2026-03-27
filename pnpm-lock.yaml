@@ -235,6 +235,7 @@ importers:
       base-64: ^1.0.0
       dayjs: ^1.11.13
       expo: ~48.0.21
+      expo-blur: ~12.0.1
       expo-constants: ^14.2.1
       expo-font: ~11.1.1
       expo-keep-awake: ^12.0.1
@@ -260,6 +261,7 @@ importers:
       base-64: 1.0.0
       dayjs: 1.11.20
       expo: 48.0.21_@babel+core@7.22.9
+      expo-blur: 12.0.1_expo@48.0.21
       expo-constants: 14.2.1_expo@48.0.21
       expo-font: 11.1.1_expo@48.0.21
       expo-keep-awake: 12.0.1_expo@48.0.21
@@ -7135,6 +7137,14 @@ packages:
     transitivePeerDependencies:
       - expo
       - supports-color
+    dev: false
+
+  /expo-blur/12.0.1_expo@48.0.21:
+    resolution: {integrity: sha512-7oF/xRIFJukM4/qL6ejZ4Z/4YcVExvBPsBrz7rGYz6PtgAkWwYFR62+ExZOzTEG4hgoPPmlnt1ncimsk/MYUgQ==}
+    peerDependencies:
+      expo: '*'
+    dependencies:
+      expo: 48.0.21_@babel+core@7.22.9
     dev: false
 
   /expo-constants/14.2.1_expo@48.0.21:

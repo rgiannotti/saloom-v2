@@ -7,7 +7,7 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 
 import { SaloomLogo } from "../components/SaloomLogo";
@@ -96,11 +96,7 @@ export const WelcomeScreen = ({ onLogin, onGetStarted }: Props) => {
           </TouchableOpacity>
 
           {/* Secondary CTA */}
-          <TouchableOpacity
-            style={styles.secondaryButton}
-            onPress={onLogin}
-            activeOpacity={0.75}
-          >
+          <TouchableOpacity style={styles.secondaryButton} onPress={onLogin} activeOpacity={0.75}>
             <Text style={styles.secondaryButtonText}>Iniciar sesión</Text>
           </TouchableOpacity>
         </View>
@@ -115,12 +111,12 @@ const ACCENT = "#C8A2F2";
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FAFAFA",
+    backgroundColor: "#FAFAFA"
   },
   inner: {
     flex: 1,
     flexDirection: "column",
-    justifyContent: "space-between",
+    justifyContent: "space-between"
   },
 
   /* Header */
@@ -129,7 +125,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingTop: 48,
     paddingBottom: 16,
-    paddingHorizontal: 24,
+    paddingHorizontal: 24
   },
 
   /* Main */
@@ -138,7 +134,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 24,
-    paddingVertical: 24,
+    paddingVertical: 24
   },
   cardRing: {
     backgroundColor: "#ffffff",
@@ -149,11 +145,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.18,
     shadowRadius: 24,
     shadowOffset: { width: 0, height: 8 },
-    elevation: 8,
+    elevation: 8
   },
   imageGradient: {
     height: "50%",
-    backgroundColor: "rgba(0,0,0,0.45)",
+    backgroundColor: "rgba(0,0,0,0.45)"
   },
   badge: {
     position: "absolute",
@@ -170,7 +166,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 2 },
-    elevation: 3,
+    elevation: 3
   },
   badgeIconWrap: {
     backgroundColor: `${ACCENT}33`,
@@ -178,23 +174,23 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     alignItems: "center",
-    justifyContent: "center",
+    justifyContent: "center"
   },
   badgeIconText: {
     fontSize: 14,
-    color: ACCENT,
+    color: ACCENT
   },
   badgeLabel: {
     fontSize: 10,
     fontFamily: fonts.bold,
     color: "#9ca3af",
     textTransform: "uppercase",
-    letterSpacing: 1,
+    letterSpacing: 1
   },
   badgeTitle: {
     fontSize: 14,
     fontFamily: fonts.bold,
-    color: "#1f2937",
+    color: "#1f2937"
   },
 
   /* Bottom sheet */
@@ -210,7 +206,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 60,
     shadowOffset: { width: 0, height: -10 },
-    elevation: 5,
+    elevation: 5
   },
   dragHandle: {
     position: "absolute",
@@ -218,7 +214,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 6,
     borderRadius: 999,
-    backgroundColor: "#f3f4f6",
+    backgroundColor: "#f3f4f6"
   },
   title: {
     fontSize: 36,
@@ -227,11 +223,11 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 40,
     marginBottom: 16,
-    letterSpacing: -0.5,
+    letterSpacing: -0.5
   },
   titleAccent: {
     color: PRIMARY,
-    fontFamily: fonts.serifItalic,
+    fontFamily: fonts.serifItalic
   },
   subtitle: {
     fontSize: 17,
@@ -240,23 +236,23 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 26,
     marginBottom: 32,
-    maxWidth: 300,
+    maxWidth: 300
   },
   dotsRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    marginBottom: 40,
+    marginBottom: 40
   },
   dot: {
     width: 8,
     height: 8,
     borderRadius: 999,
-    backgroundColor: `${ACCENT}66`,
+    backgroundColor: `${ACCENT}66`
   },
   dotActive: {
     width: 32,
-    backgroundColor: PRIMARY,
+    backgroundColor: PRIMARY
   },
   primaryButton: {
     width: "100%",
@@ -272,28 +268,28 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 16,
     shadowOffset: { width: 0, height: 6 },
-    elevation: 6,
+    elevation: 6
   },
   primaryButtonText: {
     color: "#ffffff",
     fontSize: 18,
-    fontFamily: fonts.bold,
+    fontFamily: fonts.bold
   },
   primaryButtonArrow: {
     color: "#ffffff",
     fontSize: 18,
-    fontFamily: fonts.bold,
+    fontFamily: fonts.bold
   },
   secondaryButton: {
     width: "100%",
     height: 48,
     borderRadius: 12,
     alignItems: "center",
-    justifyContent: "center",
+    justifyContent: "center"
   },
   secondaryButtonText: {
     color: "#4b5563",
     fontSize: 16,
-    fontFamily: fonts.semiBold,
-  },
+    fontFamily: fonts.semiBold
+  }
 });

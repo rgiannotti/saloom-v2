@@ -12,7 +12,7 @@ import {
   Manrope_600SemiBold,
   Manrope_700Bold,
   Manrope_800ExtraBold,
-  useFonts,
+  useFonts
 } from "@expo-google-fonts/manrope";
 import { StatusBar } from "expo-status-bar";
 import React, { useState } from "react";
@@ -61,7 +61,7 @@ export function App() {
     Manrope_600SemiBold,
     Manrope_700Bold,
     Manrope_800ExtraBold,
-    DMSerifDisplay_400Regular_Italic,
+    DMSerifDisplay_400Regular_Italic
   });
 
   if (!fontsLoaded) {
@@ -88,10 +88,10 @@ const styles = StyleSheet.create({
     backgroundColor: "#ffffff",
     alignItems: "center",
     justifyContent: "center",
-    gap: 12,
+    gap: 12
   },
   loadingText: {
     color: "#101922",
-    fontFamily: "Manrope_400Regular",
-  },
+    fontFamily: "Manrope_400Regular"
+  }
 });
