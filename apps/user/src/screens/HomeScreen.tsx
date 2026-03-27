@@ -395,9 +395,7 @@ export const HomeScreen = () => {
                     ]}
                   />
                 </View>
-                <Text style={[styles.navLabel, active && styles.navLabelActive]}>
-                  {tab.label}
-                </Text>
+                <Text style={[styles.navLabel, active && styles.navLabelActive]}>{tab.label}</Text>
               </TouchableOpacity>
             );
           })}
@@ -702,7 +700,9 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     overflow: "hidden",
     backgroundColor:
-      Platform.OS === "android" ? "rgba(255,255,255,0.96)" : "rgba(255,255,255,0.18)",
+      Platform.OS === "android" || Platform.OS === "web"
+        ? "rgba(255,255,255,0.96)"
+        : "rgba(255,255,255,0.18)",
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.55)",
     shadowColor: "#000",
@@ -715,28 +715,27 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-around",
     alignItems: "center",
-    paddingTop: 4,
-    paddingBottom: 6,
-    paddingHorizontal: 4
+    paddingTop: 2,
+    paddingBottom: 2,
+    paddingHorizontal: 2
   },
   navItem: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: 4,
-    gap: 2
+    gap: 0
   },
   navIconWrap: {
     width: 40,
-    height: 32,
+    height: 26,
     borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden"
   },
   navIconWrapActive: {
-    backgroundColor:
-      Platform.OS === "android" ? `${PRIMARY}18` : "rgba(255,255,255,0.35)",
+    backgroundColor: Platform.OS === "android" ? `${PRIMARY}18` : "rgba(255,255,255,0.35)",
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.6)"
   },
