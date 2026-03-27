@@ -1,7 +1,7 @@
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { BlurView } from "expo-blur";
 import * as Location from "expo-location";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Animated,
@@ -40,21 +40,77 @@ interface Recommendation {
   address: { full?: string; comunity?: string; city?: string };
   location?: { type?: string; coordinates?: [number, number] };
   logo?: string;
-  categories: { _id: string; name: string }[];
+  categories: { _id: string; name: string; icon?: string }[];
   professionals: {
     services: { price: number }[];
   }[];
 }
 
-// ─── Constants ───────────────────────────────────────────────────────────────
+interface ServiceCategory {
+  _id: string;
+  name: string;
+  icon: string;
+  active: boolean;
+}
 
-const CATEGORIES = [
-  { id: "peluqueria", label: "Peluquería", icon: "content-cut" },
-  { id: "barberia", label: "Barbería", icon: "face-man" },
-  { id: "spa", label: "Spa", icon: "flower" },
-  { id: "manicure", label: "Manicure", icon: "brush" },
-  { id: "masajes", label: "Masajes", icon: "human" }
-] as const;
+/** Maps backoffice react-icons/md names → MaterialCommunityIcons names */
+const MD_TO_MCI: Record<string, string> = {
+  MdContentCut: "content-cut",
+  MdSpa: "flower",
+  MdFace: "face-man",
+  MdFaceRetouchingNatural: "face-woman",
+  MdBrush: "brush",
+  MdColorLens: "palette",
+  MdLocalFlorist: "flower-outline",
+  MdFitnessCenter: "dumbbell",
+  MdSelfImprovement: "meditation",
+  MdAccessibility: "human",
+  MdHealthAndSafety: "shield-cross",
+  MdMedicalServices: "medical-bag",
+  MdLocalHospital: "hospital-building",
+  MdNaturePeople: "nature-people",
+  MdYard: "tree",
+  MdHouse: "home",
+  MdCleaningServices: "broom",
+  MdPlumbing: "pipe",
+  MdElectricalServices: "lightning-bolt",
+  MdHandyman: "tools",
+  MdBuild: "wrench",
+  MdConstruction: "hard-hat",
+  MdFormatPaint: "format-paint",
+  MdCarpenter: "saw-blade",
+  MdOutdoorGrill: "grill",
+  MdKitchen: "fridge",
+  MdDining: "food-fork-drink",
+  MdLocalCafe: "coffee",
+  MdLocalDining: "silverware-fork-knife",
+  MdPets: "paw",
+  MdDirectionsCar: "car",
+  MdCarRepair: "car-wrench",
+  MdLocalCarWash: "car-wash",
+  MdPhotoCamera: "camera",
+  MdVideocam: "video",
+  MdMusicNote: "music-note",
+  MdSchool: "school",
+  MdMenuBook: "book-open-variant",
+  MdComputer: "monitor",
+  MdPhoneIphone: "cellphone",
+  MdDesignServices: "palette-swatch",
+  MdBusinessCenter: "briefcase",
+  MdAccountBalance: "bank",
+  MdGavel: "gavel",
+  MdLocalShipping: "truck-delivery",
+  MdFlight: "airplane",
+  MdHotel: "bed",
+  MdSportsEsports: "gamepad-variant",
+  MdSportsTennis: "tennis",
+  MdSportsFootball: "soccer",
+  MdSportsMartialArts: "karate",
+  MdPool: "pool",
+  MdStar: "star",
+  MdFavorite: "heart",
+  MdCategory: "shape"
+};
 
 // Fallback coords: Polanco, CDMX
 const FALLBACK_LAT = 19.4284;
@@ -104,7 +160,7 @@ const NAV_TABS: { id: TabId; label: string; icon: ReturnType<typeof require> }[]
 export const HomeScreen = () => {
   const { logout, session } = useAuth();
   const [activeTab, setActiveTab] = useState<TabId>("explore");
-  const [activeCategory, setActiveCategory] = useState("peluqueria");
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
 
   const scaleAnims = useRef(
     NAV_TABS.reduce<Record<TabId, Animated.Value>>(
@@ -148,6 +204,31 @@ export const HomeScreen = () => {
     lng: FALLBACK_LNG
   });
 
+  const toggleCategory = (id: string) => {
+    setSelectedCategories((prev) =>
+      prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]
+    );
+  };
+
+  // Unique categories present across all loaded recommendations, preserving order of first appearance
+  const availableCategories = useMemo(() => {
+    const seen = new Set<string>();
+    const result: ServiceCategory[] = [];
+    for (const item of recommendations) {
+      for (const cat of item.categories) {
+        if (!seen.has(cat._id)) {
+          seen.add(cat._id);
+          result.push({ _id: cat._id, name: cat.name, icon: cat.icon ?? "", active: true });
+        }
+      }
+    }
+    return result;
+  }, [recommendations]);
+
+  const filteredRecommendations = recommendations.filter((item) =>
+    item.categories.some((cat) => selectedCategories.includes(cat._id))
+  );
+
   useEffect(() => {
     const fetchRecommendations = async () => {
       setLoading(true);
@@ -178,6 +259,10 @@ export const HomeScreen = () => {
         if (!res.ok) throw new Error("No se pudieron cargar los recomendados.");
         const data: Recommendation[] = await res.json();
         setRecommendations(data);
+        const allIds = [
+          ...new Set(data.flatMap((item) => item.categories.map((c) => c._id)))
+        ];
+        setSelectedCategories(allIds);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Error al cargar recomendaciones.");
       } finally {
@@ -235,26 +320,28 @@ export const HomeScreen = () => {
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.tabsContent}
             >
-              {CATEGORIES.map((cat) => {
-                const active = activeCategory === cat.id;
-                return (
-                  <TouchableOpacity
-                    key={cat.id}
-                    style={[styles.tab, active && styles.tabActive]}
-                    onPress={() => setActiveCategory(cat.id)}
-                    activeOpacity={0.8}
-                  >
-                    <MaterialCommunityIcons
-                      name={cat.icon as any}
-                      size={16}
-                      color={active ? "#ffffff" : "#1A1A1A"}
-                    />
-                    <Text style={[styles.tabLabel, active && styles.tabLabelActive]}>
-                      {cat.label}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
+              {availableCategories.map((cat) => {
+                  const active = selectedCategories.includes(cat._id);
+                  return (
+                    <TouchableOpacity
+                      key={cat._id}
+                      style={[styles.tab, active && styles.tabActive]}
+                      onPress={() => toggleCategory(cat._id)}
+                      activeOpacity={0.8}
+                    >
+                      {cat.icon && MD_TO_MCI[cat.icon] ? (
+                        <MaterialCommunityIcons
+                          name={MD_TO_MCI[cat.icon] as any}
+                          size={16}
+                          color={active ? "#ffffff" : "#1A1A1A"}
+                        />
+                      ) : null}
+                      <Text style={[styles.tabLabel, active && styles.tabLabelActive]}>
+                        {cat.name}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
             </ScrollView>
           </View>
 
@@ -284,15 +371,19 @@ export const HomeScreen = () => {
               </View>
             )}
 
-            {!loading && !error && recommendations.length === 0 && (
+            {!loading && !error && filteredRecommendations.length === 0 && (
               <View style={styles.centered}>
                 <MaterialCommunityIcons name="store-off-outline" size={32} color="#94a3b8" />
-                <Text style={styles.emptyText}>No hay recomendaciones disponibles.</Text>
+                <Text style={styles.emptyText}>
+                  {recommendations.length === 0
+                    ? "No hay recomendaciones disponibles."
+                    : "Sin resultados para las categorías seleccionadas."}
+                </Text>
               </View>
             )}
 
             {!loading &&
-              recommendations.map((item, index) => {
+              filteredRecommendations.map((item, index) => {
                 const minPrice = getMinPrice(item.professionals);
                 const distance = getDistance(userCoords.lat, userCoords.lng, item.location?.coordinates);
                 const area = getArea(item.address);
@@ -780,5 +871,25 @@ const styles = StyleSheet.create({
   },
   navLabelActive: {
     color: PRIMARY
+  },
+
+  /* States */
+  centered: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 40,
+    gap: 8
+  },
+  emptyText: {
+    fontSize: 14,
+    fontFamily: fonts.medium,
+    color: TEXT_SEC,
+    textAlign: "center"
+  },
+  errorText: {
+    fontSize: 14,
+    fontFamily: fonts.medium,
+    color: TEXT_SEC,
+    textAlign: "center"
   }
 });

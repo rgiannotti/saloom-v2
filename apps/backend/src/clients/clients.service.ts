@@ -103,7 +103,7 @@ export class ClientsService {
       })
       .limit(limit)
       .select("name denomination address location logo categories professionals")
-      .populate("categories", "name")
+      .populate("categories", "name icon")
       .populate([
         { path: "professionals.professional", select: "name email phone" },
         { path: "professionals.services.service", select: "name" }
