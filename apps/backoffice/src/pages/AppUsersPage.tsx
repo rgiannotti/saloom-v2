@@ -1,4 +1,5 @@
 import React, { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { MdEdit, MdDelete, MdRefresh, MdClose } from "react-icons/md";
 
 import { useAuth } from "../auth/AuthProvider";
 import { API_BASE_URL } from "../config";
@@ -331,7 +332,7 @@ export const AppUsersPage = () => {
               disabled={loading}
               aria-label="Actualizar usuarios"
             >
-              {loading ? "…" : "⟳"}
+              {loading ? "…" : <MdRefresh />}
             </button>
           </div>
           <div className="table-scroll" ref={tableScrollRef}>
@@ -365,14 +366,14 @@ export const AppUsersPage = () => {
                           className="ghost-button"
                           onClick={() => openEditModal(user)}
                         >
-                          ✏️
+                          <MdEdit />
                         </button>
                         <button
                           type="button"
                           className="ghost-button ghost-button--danger"
                           onClick={() => handleDelete(user._id)}
                         >
-                          🗑️
+                          <MdDelete />
                         </button>
                       </td>
                     </tr>
@@ -406,7 +407,7 @@ export const AppUsersPage = () => {
             <div className="modal__header">
               <h3>{editingId ? "Editar usuario" : "Nuevo usuario"}</h3>
               <button type="button" className="ghost-button" onClick={closeModal}>
-                ✕
+                <MdClose />
               </button>
             </div>
             <form className="app-users__form" onSubmit={handleSubmit}>

@@ -1,22 +1,23 @@
 import React from "react";
+import { MdPeople, MdMedicalServices, MdBarChart, MdSettings } from "react-icons/md";
 
 const modules = [
   {
     title: "Usuarios",
     description: "Gestiona accesos, roles y estados de las cuentas.",
-    icon: "👥"
+    icon: <MdPeople />
   },
   {
     title: "Profesionales",
     description: "Valida documentación y disponibilidad.",
-    icon: "🧑‍⚕️"
+    icon: <MdMedicalServices />
   },
   {
     title: "Reportes",
     description: "Monitorea métricas clave del negocio.",
-    icon: "📊"
+    icon: <MdBarChart />
   },
-  { title: "Configuración", description: "Actualiza catálogos, precios y campañas.", icon: "⚙️" }
+  { title: "Configuración", description: "Actualiza catálogos, precios y campañas.", icon: <MdSettings /> }
 ];
 
 export const DashboardPage = () => {

@@ -1,4 +1,5 @@
 import React, { FormEvent, useEffect, useMemo, useState } from "react";
+import { MdEdit, MdDelete, MdRefresh, MdClose } from "react-icons/md";
 
 import { useAuth } from "../auth/AuthProvider";
 import { API_BASE_URL } from "../config";
@@ -261,7 +262,7 @@ export const ServicesPage = () => {
             disabled={loading}
             aria-label="Refrescar lista de servicios"
           >
-            {loading ? "…" : "⟳"}
+            {loading ? "…" : <MdRefresh />}
           </button>
         </div>
         {error ? (
@@ -308,7 +309,7 @@ export const ServicesPage = () => {
                       onClick={() => openModal(service)}
                       aria-label={`Editar ${service.name}`}
                     >
-                      ✏️
+                      <MdEdit />
                     </button>
                     <button
                       type="button"
@@ -316,7 +317,7 @@ export const ServicesPage = () => {
                       onClick={() => handleDelete(service._id)}
                       aria-label={`Eliminar ${service.name}`}
                     >
-                      🗑️
+                      <MdDelete />
                     </button>
                   </td>
                   </tr>
@@ -343,7 +344,7 @@ export const ServicesPage = () => {
                 onClick={closeModal}
                 aria-label="Cerrar modal"
               >
-                ✕
+                <MdClose />
               </button>
             </header>
             <form className="services-form" onSubmit={handleSubmit}>

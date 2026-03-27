@@ -1,4 +1,5 @@
 import React, { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { MdEdit, MdDelete, MdRefresh, MdClose, MdExpandLess, MdExpandMore } from "react-icons/md";
 
 import { useAuth } from "../auth/AuthProvider";
 import { API_BASE_URL, GOOGLE_MAPS_API_KEY, GOOGLE_MAPS_COUNTRY } from "../config";
@@ -396,9 +397,16 @@ export const ClientsPage = () => {
 
   const addProfessionalSchedule = (index: number) => {
     setProfessionals((prev) =>
-      prev.map((pro, i) =>
-        i === index ? { ...pro, schedule: [...pro.schedule, createEmptySchedule()] } : pro
-      )
+      prev.map((pro, i) => {
+        if (i !== index) return pro;
+        const last = pro.schedule[pro.schedule.length - 1];
+        const lastDayIndex = last ? daysOfWeek.indexOf(last.day) : -1;
+        const nextDay = daysOfWeek[(lastDayIndex + 1) % daysOfWeek.length];
+        const newEntry: ProfessionalScheduleForm = last
+          ? { day: nextDay, start: last.start, end: last.end }
+          : createEmptySchedule();
+        return { ...pro, schedule: [...pro.schedule, newEntry] };
+      })
     );
   };
 
@@ -1052,7 +1060,7 @@ export const ClientsPage = () => {
   };
 
   if (!token) {
-    return <p>Inicia sesión para gestionar clientes.</p>;
+    return <p>Inicia sesión para gestionar profesionales.</p>;
   }
 
   if (!editorOpen) {
@@ -1061,10 +1069,10 @@ export const ClientsPage = () => {
         <header className="clients-page__header">
           <div>
             <h1>Profesionales</h1>
-            <p>Administra los clientes registrados en la plataforma.</p>
+            <p>Administra los profesionales registrados en la plataforma.</p>
           </div>
           <button type="button" className="primary-button" onClick={() => openEditor()}>
-            Nuevo cliente
+            Nuevo profesional
           </button>
         </header>
 
@@ -1076,9 +1084,9 @@ export const ClientsPage = () => {
               className="icon-button icon-button--ghost"
               onClick={fetchClients}
               disabled={loading}
-              aria-label="Refrescar clientes"
+              aria-label="Refrescar profesionales"
             >
-              {loading ? "…" : "⟳"}
+              {loading ? "…" : <MdRefresh />}
             </button>
           </div>
           {error ? (
@@ -1091,7 +1099,7 @@ export const ClientsPage = () => {
               <thead>
                 <tr>
                   <th>Código</th>
-                  <th>Cliente</th>
+                  <th>Profesional</th>
                   <th>Contacto</th>
                   <th>Estado</th>
                   <th></th>
@@ -1101,7 +1109,7 @@ export const ClientsPage = () => {
                 {clients.length === 0 ? (
                   <tr>
                     <td className="table-empty" colSpan={5}>
-                      No hay clientes registrados todavía.
+                      No hay profesionales registrados todavía.
                     </td>
                   </tr>
                 ) : (
@@ -1138,7 +1146,7 @@ export const ClientsPage = () => {
                           onClick={() => openEditor(client)}
                           aria-label={`Editar ${client.denomination}`}
                         >
-                          ✏️
+                          <MdEdit />
                         </button>
                         <button
                           type="button"
@@ -1146,7 +1154,7 @@ export const ClientsPage = () => {
                           onClick={() => handleDelete(client._id)}
                           aria-label={`Eliminar ${client.denomination}`}
                         >
-                          🗑️
+                          <MdDelete />
                         </button>
                       </td>
                     </tr>
@@ -1167,7 +1175,7 @@ export const ClientsPage = () => {
           <button type="button" className="ghost-button" onClick={closeEditor}>
             {"<- Volver al listado"}
           </button>
-          <h1 style={{ marginTop: "0.5rem" }}>{editingId ? "Editar cliente" : "Nuevo cliente"}</h1>
+          <h1 style={{ marginTop: "0.5rem" }}>{editingId ? "Editar profesional" : "Nuevo profesional"}</h1>
           <p>Completa la información y guarda los cambios.</p>
         </div>
         <button type="button" className="ghost-button" onClick={closeEditor}>
@@ -1203,11 +1211,11 @@ export const ClientsPage = () => {
               <>
                 <div className="form-grid">
                   <div className="form-field">
-                    <label htmlFor="client-rif">RIF / Fiscal</label>
+                    <label htmlFor="client-name">Nombre Comercial</label>
                     <input
-                      id="client-rif"
-                      value={form.rif}
-                      onChange={(e) => setForm((prev) => ({ ...prev, rif: e.target.value }))}
+                      id="client-name"
+                      value={form.name}
+                      onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
                       required
                     />
                   </div>
@@ -1225,6 +1233,16 @@ export const ClientsPage = () => {
                   </div>
 
                   <div className="form-field">
+                    <label htmlFor="client-rif">RIF / Fiscal</label>
+                    <input
+                      id="client-rif"
+                      value={form.rif}
+                      onChange={(e) => setForm((prev) => ({ ...prev, rif: e.target.value }))}
+                      required
+                    />
+                  </div>
+
+                  <div className="form-field">
                     <label htmlFor="client-fiscal-address">Dirección fiscal</label>
                     <input
                       id="client-fiscal-address"
@@ -1232,16 +1250,6 @@ export const ClientsPage = () => {
                       onChange={(e) =>
                         setForm((prev) => ({ ...prev, fiscalAddress: e.target.value }))
                       }
-                      required
-                    />
-                  </div>
-
-                  <div className="form-field">
-                    <label htmlFor="client-name">Nombre Comercial</label>
-                    <input
-                      id="client-name"
-                      value={form.name}
-                      onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
                       required
                     />
                   </div>
@@ -1354,7 +1362,7 @@ export const ClientsPage = () => {
                         setForm((prev) => ({ ...prev, useGoogleMap: e.target.checked }))
                       }
                     />
-                    Usar Google Maps
+                    Asignar Ubicación de Google Maps
                   </label>
                 </div>
 
@@ -1424,9 +1432,9 @@ export const ClientsPage = () => {
                 <div className="clients-category-section">
                   <div className="clients-category-section__header">
                     <div>
-                      <h4>Categorías del cliente</h4>
+                      <h4>Categorías del profesional</h4>
                       <p className="muted-text">
-                        Asigna las categorías relevantes para este cliente.
+                        Asigna las categorías relevantes para este profesional.
                       </p>
                     </div>
                     <button
@@ -1436,7 +1444,7 @@ export const ClientsPage = () => {
                       aria-label="Actualizar categorías"
                       disabled={catalogStatus.loading}
                     >
-                      {catalogStatus.loading ? "…" : "⟳"}
+                      {catalogStatus.loading ? "…" : <MdRefresh />}
                     </button>
                   </div>
                   {catalogStatus.error ? (
@@ -1476,9 +1484,9 @@ export const ClientsPage = () => {
               <div className="clients-personal-tab">
                 <div className="clients-personal__header">
                   <div>
-                    <h3>Profesionales asignados</h3>
+                    <h3>Staff asignado</h3>
                     <p className="muted-text">
-                      Vincula profesionales (usuarios con rol Pro), sus servicios y horarios por
+                      Vincula staff (usuarios con rol Pro), sus servicios y horarios por
                       día.
                     </p>
                     <div className="clients-personal__catalog">
@@ -1487,7 +1495,7 @@ export const ClientsPage = () => {
                         : catalogs.professionals.length ||
                             catalogs.services.length ||
                             catalogs.categories.length
-                          ? `${catalogs.professionals.length} profesionales · ${catalogs.services.length} servicios · ${catalogs.categories.length} categorías`
+                          ? `${catalogs.professionals.length} staff · ${catalogs.services.length} servicios · ${catalogs.categories.length} categorías`
                           : "Catálogos sin datos cargados"}
                     </div>
                   </div>
@@ -1499,10 +1507,10 @@ export const ClientsPage = () => {
                       aria-label="Actualizar catálogos"
                       disabled={catalogStatus.loading}
                     >
-                      {catalogStatus.loading ? "…" : "⟳"}
+                      {catalogStatus.loading ? "…" : <MdRefresh />}
                     </button>
                     <button type="button" className="ghost-button" onClick={openProfessionalPicker}>
-                      + Profesional
+                      + Staff
                     </button>
                   </div>
                 </div>
@@ -1533,7 +1541,7 @@ export const ClientsPage = () => {
                       </select>
                     ) : (
                       <p className="muted-text">
-                        No hay usuarios PRO disponibles. Crea uno nuevo para asignarlo al cliente.
+                        No hay usuarios PRO disponibles. Crea uno nuevo para asignarlo al staff.
                       </p>
                     )}
                     {professionalPickerError ? (
@@ -1566,7 +1574,7 @@ export const ClientsPage = () => {
                 {professionals.length === 0 ? (
                   <div className="clients-no-professionals">
                     <p className="muted-text">
-                      Aún no se han agregado profesionales. Usa el botón “+ Profesional” para elegir
+                      Aún no se han agregado staff. Usa el botón “+ Staff” para elegir
                       uno existente o crea un nuevo usuario PRO.
                     </p>
                     <div className="clients-professional-picker__actions">
@@ -1575,7 +1583,7 @@ export const ClientsPage = () => {
                         className="primary-button"
                         onClick={openProfessionalPicker}
                       >
-                        + Profesional
+                        + Staff
                       </button>
                       <button type="button" className="ghost-button" onClick={openNewProModal}>
                         Crear usuario PRO
@@ -1612,15 +1620,13 @@ export const ClientsPage = () => {
                           <div className="professional-card__header-actions">
                             <button
                               type="button"
-                              className={`icon-button ${
-                                pro.uiExpanded ? "" : "icon-button--ghost"
-                              }`}
+                              className="icon-button icon-button--ghost"
                               onClick={() => toggleProfessionalExpanded(proIndex)}
                               aria-label={`${
                                 pro.uiExpanded ? "Colapsar" : "Expandir"
-                              } profesional ${pro.name || proIndex + 1}`}
+                              } staff ${pro.name || proIndex + 1}`}
                             >
-                              {pro.uiExpanded ? "−" : "+"}
+                              {pro.uiExpanded ? <MdExpandLess /> : <MdExpandMore />}
                             </button>
                             <button
                               type="button"
@@ -1628,7 +1634,7 @@ export const ClientsPage = () => {
                               onClick={() => removeProfessional(proIndex)}
                               aria-label={`Eliminar profesional ${pro.name || proIndex + 1}`}
                             >
-                              🗑️
+                              <MdDelete />
                             </button>
                           </div>
                         </div>
@@ -1636,7 +1642,7 @@ export const ClientsPage = () => {
                           <div className="professional-card__body">
                             <div className="professional-fields">
                               <label className="professional-field">
-                                <span>Seleccionar del catálogo</span>
+                                <span>Seleccionar Staff</span>
                                 <select
                                   value={professionalLookup.has(pro.id) ? pro.id : ""}
                                   onChange={(e) =>
@@ -1809,7 +1815,7 @@ export const ClientsPage = () => {
                                         }
                                         aria-label="Eliminar servicio profesional"
                                       >
-                                        🗑️
+                                        <MdDelete />
                                       </button>
                                     </div>
                                   );
@@ -1894,7 +1900,7 @@ export const ClientsPage = () => {
                                       }
                                       aria-label="Eliminar día"
                                     >
-                                      🗑️
+                                      <MdDelete />
                                     </button>
                                   </div>
                                 ))
@@ -1935,11 +1941,11 @@ export const ClientsPage = () => {
               <div>
                 <h3>Crear usuario PRO</h3>
                 <p className="clients-modal__subtitle">
-                  Registra un profesional y quedará disponible para este cliente.
+                  Registra un profesional y quedará disponible para este profesional.
                 </p>
               </div>
               <button type="button" className="ghost-button" onClick={closeNewProModal}>
-                ✕
+                <MdClose />
               </button>
             </header>
             <form className="clients-modal__form" onSubmit={handleCreateProUserSubmit}>
@@ -1952,29 +1958,10 @@ export const ClientsPage = () => {
                 />
               </label>
               <label>
-                Email
-                <input
-                  type="email"
-                  value={newProForm.email}
-                  onChange={(e) => updateNewProForm("email", e.target.value)}
-                  required
-                />
-              </label>
-              <label>
                 Teléfono
                 <input
                   value={newProForm.phone}
                   onChange={(e) => updateNewProForm("phone", e.target.value)}
-                  required
-                />
-              </label>
-              <label>
-                Contraseña
-                <input
-                  type="password"
-                  minLength={8}
-                  value={newProForm.password}
-                  onChange={(e) => updateNewProForm("password", e.target.value)}
                   required
                 />
               </label>
@@ -1988,13 +1975,32 @@ export const ClientsPage = () => {
                   <option value="staff">Staff</option>
                 </select>
               </label>
+              <label>
+                Email
+                <input
+                  type="email"
+                  value={newProForm.email}
+                  onChange={(e) => updateNewProForm("email", e.target.value)}
+                  required
+                />
+              </label>
+              <label>
+                Contraseña
+                <input
+                  type="password"
+                  minLength={8}
+                  value={newProForm.password}
+                  onChange={(e) => updateNewProForm("password", e.target.value)}
+                  required
+                />
+              </label>
               {newProError ? (
                 <p className="error" role="alert">
                   {newProError}
                 </p>
               ) : null}
               <div className="clients-modal__actions">
-                <button type="submit" disabled={newProSubmitting}>
+                <button type="submit" className="primary-button" disabled={newProSubmitting}>
                   {newProSubmitting ? "Creando..." : "Crear usuario"}
                 </button>
                 <button type="button" className="ghost-button" onClick={closeNewProModal}>
