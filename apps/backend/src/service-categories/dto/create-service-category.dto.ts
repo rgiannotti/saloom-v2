@@ -7,6 +7,7 @@ export class CreateServiceCategoryDto {
   @IsString() @MinLength(2) name!: string;
 
   @ApiPropertyOptional() @IsOptional() @IsString() description?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() icon?: string;
   @ApiPropertyOptional() @IsOptional() @Type(() => Number) @IsNumber() order?: number;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() active?: boolean;
 }

@@ -38,6 +38,7 @@ interface Recommendation {
   name: string;
   denomination: string;
   address: { full?: string; comunity?: string; city?: string };
+  location?: { type?: string; coordinates?: [number, number] };
   logo?: string;
   categories: { _id: string; name: string }[];
   professionals: {
@@ -68,6 +69,26 @@ const getMinPrice = (professionals: Recommendation["professionals"]): number | n
 
 const getArea = (address: Recommendation["address"]): string =>
   address.comunity || address.city || address.full || "";
+
+const getDistance = (
+  userLat: number,
+  userLng: number,
+  coords?: [number, number]
+): string | null => {
+  if (!coords || coords.length < 2) return null;
+  const [storeLng, storeLat] = coords; // GeoJSON: [lng, lat]
+  const R = 6371;
+  const dLat = ((storeLat - userLat) * Math.PI) / 180;
+  const dLng = ((storeLng - userLng) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((userLat * Math.PI) / 180) *
+      Math.cos((storeLat * Math.PI) / 180) *
+      Math.sin(dLng / 2) ** 2;
+  const km = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  if (km < 1) return `${Math.round(km * 1000)} m`;
+  return `${km.toFixed(1)} km`;
+};
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
@@ -122,6 +143,10 @@ export const HomeScreen = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [locationLabel, setLocationLabel] = useState("Mi ubicación");
+  const [userCoords, setUserCoords] = useState<{ lat: number; lng: number }>({
+    lat: FALLBACK_LAT,
+    lng: FALLBACK_LNG
+  });
 
   useEffect(() => {
     const fetchRecommendations = async () => {
@@ -138,6 +163,7 @@ export const HomeScreen = () => {
           });
           lat = pos.coords.latitude;
           lng = pos.coords.longitude;
+          setUserCoords({ lat, lng });
           setLocationLabel("Mi ubicación");
         }
 
@@ -268,8 +294,9 @@ export const HomeScreen = () => {
             {!loading &&
               recommendations.map((item, index) => {
                 const minPrice = getMinPrice(item.professionals);
+                const distance = getDistance(userCoords.lat, userCoords.lng, item.location?.coordinates);
                 const area = getArea(item.address);
-                const categoryName = item.categories?.[0]?.name;
+                const locationText = [distance, area].filter(Boolean).join(" · ");
                 const isPrimary = index === 0;
                 const isFav = favorites.includes(item._id);
 
@@ -312,21 +339,22 @@ export const HomeScreen = () => {
                     )}
 
                     <View style={styles.cardContent}>
-                      <View style={styles.cardTopRow}>
-                        {categoryName && (
-                          <View style={styles.categoryBadge}>
-                            <Text style={styles.categoryBadgeText}>{categoryName}</Text>
-                          </View>
-                        )}
-                        <Text style={styles.cardType}>{item.denomination}</Text>
-                      </View>
+                      {item.categories && item.categories.length > 0 && (
+                        <View style={styles.cardTopRow}>
+                          {item.categories.map((cat, i) => (
+                            <View key={i} style={styles.categoryBadge}>
+                              <Text style={styles.categoryBadgeText}>{cat.name}</Text>
+                            </View>
+                          ))}
+                        </View>
+                      )}
 
                       <Text style={styles.cardName}>{item.name}</Text>
 
-                      {area ? (
+                      {locationText ? (
                         <View style={styles.locationRow}>
                           <MaterialCommunityIcons name="map-marker" size={14} color="#94a3b8" />
-                          <Text style={styles.locationDetail}>{area}</Text>
+                          <Text style={styles.locationDetail}>{locationText}</Text>
                         </View>
                       ) : null}
 
@@ -336,7 +364,7 @@ export const HomeScreen = () => {
                             <>
                               <Text style={styles.priceLabel}>Desde</Text>
                               <Text style={styles.price}>
-                                ${minPrice} <Text style={styles.priceCurrency}>MXN</Text>
+                                ${minPrice} <Text style={styles.priceCurrency}>Ref.</Text>
                               </Text>
                             </>
                           ) : (
@@ -619,12 +647,14 @@ const styles = StyleSheet.create({
   },
   categoryBadge: {
     borderRadius: 999,
-    paddingHorizontal: 8,
-    paddingVertical: 2
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    backgroundColor: `${LILAC}33`
   },
   categoryBadgeText: {
     fontSize: 11,
-    fontFamily: fonts.bold
+    fontFamily: fonts.bold,
+    color: LILAC_DARK
   },
   cardType: {
     fontSize: 12,

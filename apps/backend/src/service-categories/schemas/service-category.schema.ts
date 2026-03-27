@@ -16,6 +16,9 @@ export class ServiceCategory {
   @Prop({ default: 0, min: 0 })
   order: number;
 
+  @Prop({ default: "", trim: true })
+  icon: string;
+
   @Prop({ default: true })
   active: boolean;
 

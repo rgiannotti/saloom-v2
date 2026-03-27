@@ -53,6 +53,8 @@ export const ServicesPage = () => {
   const [showCategoryForm, setShowCategoryForm] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [creatingCategory, setCreatingCategory] = useState(false);
+  const [filterCategories, setFilterCategories] = useState<Set<string>>(new Set());
+  const [filterHome, setFilterHome] = useState(false);
 
   const authHeaders = useMemo(() => {
     if (!token) {
@@ -113,6 +115,28 @@ export const ServicesPage = () => {
     fetchCategories();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authHeaders]);
+
+  const filteredServices = useMemo(() => {
+    return services.filter((service) => {
+      if (filterHome && !service.home) return false;
+      if (filterCategories.size > 0) {
+        const catId = service.category && typeof service.category === "object"
+          ? service.category._id
+          : null;
+        if (!catId || !filterCategories.has(catId)) return false;
+      }
+      return true;
+    });
+  }, [services, filterCategories, filterHome]);
+
+  const toggleCategoryFilter = (id: string) => {
+    setFilterCategories((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   const openModal = (service?: Service) => {
     if (service) {
@@ -265,6 +289,38 @@ export const ServicesPage = () => {
             {loading ? "…" : <MdRefresh />}
           </button>
         </div>
+        {categories.length > 0 || true ? (
+          <div className="filter-pills">
+            <span className="filter-pills__label">Filtros:</span>
+            <button
+              type="button"
+              className={`pill ${filterHome ? "pill--active" : ""}`}
+              onClick={() => setFilterHome((prev) => !prev)}
+            >
+              A domicilio
+            </button>
+            {categories.map((cat) => (
+              <button
+                key={cat._id}
+                type="button"
+                className={`pill ${filterCategories.has(cat._id) ? "pill--active" : ""}`}
+                onClick={() => toggleCategoryFilter(cat._id)}
+              >
+                {cat.name}
+              </button>
+            ))}
+            {(filterHome || filterCategories.size > 0) ? (
+              <button
+                type="button"
+                className="pill pill--clear"
+                onClick={() => { setFilterHome(false); setFilterCategories(new Set()); }}
+              >
+                Limpiar filtros
+              </button>
+            ) : null}
+          </div>
+        ) : null}
+
         {error ? (
           <p className="error" role="alert">
             {error}
@@ -282,14 +338,14 @@ export const ServicesPage = () => {
               </tr>
             </thead>
             <tbody>
-              {services.length === 0 ? (
+              {filteredServices.length === 0 ? (
                 <tr>
                   <td className="table-empty" colSpan={5}>
-                    Aún no hay servicios creados.
+                    {services.length === 0 ? "Aún no hay servicios creados." : "No hay servicios con los filtros seleccionados."}
                   </td>
                 </tr>
               ) : (
-                services.map((service) => (
+                filteredServices.map((service) => (
                   <tr key={service._id}>
                     <td>
                       <strong>{service.name}</strong>
