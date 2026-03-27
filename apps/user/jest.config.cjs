@@ -21,5 +21,6 @@ module.exports = {
     ]
   },
   transformIgnorePatterns: [
-    "node_modules/(?!((?:\\.pnpm/[^/]+/node_modules/)?((jest-)?react-native|@react-native|@react-native-community|expo(nent)?|@expo|expo-.*|@unimodules|@testing-library|react-test-renderer))/)"]
+    "node_modules/(?!((?:\\.pnpm/[^/]+/node_modules/)?((jest-)?react-native|@react-native|@react-native-community|expo(nent)?|@expo|expo-.*|@unimodules|@testing-library|react-test-renderer))/)"
+  ]
 };

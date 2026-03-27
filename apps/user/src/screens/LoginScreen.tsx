@@ -9,7 +9,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import Svg, { Path, G, Circle } from "react-native-svg";
 
@@ -80,10 +80,22 @@ const EyeIcon = ({ visible }: { visible: boolean }) =>
 
 const GoogleIcon = () => (
   <Svg width={20} height={20} viewBox="0 0 24 24">
-    <Path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
-    <Path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
-    <Path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
-    <Path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+    <Path
+      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+      fill="#4285F4"
+    />
+    <Path
+      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+      fill="#34A853"
+    />
+    <Path
+      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+      fill="#FBBC05"
+    />
+    <Path
+      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+      fill="#EA4335"
+    />
   </Svg>
 );
 
@@ -148,7 +160,6 @@ export const LoginScreen = ({ onBack }: Props) => {
 
           {/* Form */}
           <View style={styles.form}>
-
             {/* Email */}
             <View style={styles.fieldWrap}>
               <Text style={styles.label}>Email o Teléfono</Text>
@@ -250,15 +261,15 @@ const PRIMARY = "#ff3b3b";
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#ffffff",
+    backgroundColor: "#ffffff"
   },
   flex: {
-    flex: 1,
+    flex: 1
   },
   scrollContent: {
     paddingHorizontal: 24,
     paddingTop: 16,
-    paddingBottom: 32,
+    paddingBottom: 32
   },
 
   /* Back */
@@ -271,51 +282,51 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderWidth: 1,
     borderColor: "#e2e8f0",
-    marginBottom: 8,
+    marginBottom: 8
   },
   backArrow: {
     fontSize: 18,
     color: "#0d141b",
-    fontFamily: fonts.regular,
+    fontFamily: fonts.regular
   },
 
   /* Header */
   headerSection: {
     alignItems: "center",
     paddingTop: 24,
-    paddingBottom: 16,
+    paddingBottom: 16
   },
   logoWrap: {
-    marginBottom: 24,
+    marginBottom: 24
   },
   title: {
     fontSize: 28,
     fontFamily: fonts.bold,
     color: "#0d141b",
     letterSpacing: -0.5,
-    textAlign: "center",
+    textAlign: "center"
   },
   subtitle: {
     fontSize: 16,
     fontFamily: fonts.medium,
     color: "#64748b",
     textAlign: "center",
-    marginTop: 8,
+    marginTop: 8
   },
 
   /* Form */
   form: {
     gap: 20,
-    marginTop: 16,
+    marginTop: 16
   },
   fieldWrap: {
-    gap: 6,
+    gap: 6
   },
   label: {
     fontSize: 14,
     fontFamily: fonts.semiBold,
     color: "#0d141b",
-    marginLeft: 4,
+    marginLeft: 4
   },
 
   /* Email input */
@@ -324,7 +335,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
     borderColor: "#e2e8f0",
-    backgroundColor: "#f8fafc",
+    backgroundColor: "#f8fafc"
   },
   input: {
     height: 56,
@@ -338,19 +349,19 @@ const styles = StyleSheet.create({
       web: {
         // @ts-ignore - web only
         outlineColor: `${PRIMARY}80`,
-        outlineWidth: 1,
-      },
-    }),
+        outlineWidth: 1
+      }
+    })
   },
   inputWithIcon: {
-    paddingRight: 48,
+    paddingRight: 48
   },
   inputIconRight: {
     position: "absolute",
     right: 14,
     top: 0,
     bottom: 0,
-    justifyContent: "center",
+    justifyContent: "center"
   },
 
   /* Password input */
@@ -360,7 +371,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#e2e8f0",
     backgroundColor: "#f8fafc",
-    overflow: "hidden",
+    overflow: "hidden"
   },
   passwordInput: {
     flex: 1,
@@ -376,26 +387,26 @@ const styles = StyleSheet.create({
       web: {
         // @ts-ignore - web only
         outlineColor: `${PRIMARY}80`,
-        outlineWidth: 1,
-      },
-    }),
+        outlineWidth: 1
+      }
+    })
   },
   eyeToggle: {
     width: 52,
     alignItems: "center",
     justifyContent: "center",
     borderLeftWidth: 1,
-    borderLeftColor: "#e2e8f0",
+    borderLeftColor: "#e2e8f0"
   },
   forgotWrap: {
     alignSelf: "flex-end",
     marginTop: 4,
-    marginRight: 4,
+    marginRight: 4
   },
   forgotText: {
     fontSize: 12,
     fontFamily: fonts.semiBold,
-    color: "#64748b",
+    color: "#64748b"
   },
 
   /* Error */
@@ -403,7 +414,7 @@ const styles = StyleSheet.create({
     color: "#b91c1c",
     fontSize: 13,
     fontFamily: fonts.medium,
-    marginTop: -8,
+    marginTop: -8
   },
 
   /* Login button */
@@ -418,42 +429,42 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
     elevation: 4,
-    marginTop: 4,
+    marginTop: 4
   },
   loginButtonDisabled: {
     opacity: 0.5,
     shadowOpacity: 0,
-    elevation: 0,
+    elevation: 0
   },
   loginButtonText: {
     color: "#ffffff",
     fontSize: 16,
     fontFamily: fonts.bold,
-    letterSpacing: 0.3,
+    letterSpacing: 0.3
   },
 
   /* Divider */
   dividerRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: 12
   },
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: "#e2e8f0",
+    backgroundColor: "#e2e8f0"
   },
   dividerText: {
     fontSize: 11,
     fontFamily: fonts.bold,
     color: "#94a3b8",
-    letterSpacing: 1,
+    letterSpacing: 1
   },
 
   /* Social */
   socialRow: {
     flexDirection: "row",
-    gap: 16,
+    gap: 16
   },
   socialButton: {
     flex: 1,
@@ -470,12 +481,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.04,
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 1 },
-    elevation: 1,
+    elevation: 1
   },
   socialText: {
     fontSize: 14,
     fontFamily: fonts.bold,
-    color: "#334155",
+    color: "#334155"
   },
 
   /* Footer */
@@ -483,16 +494,16 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 32,
+    marginTop: 32
   },
   footerText: {
     fontSize: 14,
     fontFamily: fonts.medium,
-    color: "#64748b",
+    color: "#64748b"
   },
   footerLink: {
     fontSize: 14,
     fontFamily: fonts.bold,
-    color: PRIMARY,
-  },
+    color: PRIMARY
+  }
 });

@@ -26,7 +26,6 @@ components:
   # SCHEMAS
   # ─────────────────────────────────────────────
   schemas:
-
     # ── Enums ──────────────────────────────────
     UserRole:
       type: string
@@ -60,42 +59,42 @@ components:
       type: object
       required: [full, street, number, comunity, province, city, placeId]
       properties:
-        full:        { type: string }
-        street:      { type: string }
-        number:      { type: string }
-        comunity:    { type: string }
-        province:    { type: string }
-        city:        { type: string }
-        postal:      { type: string }
-        placeId:     { type: string }
+        full: { type: string }
+        street: { type: string }
+        number: { type: string }
+        comunity: { type: string }
+        province: { type: string }
+        city: { type: string }
+        postal: { type: string }
+        placeId: { type: string }
 
     AuthTokens:
       type: object
       properties:
-        accessToken:  { type: string }
+        accessToken: { type: string }
         refreshToken: { type: string }
 
     # ── User ───────────────────────────────────
     User:
       type: object
       properties:
-        _id:       { type: string }
-        name:      { type: string }
-        email:     { type: string, format: email }
-        phone:     { type: string }
+        _id: { type: string }
+        name: { type: string }
+        email: { type: string, format: email }
+        phone: { type: string }
         roles:
           type: array
-          items: { $ref: '#/components/schemas/UserRole' }
-        client:    { type: string, nullable: true }
-        active:    { type: boolean }
+          items: { $ref: "#/components/schemas/UserRole" }
+        client: { type: string, nullable: true }
+        active: { type: boolean }
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
 
     AuthResponse:
       type: object
       properties:
-        user:   { $ref: '#/components/schemas/User' }
-        tokens: { $ref: '#/components/schemas/AuthTokens' }
+        user: { $ref: "#/components/schemas/User" }
+        tokens: { $ref: "#/components/schemas/AuthTokens" }
 
     # ── Client ─────────────────────────────────
     ProfessionalService:
@@ -103,16 +102,16 @@ components:
       required: [service, price, slot]
       properties:
         service: { type: string, description: Service ObjectId }
-        price:   { type: number, minimum: 0 }
-        slot:    { type: number, minimum: 1 }
+        price: { type: number, minimum: 0 }
+        slot: { type: number, minimum: 1 }
 
     ProfessionalWorkDay:
       type: object
       required: [day, start, end]
       properties:
-        day:   { type: string, example: monday }
-        start: { type: string, pattern: '^\d{2}:\d{2}$', example: '09:00' }
-        end:   { type: string, pattern: '^\d{2}:\d{2}$', example: '18:00' }
+        day: { type: string, example: monday }
+        start: { type: string, pattern: '^\d{2}:\d{2}$', example: "09:00" }
+        end: { type: string, pattern: '^\d{2}:\d{2}$', example: "18:00" }
 
     ClientProfessional:
       type: object
@@ -120,44 +119,44 @@ components:
         professional: { type: string }
         services:
           type: array
-          items: { $ref: '#/components/schemas/ProfessionalService' }
+          items: { $ref: "#/components/schemas/ProfessionalService" }
         schedule:
           type: array
-          items: { $ref: '#/components/schemas/ProfessionalWorkDay' }
+          items: { $ref: "#/components/schemas/ProfessionalWorkDay" }
 
     Client:
       type: object
       properties:
-        _id:            { type: string }
-        code:           { type: number }
-        rif:            { type: string }
-        denomination:   { type: string }
-        name:           { type: string }
-        slug:           { type: string }
-        fiscalAddress:  { type: string }
-        person:         { type: string }
-        logo:           { type: string }
-        website:        { type: string }
-        useGoogleMap:   { type: boolean }
-        address:        { $ref: '#/components/schemas/Address' }
-        location:       { $ref: '#/components/schemas/GeoPoint' }
-        baddress:       { type: string }
-        email:          { type: string, format: email }
-        phone:          { type: string }
-        home:           { type: boolean }
-        online:         { type: boolean }
-        onlineHome:     { type: boolean }
-        blocked:        { type: boolean }
-        active:         { type: boolean }
+        _id: { type: string }
+        code: { type: number }
+        rif: { type: string }
+        denomination: { type: string }
+        name: { type: string }
+        slug: { type: string }
+        fiscalAddress: { type: string }
+        person: { type: string }
+        logo: { type: string }
+        website: { type: string }
+        useGoogleMap: { type: boolean }
+        address: { $ref: "#/components/schemas/Address" }
+        location: { $ref: "#/components/schemas/GeoPoint" }
+        baddress: { type: string }
+        email: { type: string, format: email }
+        phone: { type: string }
+        home: { type: boolean }
+        online: { type: boolean }
+        onlineHome: { type: boolean }
+        blocked: { type: boolean }
+        active: { type: boolean }
         communicationChannels:
           type: array
-          items: { $ref: '#/components/schemas/CommunicationChannel' }
+          items: { $ref: "#/components/schemas/CommunicationChannel" }
         payments:
           type: array
           items: { type: string }
         professionals:
           type: array
-          items: { $ref: '#/components/schemas/ClientProfessional' }
+          items: { $ref: "#/components/schemas/ClientProfessional" }
         categories:
           type: array
           items: { type: string }
@@ -168,12 +167,12 @@ components:
     Service:
       type: object
       properties:
-        _id:      { type: string }
-        name:     { type: string }
-        notes:    { type: string }
-        order:    { type: number }
-        home:     { type: boolean }
-        active:   { type: boolean }
+        _id: { type: string }
+        name: { type: string }
+        notes: { type: string }
+        order: { type: number }
+        home: { type: boolean }
+        active: { type: boolean }
         category: { type: string, nullable: true }
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
@@ -181,13 +180,13 @@ components:
     ServiceCategory:
       type: object
       properties:
-        _id:         { type: string }
-        name:        { type: string }
+        _id: { type: string }
+        name: { type: string }
         description: { type: string }
-        order:       { type: number }
-        active:      { type: boolean }
-        createdAt:   { type: string, format: date-time }
-        updatedAt:   { type: string, format: date-time }
+        order: { type: number }
+        active: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
 
     # ── Appointment ────────────────────────────
     AppointmentServiceItem:
@@ -195,14 +194,14 @@ components:
       required: [service]
       properties:
         service: { type: string }
-        price:   { type: number, minimum: 0 }
+        price: { type: number, minimum: 0 }
 
     AppointmentStatusHistory:
       type: object
       required: [status]
       properties:
-        status:  { type: string }
-        date:    { type: string, format: date-time }
+        status: { type: string }
+        date: { type: string, format: date-time }
         comment: { type: string }
 
     AppointmentPlace:
@@ -212,44 +211,44 @@ components:
         address:
           type: object
           properties:
-            full:      { type: string }
-            street:    { type: string }
-            number:    { type: string }
-            province:  { type: string }
-            comunity:  { type: string }
-            city:      { type: string }
-            postal:    { type: string }
-            placeId:   { type: string }
-        location: { $ref: '#/components/schemas/GeoPoint' }
+            full: { type: string }
+            street: { type: string }
+            number: { type: string }
+            province: { type: string }
+            comunity: { type: string }
+            city: { type: string }
+            postal: { type: string }
+            placeId: { type: string }
+        location: { $ref: "#/components/schemas/GeoPoint" }
 
     Appointment:
       type: object
       properties:
-        _id:          { type: string }
-        code:         { type: string }
-        startDate:    { type: string, format: date-time }
-        endDate:      { type: string, format: date-time }
+        _id: { type: string }
+        code: { type: string }
+        startDate: { type: string, format: date-time }
+        endDate: { type: string, format: date-time }
         services:
           type: array
-          items: { $ref: '#/components/schemas/AppointmentServiceItem' }
-        slots:        { type: number }
-        slotStart:    { type: number }
-        slotEnd:      { type: number }
-        status:       { type: string }
-        amount:       { type: number }
-        notes:        { type: string }
-        active:       { type: boolean }
-        client:       { type: string }
+          items: { $ref: "#/components/schemas/AppointmentServiceItem" }
+        slots: { type: number }
+        slotStart: { type: number }
+        slotEnd: { type: number }
+        status: { type: string }
+        amount: { type: number }
+        notes: { type: string }
+        active: { type: boolean }
+        client: { type: string }
         professional: { type: string, nullable: true }
-        user:         { type: string, nullable: true }
+        user: { type: string, nullable: true }
         statuses:
           type: array
-          items: { $ref: '#/components/schemas/AppointmentStatusHistory' }
-        place:        { $ref: '#/components/schemas/AppointmentPlace' }
-        type:         { type: string }
+          items: { $ref: "#/components/schemas/AppointmentStatusHistory" }
+        place: { $ref: "#/components/schemas/AppointmentPlace" }
+        type: { type: string }
         reminderSent: { type: boolean }
-        createdAt:    { type: string, format: date-time }
-        updatedAt:    { type: string, format: date-time }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
 
     # ── Dashboard ──────────────────────────────
     Dashboard:
@@ -260,18 +259,18 @@ components:
     Message:
       type: object
       properties:
-        _id:           { type: string }
+        _id: { type: string }
         appointmentId: { type: string }
-        body:          { type: string }
-        createdAt:     { type: string, format: date-time }
+        body: { type: string }
+        createdAt: { type: string, format: date-time }
 
     # ── Error ──────────────────────────────────
     Error:
       type: object
       properties:
         statusCode: { type: integer }
-        message:    { type: string }
-        error:      { type: string }
+        message: { type: string }
+        error: { type: string }
 
     SuccessResponse:
       type: object
@@ -280,7 +279,6 @@ components:
 
   # ── Request Bodies ─────────────────────────
   requestBodies:
-
     LoginBody:
       required: true
       content:
@@ -289,7 +287,7 @@ components:
             type: object
             required: [email, password]
             properties:
-              email:    { type: string, format: email }
+              email: { type: string, format: email }
               password: { type: string, minLength: 8 }
 
     RegisterBody:
@@ -300,14 +298,14 @@ components:
             type: object
             required: [name, phone]
             properties:
-              name:     { type: string, minLength: 2 }
-              email:    { type: string, format: email }
-              phone:    { type: string }
+              name: { type: string, minLength: 2 }
+              email: { type: string, format: email }
+              phone: { type: string }
               password: { type: string, minLength: 8 }
               roles:
                 type: array
-                items: { $ref: '#/components/schemas/UserRole' }
-              client:   { type: string, description: Client ObjectId }
+                items: { $ref: "#/components/schemas/UserRole" }
+              client: { type: string, description: Client ObjectId }
 
     RefreshTokenBody:
       required: true
@@ -317,7 +315,7 @@ components:
             type: object
             required: [userId, refreshToken]
             properties:
-              userId:       { type: string }
+              userId: { type: string }
               refreshToken: { type: string }
 
     ResetPasswordBody:
@@ -338,14 +336,14 @@ components:
             type: object
             required: [name, phone]
             properties:
-              name:     { type: string, minLength: 2 }
-              email:    { type: string, format: email }
-              phone:    { type: string }
+              name: { type: string, minLength: 2 }
+              email: { type: string, format: email }
+              phone: { type: string }
               password: { type: string, minLength: 8 }
               roles:
                 type: array
-                items: { $ref: '#/components/schemas/UserRole' }
-              client:   { type: string }
+                items: { $ref: "#/components/schemas/UserRole" }
+              client: { type: string }
 
     UpdateUserBody:
       required: true
@@ -354,14 +352,14 @@ components:
           schema:
             type: object
             properties:
-              name:     { type: string, minLength: 2 }
-              email:    { type: string, format: email }
-              phone:    { type: string }
+              name: { type: string, minLength: 2 }
+              email: { type: string, format: email }
+              phone: { type: string }
               password: { type: string, minLength: 8 }
               roles:
                 type: array
-                items: { $ref: '#/components/schemas/UserRole' }
-              client:   { type: string }
+                items: { $ref: "#/components/schemas/UserRole" }
+              client: { type: string }
 
     CreateClientUserBody:
       required: true
@@ -371,9 +369,9 @@ components:
             type: object
             required: [name, phone]
             properties:
-              name:     { type: string, minLength: 2 }
-              email:    { type: string, format: email }
-              phone:    { type: string }
+              name: { type: string, minLength: 2 }
+              email: { type: string, format: email }
+              phone: { type: string }
               password: { type: string, minLength: 8 }
 
     CreateClientBody:
@@ -382,32 +380,33 @@ components:
         application/json:
           schema:
             type: object
-            required: [rif, denomination, name, fiscalAddress, person, email, phone, address, location]
+            required:
+              [rif, denomination, name, fiscalAddress, person, email, phone, address, location]
             properties:
-              rif:           { type: string }
-              denomination:  { type: string }
-              name:          { type: string }
-              slug:          { type: string }
+              rif: { type: string }
+              denomination: { type: string }
+              name: { type: string }
+              slug: { type: string }
               fiscalAddress: { type: string }
-              person:        { type: string }
-              website:       { type: string }
-              useGoogleMap:  { type: boolean }
-              address:       { $ref: '#/components/schemas/Address' }
-              location:      { $ref: '#/components/schemas/GeoPoint' }
-              baddress:      { type: string }
-              email:         { type: string, format: email }
-              phone:         { type: string }
-              home:          { type: boolean }
-              online:        { type: boolean }
-              onlineHome:    { type: boolean }
-              blocked:       { type: boolean }
-              active:        { type: boolean }
+              person: { type: string }
+              website: { type: string }
+              useGoogleMap: { type: boolean }
+              address: { $ref: "#/components/schemas/Address" }
+              location: { $ref: "#/components/schemas/GeoPoint" }
+              baddress: { type: string }
+              email: { type: string, format: email }
+              phone: { type: string }
+              home: { type: boolean }
+              online: { type: boolean }
+              onlineHome: { type: boolean }
+              blocked: { type: boolean }
+              active: { type: boolean }
               payments:
                 type: array
                 items: { type: string }
               communicationChannels:
                 type: array
-                items: { $ref: '#/components/schemas/CommunicationChannel' }
+                items: { $ref: "#/components/schemas/CommunicationChannel" }
               categories:
                 type: array
                 items: { type: string }
@@ -420,7 +419,7 @@ components:
             type: object
             properties:
               professionalId: { type: string }
-              name:  { type: string }
+              name: { type: string }
               email: { type: string }
               phone: { type: string }
               services:
@@ -430,11 +429,11 @@ components:
                   required: [serviceId, price, slot]
                   properties:
                     serviceId: { type: string }
-                    price:     { type: number, minimum: 0 }
-                    slot:      { type: number, minimum: 1 }
+                    price: { type: number, minimum: 0 }
+                    slot: { type: number, minimum: 1 }
               schedule:
                 type: array
-                items: { $ref: '#/components/schemas/ProfessionalWorkDay' }
+                items: { $ref: "#/components/schemas/ProfessionalWorkDay" }
 
     CreateAppointmentBody:
       required: true
@@ -442,29 +441,30 @@ components:
         application/json:
           schema:
             type: object
-            required: [startDate, endDate, services, slots, slotStart, slotEnd, status, client, place]
+            required:
+              [startDate, endDate, services, slots, slotStart, slotEnd, status, client, place]
             properties:
-              startDate:    { type: string, format: date-time }
-              endDate:      { type: string, format: date-time }
+              startDate: { type: string, format: date-time }
+              endDate: { type: string, format: date-time }
               services:
                 type: array
                 minItems: 1
-                items: { $ref: '#/components/schemas/AppointmentServiceItem' }
-              slots:        { type: number, minimum: 1 }
-              slotStart:    { type: number, minimum: 0 }
-              slotEnd:      { type: number, minimum: 0 }
-              status:       { type: string }
-              amount:       { type: number }
-              notes:        { type: string }
-              active:       { type: boolean }
-              client:       { type: string }
+                items: { $ref: "#/components/schemas/AppointmentServiceItem" }
+              slots: { type: number, minimum: 1 }
+              slotStart: { type: number, minimum: 0 }
+              slotEnd: { type: number, minimum: 0 }
+              status: { type: string }
+              amount: { type: number }
+              notes: { type: string }
+              active: { type: boolean }
+              client: { type: string }
               professional: { type: string }
-              user:         { type: string }
+              user: { type: string }
               statuses:
                 type: array
-                items: { $ref: '#/components/schemas/AppointmentStatusHistory' }
-              place:        { $ref: '#/components/schemas/AppointmentPlace' }
-              type:         { type: string }
+                items: { $ref: "#/components/schemas/AppointmentStatusHistory" }
+              place: { $ref: "#/components/schemas/AppointmentPlace" }
+              type: { type: string }
 
     CreateServiceBody:
       required: true
@@ -474,11 +474,11 @@ components:
             type: object
             required: [name]
             properties:
-              name:       { type: string, minLength: 2 }
-              notes:      { type: string }
-              order:      { type: number }
-              home:       { type: boolean }
-              active:     { type: boolean }
+              name: { type: string, minLength: 2 }
+              notes: { type: string }
+              order: { type: number }
+              home: { type: boolean }
+              active: { type: boolean }
               categoryId: { type: string }
 
     CreateServiceCategoryBody:
@@ -489,10 +489,10 @@ components:
             type: object
             required: [name]
             properties:
-              name:        { type: string, minLength: 2 }
+              name: { type: string, minLength: 2 }
               description: { type: string }
-              order:       { type: number }
-              active:      { type: boolean }
+              order: { type: number }
+              active: { type: boolean }
 
     SendMessageBody:
       required: true
@@ -510,30 +510,29 @@ components:
       description: Token JWT faltante o inválido
       content:
         application/json:
-          schema: { $ref: '#/components/schemas/Error' }
+          schema: { $ref: "#/components/schemas/Error" }
     Forbidden:
       description: Sin permisos suficientes
       content:
         application/json:
-          schema: { $ref: '#/components/schemas/Error' }
+          schema: { $ref: "#/components/schemas/Error" }
     NotFound:
       description: Recurso no encontrado
       content:
         application/json:
-          schema: { $ref: '#/components/schemas/Error' }
+          schema: { $ref: "#/components/schemas/Error" }
 
 # ─────────────────────────────────────────────
 # PATHS
 # ─────────────────────────────────────────────
 paths:
-
   # ── Health ────────────────────────────────
   /health:
     get:
       tags: [Health]
       summary: Health check
       responses:
-        '200':
+        "200":
           description: OK
 
   # ── Auth ──────────────────────────────────
@@ -545,19 +544,19 @@ paths:
         - name: audience
           in: path
           required: true
-          schema: { $ref: '#/components/schemas/AppAudience' }
-      requestBody: { $ref: '#/components/requestBodies/RegisterBody' }
+          schema: { $ref: "#/components/schemas/AppAudience" }
+      requestBody: { $ref: "#/components/requestBodies/RegisterBody" }
       responses:
-        '201':
+        "201":
           description: Usuario registrado
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/AuthResponse' }
-        '400':
+              schema: { $ref: "#/components/schemas/AuthResponse" }
+        "400":
           description: Datos inválidos
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Error' }
+              schema: { $ref: "#/components/schemas/Error" }
 
   /auth/{audience}/login:
     post:
@@ -567,32 +566,32 @@ paths:
         - name: audience
           in: path
           required: true
-          schema: { $ref: '#/components/schemas/AppAudience' }
-      requestBody: { $ref: '#/components/requestBodies/LoginBody' }
+          schema: { $ref: "#/components/schemas/AppAudience" }
+      requestBody: { $ref: "#/components/requestBodies/LoginBody" }
       responses:
-        '200':
+        "200":
           description: Sesión iniciada
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/AuthResponse' }
-        '401':
+              schema: { $ref: "#/components/schemas/AuthResponse" }
+        "401":
           description: Credenciales inválidas
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Error' }
+              schema: { $ref: "#/components/schemas/Error" }
 
   /auth/refresh:
     post:
       tags: [Auth]
       summary: Renovar access token
-      requestBody: { $ref: '#/components/requestBodies/RefreshTokenBody' }
+      requestBody: { $ref: "#/components/requestBodies/RefreshTokenBody" }
       responses:
-        '200':
+        "200":
           description: Tokens renovados
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/AuthTokens' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
+              schema: { $ref: "#/components/schemas/AuthTokens" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
 
   /auth/logout:
     post:
@@ -601,12 +600,12 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        '200':
+        "200":
           description: Sesión cerrada
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/SuccessResponse' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
+              schema: { $ref: "#/components/schemas/SuccessResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
 
   # ── Backoffice Users ──────────────────────
   /backoffice/users:
@@ -616,30 +615,30 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        '200':
+        "200":
           description: Lista de usuarios
           content:
             application/json:
               schema:
                 type: array
-                items: { $ref: '#/components/schemas/User' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
+                items: { $ref: "#/components/schemas/User" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
 
     post:
       tags: [Backoffice – Users]
       summary: Crear usuario
       security:
         - bearerAuth: []
-      requestBody: { $ref: '#/components/requestBodies/CreateUserBody' }
+      requestBody: { $ref: "#/components/requestBodies/CreateUserBody" }
       responses:
-        '201':
+        "201":
           description: Usuario creado
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/User' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
+              schema: { $ref: "#/components/schemas/User" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
 
   /backoffice/users/{id}:
     parameters:
@@ -654,30 +653,30 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        '200':
+        "200":
           description: Usuario encontrado
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/User' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
-        '404': { $ref: '#/components/responses/NotFound' }
+              schema: { $ref: "#/components/schemas/User" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
 
     patch:
       tags: [Backoffice – Users]
       summary: Actualizar usuario
       security:
         - bearerAuth: []
-      requestBody: { $ref: '#/components/requestBodies/UpdateUserBody' }
+      requestBody: { $ref: "#/components/requestBodies/UpdateUserBody" }
       responses:
-        '200':
+        "200":
           description: Usuario actualizado
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/User' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
-        '404': { $ref: '#/components/responses/NotFound' }
+              schema: { $ref: "#/components/schemas/User" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
 
     delete:
       tags: [Backoffice – Users]
@@ -685,14 +684,14 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        '200':
+        "200":
           description: Usuario eliminado
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/SuccessResponse' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
-        '404': { $ref: '#/components/responses/NotFound' }
+              schema: { $ref: "#/components/schemas/SuccessResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
 
   /backoffice/users/{id}/reset-password:
     post:
@@ -705,15 +704,15 @@ paths:
           in: path
           required: true
           schema: { type: string }
-      requestBody: { $ref: '#/components/requestBodies/ResetPasswordBody' }
+      requestBody: { $ref: "#/components/requestBodies/ResetPasswordBody" }
       responses:
-        '200':
+        "200":
           description: Contraseña reseteada
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/SuccessResponse' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
+              schema: { $ref: "#/components/schemas/SuccessResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
 
   # ── App Users ─────────────────────────────
   /app/users:
@@ -729,31 +728,31 @@ paths:
         - name: roles
           in: query
           description: Roles separados por coma
-          schema: { type: string, example: 'pro,owner' }
+          schema: { type: string, example: "pro,owner" }
       responses:
-        '200':
+        "200":
           description: Lista de usuarios
           content:
             application/json:
               schema:
                 type: array
-                items: { $ref: '#/components/schemas/User' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
+                items: { $ref: "#/components/schemas/User" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
 
     post:
       tags: [App – Users]
       summary: Crear usuario de la app
       security:
         - bearerAuth: []
-      requestBody: { $ref: '#/components/requestBodies/CreateUserBody' }
+      requestBody: { $ref: "#/components/requestBodies/CreateUserBody" }
       responses:
-        '201':
+        "201":
           description: Usuario creado
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/User' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
+              schema: { $ref: "#/components/schemas/User" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
 
   /app/users/{id}:
     parameters:
@@ -768,29 +767,29 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        '200':
+        "200":
           description: Usuario encontrado
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/User' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
-        '404': { $ref: '#/components/responses/NotFound' }
+              schema: { $ref: "#/components/schemas/User" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
 
     patch:
       tags: [App – Users]
       summary: Actualizar usuario
       security:
         - bearerAuth: []
-      requestBody: { $ref: '#/components/requestBodies/UpdateUserBody' }
+      requestBody: { $ref: "#/components/requestBodies/UpdateUserBody" }
       responses:
-        '200':
+        "200":
           description: Usuario actualizado
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/User' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
+              schema: { $ref: "#/components/schemas/User" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
 
     delete:
       tags: [App – Users]
@@ -798,13 +797,13 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        '200':
+        "200":
           description: Usuario eliminado
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/SuccessResponse' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
+              schema: { $ref: "#/components/schemas/SuccessResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
 
   # ── Client Users ──────────────────────────
   /client/users:
@@ -819,30 +818,30 @@ paths:
           description: Buscar por nombre, email o teléfono
           schema: { type: string }
       responses:
-        '200':
+        "200":
           description: Lista de usuarios
           content:
             application/json:
               schema:
                 type: array
-                items: { $ref: '#/components/schemas/User' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
+                items: { $ref: "#/components/schemas/User" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
 
     post:
       tags: [Client – Users]
       summary: Crear usuario del cliente
       security:
         - bearerAuth: []
-      requestBody: { $ref: '#/components/requestBodies/CreateClientUserBody' }
+      requestBody: { $ref: "#/components/requestBodies/CreateClientUserBody" }
       responses:
-        '201':
+        "201":
           description: Usuario creado
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/User' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
+              schema: { $ref: "#/components/schemas/User" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
 
   /client/users/{userId}:
     parameters:
@@ -863,18 +862,18 @@ paths:
             schema:
               type: object
               properties:
-                name:     { type: string }
-                email:    { type: string, format: email }
-                phone:    { type: string }
+                name: { type: string }
+                email: { type: string, format: email }
+                phone: { type: string }
                 password: { type: string, minLength: 8 }
       responses:
-        '200':
+        "200":
           description: Usuario actualizado
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/User' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
+              schema: { $ref: "#/components/schemas/User" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
 
     delete:
       tags: [Client – Users]
@@ -882,13 +881,13 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        '200':
+        "200":
           description: Usuario eliminado
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/SuccessResponse' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
+              schema: { $ref: "#/components/schemas/SuccessResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
 
   # ── Backoffice Clients ────────────────────
   /backoffice/clients:
@@ -898,30 +897,30 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        '200':
+        "200":
           description: Lista de clientes
           content:
             application/json:
               schema:
                 type: array
-                items: { $ref: '#/components/schemas/Client' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
+                items: { $ref: "#/components/schemas/Client" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
 
     post:
       tags: [Backoffice – Clients]
       summary: Crear cliente
       security:
         - bearerAuth: []
-      requestBody: { $ref: '#/components/requestBodies/CreateClientBody' }
+      requestBody: { $ref: "#/components/requestBodies/CreateClientBody" }
       responses:
-        '201':
+        "201":
           description: Cliente creado
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Client' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
+              schema: { $ref: "#/components/schemas/Client" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
 
   /backoffice/clients/{id}:
     parameters:
@@ -936,14 +935,14 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        '200':
+        "200":
           description: Cliente encontrado
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Client' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
-        '404': { $ref: '#/components/responses/NotFound' }
+              schema: { $ref: "#/components/schemas/Client" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
 
     patch:
       tags: [Backoffice – Clients]
@@ -954,15 +953,15 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/Client' }
+            schema: { $ref: "#/components/schemas/Client" }
       responses:
-        '200':
+        "200":
           description: Cliente actualizado
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Client' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
+              schema: { $ref: "#/components/schemas/Client" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
 
     delete:
       tags: [Backoffice – Clients]
@@ -970,13 +969,13 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        '200':
+        "200":
           description: Cliente eliminado
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/SuccessResponse' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
+              schema: { $ref: "#/components/schemas/SuccessResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
 
   /backoffice/clients/{id}/logo:
     post:
@@ -1001,7 +1000,7 @@ paths:
                   type: string
                   format: binary
       responses:
-        '201':
+        "201":
           description: Logo subido
           content:
             application/json:
@@ -1009,9 +1008,9 @@ paths:
                 type: object
                 properties:
                   success: { type: boolean }
-                  logo:    { type: string }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
+                  logo: { type: string }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
 
   # ── App Clients ───────────────────────────
   /app/clients/me:
@@ -1021,13 +1020,13 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        '200':
+        "200":
           description: Cliente del usuario autenticado
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Client' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
+              schema: { $ref: "#/components/schemas/Client" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
 
     patch:
       tags: [App – Clients]
@@ -1038,15 +1037,15 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/Client' }
+            schema: { $ref: "#/components/schemas/Client" }
       responses:
-        '200':
+        "200":
           description: Cliente actualizado
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Client' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
+              schema: { $ref: "#/components/schemas/Client" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
 
   /app/clients/{id}/professionals:
     parameters:
@@ -1061,30 +1060,30 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        '200':
+        "200":
           description: Lista de profesionales
           content:
             application/json:
               schema:
                 type: array
-                items: { $ref: '#/components/schemas/ClientProfessional' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
+                items: { $ref: "#/components/schemas/ClientProfessional" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
 
     post:
       tags: [App – Clients]
       summary: Agregar o actualizar profesional del cliente
       security:
         - bearerAuth: []
-      requestBody: { $ref: '#/components/requestBodies/UpsertClientProfessionalBody' }
+      requestBody: { $ref: "#/components/requestBodies/UpsertClientProfessionalBody" }
       responses:
-        '201':
+        "201":
           description: Profesional registrado
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/ClientProfessional' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
+              schema: { $ref: "#/components/schemas/ClientProfessional" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
 
   /app/clients/{id}/professionals/{professionalId}:
     delete:
@@ -1102,13 +1101,13 @@ paths:
           required: true
           schema: { type: string }
       responses:
-        '200':
+        "200":
           description: Profesional eliminado
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/ClientProfessional' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
+              schema: { $ref: "#/components/schemas/ClientProfessional" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
 
   # ── Public Clients ────────────────────────
   /public/clients/logo/{slug}:
@@ -1121,7 +1120,7 @@ paths:
           required: true
           schema: { type: string }
       responses:
-        '200':
+        "200":
           description: URL del logo
           content:
             application/json:
@@ -1129,7 +1128,7 @@ paths:
                 type: object
                 properties:
                   logo: { type: string }
-        '404': { $ref: '#/components/responses/NotFound' }
+        "404": { $ref: "#/components/responses/NotFound" }
 
   # ── Recommendations ───────────────────────
   /app/recommendations:
@@ -1158,15 +1157,15 @@ paths:
           in: query
           schema: { type: integer, default: 10, maximum: 20 }
       responses:
-        '200':
+        "200":
           description: Clientes cercanos
           content:
             application/json:
               schema:
                 type: array
-                items: { $ref: '#/components/schemas/Client' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
+                items: { $ref: "#/components/schemas/Client" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
 
   # ── Appointments ──────────────────────────
   /appointments:
@@ -1176,30 +1175,30 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        '200':
+        "200":
           description: Lista de citas
           content:
             application/json:
               schema:
                 type: array
-                items: { $ref: '#/components/schemas/Appointment' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
+                items: { $ref: "#/components/schemas/Appointment" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
 
     post:
       tags: [Appointments]
       summary: Crear cita
       security:
         - bearerAuth: []
-      requestBody: { $ref: '#/components/requestBodies/CreateAppointmentBody' }
+      requestBody: { $ref: "#/components/requestBodies/CreateAppointmentBody" }
       responses:
-        '201':
+        "201":
           description: Cita creada
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Appointment' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
+              schema: { $ref: "#/components/schemas/Appointment" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
 
   /appointments/{id}:
     parameters:
@@ -1214,13 +1213,13 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        '200':
+        "200":
           description: Cita encontrada
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Appointment' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '404': { $ref: '#/components/responses/NotFound' }
+              schema: { $ref: "#/components/schemas/Appointment" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
 
     patch:
       tags: [Appointments]
@@ -1231,15 +1230,15 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/Appointment' }
+            schema: { $ref: "#/components/schemas/Appointment" }
       responses:
-        '200':
+        "200":
           description: Cita actualizada
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Appointment' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '404': { $ref: '#/components/responses/NotFound' }
+              schema: { $ref: "#/components/schemas/Appointment" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
 
     delete:
       tags: [Appointments]
@@ -1247,13 +1246,13 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        '200':
+        "200":
           description: Cita eliminada
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/SuccessResponse' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '404': { $ref: '#/components/responses/NotFound' }
+              schema: { $ref: "#/components/schemas/SuccessResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
 
   # ── Services ──────────────────────────────
   /services:
@@ -1263,30 +1262,30 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        '200':
+        "200":
           description: Lista de servicios
           content:
             application/json:
               schema:
                 type: array
-                items: { $ref: '#/components/schemas/Service' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
+                items: { $ref: "#/components/schemas/Service" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
 
     post:
       tags: [Services]
       summary: Crear servicio
       security:
         - bearerAuth: []
-      requestBody: { $ref: '#/components/requestBodies/CreateServiceBody' }
+      requestBody: { $ref: "#/components/requestBodies/CreateServiceBody" }
       responses:
-        '201':
+        "201":
           description: Servicio creado
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Service' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
+              schema: { $ref: "#/components/schemas/Service" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
 
   /services/{id}:
     parameters:
@@ -1301,13 +1300,13 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        '200':
+        "200":
           description: Servicio encontrado
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Service' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '404': { $ref: '#/components/responses/NotFound' }
+              schema: { $ref: "#/components/schemas/Service" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
 
     patch:
       tags: [Services]
@@ -1318,15 +1317,15 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/Service' }
+            schema: { $ref: "#/components/schemas/Service" }
       responses:
-        '200':
+        "200":
           description: Servicio actualizado
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Service' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
+              schema: { $ref: "#/components/schemas/Service" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
 
     delete:
       tags: [Services]
@@ -1334,13 +1333,13 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        '200':
+        "200":
           description: Servicio eliminado
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/SuccessResponse' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
+              schema: { $ref: "#/components/schemas/SuccessResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
 
   # ── Service Categories ─────────────────────
   /service-categories:
@@ -1350,30 +1349,30 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        '200':
+        "200":
           description: Lista de categorías
           content:
             application/json:
               schema:
                 type: array
-                items: { $ref: '#/components/schemas/ServiceCategory' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
+                items: { $ref: "#/components/schemas/ServiceCategory" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
 
     post:
       tags: [Service Categories]
       summary: Crear categoría
       security:
         - bearerAuth: []
-      requestBody: { $ref: '#/components/requestBodies/CreateServiceCategoryBody' }
+      requestBody: { $ref: "#/components/requestBodies/CreateServiceCategoryBody" }
       responses:
-        '201':
+        "201":
           description: Categoría creada
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/ServiceCategory' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
+              schema: { $ref: "#/components/schemas/ServiceCategory" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
 
   /service-categories/{id}:
     parameters:
@@ -1388,13 +1387,13 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        '200':
+        "200":
           description: Categoría encontrada
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/ServiceCategory' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '404': { $ref: '#/components/responses/NotFound' }
+              schema: { $ref: "#/components/schemas/ServiceCategory" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
 
     patch:
       tags: [Service Categories]
@@ -1405,15 +1404,15 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/ServiceCategory' }
+            schema: { $ref: "#/components/schemas/ServiceCategory" }
       responses:
-        '200':
+        "200":
           description: Categoría actualizada
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/ServiceCategory' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
+              schema: { $ref: "#/components/schemas/ServiceCategory" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
 
     delete:
       tags: [Service Categories]
@@ -1421,13 +1420,13 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        '200':
+        "200":
           description: Categoría eliminada
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/SuccessResponse' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
+              schema: { $ref: "#/components/schemas/SuccessResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
 
   # ── Dashboard ─────────────────────────────
   /client/dashboard:
@@ -1438,13 +1437,13 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        '200':
+        "200":
           description: Datos del dashboard
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Dashboard' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
+              schema: { $ref: "#/components/schemas/Dashboard" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
 
   # ── Communications ────────────────────────
   /communications/appointments/{appointmentId}/messages:
@@ -1460,30 +1459,30 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        '200':
+        "200":
           description: Lista de mensajes
           content:
             application/json:
               schema:
                 type: array
-                items: { $ref: '#/components/schemas/Message' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
+                items: { $ref: "#/components/schemas/Message" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
 
     post:
       tags: [Communications]
       summary: Enviar mensaje a la cita
       security:
         - bearerAuth: []
-      requestBody: { $ref: '#/components/requestBodies/SendMessageBody' }
+      requestBody: { $ref: "#/components/requestBodies/SendMessageBody" }
       responses:
-        '201':
+        "201":
           description: Mensaje enviado
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Message' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
+              schema: { $ref: "#/components/schemas/Message" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
 
   /communications/appointments/{appointmentId}/messages/confirm:
     post:
@@ -1497,10 +1496,10 @@ paths:
           required: true
           schema: { type: string }
       responses:
-        '201':
+        "201":
           description: Confirmación enviada
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
 
   /communications/appointments/{appointmentId}/messages/reminder:
     post:
@@ -1514,10 +1513,10 @@ paths:
           required: true
           schema: { type: string }
       responses:
-        '201':
+        "201":
           description: Recordatorio enviado
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
 
 # ─────────────────────────────────────────────
 # TAG DESCRIPTIONS

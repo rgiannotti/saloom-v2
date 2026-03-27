@@ -5,8 +5,5 @@
     "jsx": "react-jsx",
     "types": ["react-native", "jest"]
   },
-  "include": [
-    "App.tsx",
-    "src"
-  ]
+  "include": ["App.tsx", "src"]
 }
