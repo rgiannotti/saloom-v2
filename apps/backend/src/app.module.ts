@@ -17,6 +17,7 @@ import { UsersModule } from "./users/users.module";
 import { AppointmentsModule } from "./appointments/appointments.module";
 import { DashboardModule } from "./dashboard/dashboard.module";
 import { CommunicationsModule } from "./communications/communications.module";
+import { SettingsModule } from "./settings/settings.module";
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { CommunicationsModule } from "./communications/communications.module";
     ServiceCategoriesModule,
     DashboardModule,
     CommunicationsModule,
+    SettingsModule,
     AuthModule
   ],
   controllers: [AppController],

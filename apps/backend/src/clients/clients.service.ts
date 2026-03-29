@@ -81,6 +81,26 @@ export class ClientsService {
     return client;
   }
 
+  async findInBounds(minLat: number, maxLat: number, minLng: number, maxLng: number) {
+    return this.clientModel
+      .find({
+        active: true,
+        blocked: { $ne: true },
+        location: {
+          $geoWithin: {
+            $box: [
+              [minLng, minLat],
+              [maxLng, maxLat]
+            ]
+          }
+        }
+      })
+      .select("name location logo coverImage categories")
+      .populate("categories", "name")
+      .lean()
+      .exec();
+  }
+
   async findRecommendedNearby(
     latitude: number,
     longitude: number,
@@ -102,7 +122,7 @@ export class ClientsService {
         }
       })
       .limit(limit)
-      .select("name denomination address location logo categories professionals")
+      .select("name denomination address location logo coverImage categories professionals")
       .populate("categories", "name icon")
       .populate([
         { path: "professionals.professional", select: "name email phone" },
@@ -146,20 +166,45 @@ export class ClientsService {
 
   async updateLogo(id: string, logo: string): Promise<Client> {
     const client = await this.clientModel
-      .findByIdAndUpdate(
-        id,
-        { $set: { logo } },
-        {
-          new: true,
-          runValidators: true
-        }
-      )
+      .findByIdAndUpdate(id, { $set: { logo } }, { new: true, runValidators: true })
       .lean()
       .exec();
     if (!client || client.active === false) {
       throw new NotFoundException(`Client with id ${id} not found`);
     }
     return client;
+  }
+
+  async updateCoverImage(id: string, coverImage: string): Promise<Client> {
+    const client = await this.clientModel
+      .findByIdAndUpdate(id, { $set: { coverImage } }, { new: true, runValidators: true })
+      .lean()
+      .exec();
+    if (!client || client.active === false) {
+      throw new NotFoundException(`Client with id ${id} not found`);
+    }
+    return client;
+  }
+
+  async addGalleryImage(id: string, url: string): Promise<Client> {
+    const client = await this.clientModel
+      .findByIdAndUpdate(id, { $push: { gallery: url } }, { new: true, runValidators: true })
+      .lean()
+      .exec();
+    if (!client || client.active === false) {
+      throw new NotFoundException(`Client with id ${id} not found`);
+    }
+    return client;
+  }
+
+  async removeGalleryImage(id: string, index: number): Promise<Client> {
+    const doc = await this.clientModel.findById(id).exec();
+    if (!doc || doc.active === false) {
+      throw new NotFoundException(`Client with id ${id} not found`);
+    }
+    doc.gallery.splice(index, 1);
+    await doc.save();
+    return doc.toObject();
   }
 
   async remove(id: string): Promise<void> {

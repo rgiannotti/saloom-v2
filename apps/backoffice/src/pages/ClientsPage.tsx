@@ -40,6 +40,8 @@ interface Client {
   categories?: Array<{ _id: string; name: string } | string>;
   slug?: string;
   logo?: string;
+  coverImage?: string;
+  gallery?: string[];
 }
 
 interface ClientFormState {
@@ -172,7 +174,14 @@ export const ClientsPage = () => {
   const [form, setForm] = useState<ClientFormState>(defaultForm);
   const [addressState, setAddressState] = useState<AddressState>(defaultAddress);
   const [professionals, setProfessionals] = useState<ClientProfessionalForm[]>([]);
-  const [activeTab, setActiveTab] = useState<"general" | "personal">("general");
+  const [activeTab, setActiveTab] = useState<"general" | "personal" | "imagenes">("general");
+  const [coverImage, setCoverImage] = useState("");
+  const [gallery, setGallery] = useState<string[]>([]);
+  const [coverUploading, setCoverUploading] = useState(false);
+  const [galleryUploading, setGalleryUploading] = useState(false);
+  const [imageError, setImageError] = useState<string | null>(null);
+  const [coverDragOver, setCoverDragOver] = useState(false);
+  const [galleryDragOver, setGalleryDragOver] = useState(false);
   const [serviceDropdownOpen, setServiceDropdownOpen] = useState<Record<string, boolean>>({});
   const [serviceSearch, setServiceSearch] = useState<Record<string, string>>({});
   const [catalogs, setCatalogs] = useState<{
@@ -719,6 +728,9 @@ export const ClientsPage = () => {
       });
       setLogoPreview(resolveLogoSrc(client.logo ?? ""));
       setLogoFile(null);
+      setCoverImage(client.coverImage ?? "");
+      setGallery(client.gallery ?? []);
+      setImageError(null);
       setAddressState(
         client.useGoogleMap && client.address?.placeId
           ? {
@@ -781,9 +793,68 @@ export const ClientsPage = () => {
       setProfessionals([]);
       setLogoFile(null);
       setLogoPreview("");
+      setCoverImage("");
+      setGallery([]);
+      setImageError(null);
     }
     setActiveTab("general");
     setEditorOpen(true);
+  };
+
+  const uploadCover = async (file: File) => {
+    if (!editingId || !authHeaders) return;
+    setImageError(null);
+    setCoverUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch(`${API_BASE_URL}/backoffice/clients/${editingId}/cover`, {
+        method: "POST",
+        headers: { Authorization: authHeaders.Authorization },
+        body: fd
+      });
+      const data = (await res.json()) as {
+        success: boolean;
+        coverImage?: string;
+        message?: string;
+      };
+      if (!data.success) throw new Error(data.message ?? "Error al subir");
+      setCoverImage(data.coverImage ?? "");
+    } catch (err) {
+      setImageError((err as Error).message);
+    } finally {
+      setCoverUploading(false);
+    }
+  };
+
+  const uploadGalleryFiles = async (files: File[]) => {
+    if (!files.length || !editingId || !authHeaders) return;
+    setImageError(null);
+    setGalleryUploading(true);
+    try {
+      let latestGallery: string[] = [...gallery];
+      for (const file of files) {
+        const fd = new FormData();
+        fd.append("file", file);
+        const res = await fetch(`${API_BASE_URL}/backoffice/clients/${editingId}/gallery`, {
+          method: "POST",
+          headers: { Authorization: authHeaders.Authorization },
+          body: fd
+        });
+        const data = (await res.json()) as {
+          success: boolean;
+          gallery?: string[];
+          message?: string;
+        };
+        if (!data.success) throw new Error(data.message ?? "Error al subir");
+        latestGallery = data.gallery ?? latestGallery;
+      }
+      setGallery(latestGallery);
+    } catch (err) {
+      setImageError((err as Error).message);
+    } finally {
+      setGalleryUploading(false);
+    }
   };
 
   const closeEditor = () => {
@@ -794,6 +865,9 @@ export const ClientsPage = () => {
     setProfessionals([]);
     setLogoFile(null);
     setLogoPreview("");
+    setCoverImage("");
+    setGallery([]);
+    setImageError(null);
     setError(null);
     setActiveTab("general");
     setProfessionalPickerOpen(false);
@@ -1015,13 +1089,16 @@ export const ClientsPage = () => {
       if (logoFile && savedClient?._id) {
         const formData = new FormData();
         formData.append("file", logoFile);
-        const uploadResp = await fetch(`${API_BASE_URL}/backoffice/clients/${savedClient._id}/logo`, {
-          method: "POST",
-          headers: {
-            Authorization: authHeaders.Authorization
-          },
-          body: formData
-        });
+        const uploadResp = await fetch(
+          `${API_BASE_URL}/backoffice/clients/${savedClient._id}/logo`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: authHeaders.Authorization
+            },
+            body: formData
+          }
+        );
         if (uploadResp.ok) {
           const uploadData = (await uploadResp.json()) as { logo?: string };
           if (uploadData.logo) {
@@ -1175,7 +1252,9 @@ export const ClientsPage = () => {
           <button type="button" className="ghost-button" onClick={closeEditor}>
             {"<- Volver al listado"}
           </button>
-          <h1 style={{ marginTop: "0.5rem" }}>{editingId ? "Editar profesional" : "Nuevo profesional"}</h1>
+          <h1 style={{ marginTop: "0.5rem" }}>
+            {editingId ? "Editar profesional" : "Nuevo profesional"}
+          </h1>
           <p>Completa la información y guarda los cambios.</p>
         </div>
         <button type="button" className="ghost-button" onClick={closeEditor}>
@@ -1204,6 +1283,15 @@ export const ClientsPage = () => {
                 onClick={() => setActiveTab("personal")}
               >
                 Personal
+              </button>
+              <button
+                type="button"
+                className={`clients-tabs__button ${
+                  activeTab === "imagenes" ? "clients-tabs__button--active" : ""
+                }`}
+                onClick={() => setActiveTab("imagenes")}
+              >
+                Imágenes
               </button>
             </div>
 
@@ -1480,14 +1568,13 @@ export const ClientsPage = () => {
                   </small>
                 </div>
               </>
-            ) : (
+            ) : activeTab === "personal" ? (
               <div className="clients-personal-tab">
                 <div className="clients-personal__header">
                   <div>
                     <h3>Staff asignado</h3>
                     <p className="muted-text">
-                      Vincula staff (usuarios con rol Pro), sus servicios y horarios por
-                      día.
+                      Vincula staff (usuarios con rol Pro), sus servicios y horarios por día.
                     </p>
                     <div className="clients-personal__catalog">
                       {catalogStatus.loading
@@ -1574,8 +1661,8 @@ export const ClientsPage = () => {
                 {professionals.length === 0 ? (
                   <div className="clients-no-professionals">
                     <p className="muted-text">
-                      Aún no se han agregado staff. Usa el botón “+ Staff” para elegir
-                      uno existente o crea un nuevo usuario PRO.
+                      Aún no se han agregado staff. Usa el botón “+ Staff” para elegir uno existente
+                      o crea un nuevo usuario PRO.
                     </p>
                     <div className="clients-professional-picker__actions">
                       <button
@@ -1914,7 +2001,155 @@ export const ClientsPage = () => {
                 )}
                 <div ref={professionalsEndRef} />
               </div>
-            )}
+            ) : null}
+
+            {activeTab === "imagenes" ? (
+              <div className="clients-images-tab">
+                {!editingId ? (
+                  <p className="muted-text clients-images-tab__notice">
+                    Guarda el profesional primero para poder subir imágenes.
+                  </p>
+                ) : (
+                  <>
+                    {imageError ? (
+                      <p className="error" role="alert">
+                        {imageError}
+                      </p>
+                    ) : null}
+
+                    <section className="clients-images-section">
+                      <h3 className="clients-images-section__title">Imagen de portada</h3>
+                      <p className="clients-images-section__hint">
+                        Se usa como banner principal del profesional.
+                      </p>
+                      <div className="clients-cover-upload">
+                        {coverImage ? (
+                          <div className="clients-cover-preview">
+                            <img src={coverImage} alt="Portada" />
+                            <button
+                              type="button"
+                              className="clients-cover-preview__remove icon-button icon-button--danger"
+                              onClick={() => {
+                                setCoverImage("");
+                                fetch(`${API_BASE_URL}/backoffice/clients/${editingId}`, {
+                                  method: "PATCH",
+                                  headers: authHeaders!,
+                                  body: JSON.stringify({ coverImage: "" })
+                                }).catch(() => {});
+                              }}
+                              aria-label="Eliminar portada"
+                            >
+                              <MdClose />
+                            </button>
+                          </div>
+                        ) : (
+                          <label
+                            className={`clients-cover-dropzone${coverDragOver ? " clients-cover-dropzone--drag" : ""}`}
+                            onDragOver={(e) => {
+                              e.preventDefault();
+                              setCoverDragOver(true);
+                            }}
+                            onDragLeave={() => setCoverDragOver(false)}
+                            onDrop={(e) => {
+                              e.preventDefault();
+                              setCoverDragOver(false);
+                              const file = e.dataTransfer.files?.[0];
+                              if (file) uploadCover(file);
+                            }}
+                          >
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="sr-only"
+                              disabled={coverUploading}
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) uploadCover(file);
+                                e.target.value = "";
+                              }}
+                            />
+                            <span className="clients-cover-dropzone__label">
+                              {coverUploading ? "Subiendo…" : "Arrastra una imagen o haz clic"}
+                            </span>
+                          </label>
+                        )}
+                      </div>
+                    </section>
+
+                    <section className="clients-images-section">
+                      <h3 className="clients-images-section__title">Galería</h3>
+                      <p className="clients-images-section__hint">
+                        Fotos adicionales del negocio o espacio de trabajo.
+                      </p>
+                      <div className="clients-gallery-grid">
+                        {gallery.map((url, idx) => (
+                          <div className="clients-gallery-item" key={`gallery-${idx}`}>
+                            <img src={url} alt={`Foto ${idx + 1}`} />
+                            <button
+                              type="button"
+                              className="clients-gallery-item__remove icon-button icon-button--danger"
+                              aria-label={`Eliminar foto ${idx + 1}`}
+                              onClick={async () => {
+                                if (!editingId || !authHeaders) return;
+                                setImageError(null);
+                                try {
+                                  const res = await fetch(
+                                    `${API_BASE_URL}/backoffice/clients/${editingId}/gallery/${idx}`,
+                                    { method: "DELETE", headers: authHeaders }
+                                  );
+                                  const data = (await res.json()) as {
+                                    success: boolean;
+                                    gallery?: string[];
+                                    message?: string;
+                                  };
+                                  if (!data.success)
+                                    throw new Error(data.message ?? "Error al eliminar");
+                                  setGallery(data.gallery ?? []);
+                                } catch (err) {
+                                  setImageError((err as Error).message);
+                                }
+                              }}
+                            >
+                              <MdClose />
+                            </button>
+                          </div>
+                        ))}
+                        <label
+                          className={`clients-gallery-add${galleryDragOver ? " clients-gallery-add--drag" : ""}`}
+                          onDragOver={(e) => {
+                            e.preventDefault();
+                            setGalleryDragOver(true);
+                          }}
+                          onDragLeave={() => setGalleryDragOver(false)}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            setGalleryDragOver(false);
+                            const files = Array.from(e.dataTransfer.files).filter((f) =>
+                              f.type.startsWith("image/")
+                            );
+                            if (files.length) uploadGalleryFiles(files);
+                          }}
+                        >
+                          <input
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            className="sr-only"
+                            disabled={galleryUploading}
+                            onChange={(e) => {
+                              const files = Array.from(e.target.files ?? []);
+                              if (files.length) uploadGalleryFiles(files);
+                              e.target.value = "";
+                            }}
+                          />
+                          <span>{galleryUploading ? "Subiendo…" : "+ Agregar fotos"}</span>
+                        </label>
+                      </div>
+                    </section>
+                  </>
+                )}
+              </div>
+            ) : null}
 
             {error ? (
               <p className="error" role="alert">

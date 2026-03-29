@@ -40,7 +40,7 @@ const navItems: NavItem[] = [
   { label: "Usuarios", icon: <MdPeople />, to: "/app/users" },
   { label: "Usuarios Saloom", icon: <MdManageAccounts />, to: "/backoffice/users" },
   { label: "Reportes", icon: <MdBarChart /> },
-  { label: "Configuración", icon: <MdSettings /> }
+  { label: "Configuración", icon: <MdSettings />, to: "/settings" }
 ];
 
 export const Sidebar = ({ collapsed, onToggle, mobileOpen, onNavigate }: SidebarProps) => {

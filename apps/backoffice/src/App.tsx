@@ -12,6 +12,7 @@ import { AppUsersPage } from "./pages/AppUsersPage";
 import { ServicesPage } from "./pages/ServicesPage";
 import { CategoriesPage } from "./pages/CategoriesPage";
 import { ClientsPage } from "./pages/ClientsPage";
+import { SettingsPage } from "./pages/SettingsPage";
 
 export const App = () => {
   return (
@@ -34,6 +35,7 @@ export const App = () => {
               <Route path="services" element={<ServicesPage />} />
               <Route path="categories" element={<CategoriesPage />} />
               <Route path="clients" element={<ClientsPage />} />
+              <Route path="settings" element={<SettingsPage />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />

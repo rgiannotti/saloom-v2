@@ -118,6 +118,12 @@ export class Client {
   logo: string;
 
   @Prop({ default: "", trim: true })
+  coverImage: string;
+
+  @Prop({ type: [String], default: [] })
+  gallery: string[];
+
+  @Prop({ default: "", trim: true })
   website: string;
 
   @Prop({ default: false })

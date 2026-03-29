@@ -30,6 +30,7 @@ import { SaloomLogo } from "../components/SaloomLogo";
 import { API_BASE_URL } from "../config";
 import { fonts } from "../theme/fonts";
 import { AiAssistantScreen } from "./AiAssistantScreen";
+import { LocationPickerScreen, PickedLocation } from "./LocationPickerScreen";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -40,6 +41,7 @@ interface Recommendation {
   address: { full?: string; comunity?: string; city?: string };
   location?: { type?: string; coordinates?: [number, number] };
   logo?: string;
+  coverImage?: string;
   categories: { _id: string; name: string; icon?: string }[];
   professionals: {
     services: { price: number }[];
@@ -199,6 +201,7 @@ export const HomeScreen = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [locationLabel, setLocationLabel] = useState("Mi ubicación");
+  const [locationPickerVisible, setLocationPickerVisible] = useState(false);
   const [userCoords, setUserCoords] = useState<{ lat: number; lng: number }>({
     lat: FALLBACK_LAT,
     lng: FALLBACK_LNG
@@ -229,52 +232,74 @@ export const HomeScreen = () => {
     item.categories.some((cat) => selectedCategories.includes(cat._id))
   );
 
-  useEffect(() => {
-    const fetchRecommendations = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        let lat = FALLBACK_LAT;
-        let lng = FALLBACK_LNG;
+  const fetchRecommendations = async (lat: number, lng: number) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(
+        `${API_BASE_URL}/app/recommendations?lat=${lat}&lng=${lng}&limit=10`,
+        {
+          headers: {
+            Authorization: `Bearer ${session?.tokens.accessToken}`
+          }
+        }
+      );
+      if (!res.ok) throw new Error("No se pudieron cargar los recomendados.");
+      const data: Recommendation[] = await res.json();
+      setRecommendations(data);
+      const allIds = [
+        ...new Set(data.flatMap((item) => item.categories.map((c) => c._id)))
+      ];
+      setSelectedCategories(allIds);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al cargar recomendaciones.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-        const { status } = await Location.requestForegroundPermissionsAsync();
-        if (status === "granted") {
-          const pos = await Location.getCurrentPositionAsync({
-            accuracy: Location.Accuracy.Balanced
-          });
-          lat = pos.coords.latitude;
-          lng = pos.coords.longitude;
-          setUserCoords({ lat, lng });
+  useEffect(() => {
+    const init = async () => {
+      let lat = FALLBACK_LAT;
+      let lng = FALLBACK_LNG;
+
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status === "granted") {
+        const pos = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced
+        });
+        lat = pos.coords.latitude;
+        lng = pos.coords.longitude;
+        setUserCoords({ lat, lng });
+
+        try {
+          const results = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lng });
+          if (results.length > 0) {
+            const r = results[0];
+            const zone = r.district ?? r.subregion ?? r.city ?? r.region ?? "Mi ubicación";
+            setLocationLabel(zone);
+          } else {
+            setLocationLabel("Mi ubicación");
+          }
+        } catch {
           setLocationLabel("Mi ubicación");
         }
-
-        const res = await fetch(
-          `${API_BASE_URL}/app/recommendations?lat=${lat}&lng=${lng}&limit=10`,
-          {
-            headers: {
-              Authorization: `Bearer ${session?.tokens.accessToken}`
-            }
-          }
-        );
-        if (!res.ok) throw new Error("No se pudieron cargar los recomendados.");
-        const data: Recommendation[] = await res.json();
-        setRecommendations(data);
-        const allIds = [
-          ...new Set(data.flatMap((item) => item.categories.map((c) => c._id)))
-        ];
-        setSelectedCategories(allIds);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Error al cargar recomendaciones.");
-      } finally {
-        setLoading(false);
       }
+
+      await fetchRecommendations(lat, lng);
     };
 
-    fetchRecommendations();
+    init();
   }, [session?.tokens.accessToken]);
 
   const toggleFavorite = (id: string) => {
     setFavorites((prev) => (prev.includes(id) ? prev.filter((f) => f !== id) : [...prev, id]));
+  };
+
+  const handleLocationConfirm = (picked: PickedLocation) => {
+    setUserCoords({ lat: picked.latitude, lng: picked.longitude });
+    setLocationLabel(picked.zone || picked.address || "Mi ubicación");
+    fetchRecommendations(picked.latitude, picked.longitude);
   };
 
   return (
@@ -287,7 +312,11 @@ export const HomeScreen = () => {
           {/* Top bar */}
           <View style={styles.topBar}>
             <SaloomLogo width={120} />
-            <TouchableOpacity style={styles.locationBtn} activeOpacity={0.7}>
+            <TouchableOpacity
+              style={styles.locationBtn}
+              activeOpacity={0.7}
+              onPress={() => setLocationPickerVisible(true)}
+            >
               <MaterialCommunityIcons name="map-marker" size={16} color={PRIMARY} />
               <Text style={styles.locationText} numberOfLines={1}>
                 {locationLabel}
@@ -391,11 +420,12 @@ export const HomeScreen = () => {
                 const isPrimary = index === 0;
                 const isFav = favorites.includes(item._id);
 
+                const cardImageUri = item.coverImage || item.logo;
                 return (
                   <View key={item._id} style={styles.card}>
-                    {item.logo ? (
+                    {cardImageUri ? (
                       <ImageBackground
-                        source={{ uri: item.logo }}
+                        source={{ uri: cardImageUri }}
                         style={styles.cardImage}
                         imageStyle={styles.cardImageStyle}
                         resizeMode="cover"
@@ -483,6 +513,15 @@ export const HomeScreen = () => {
 
       {/* ── AI Assistant tab ── */}
       {activeTab === "ai" && <AiAssistantScreen />}
+
+      {/* ── Location picker modal ── */}
+      <LocationPickerScreen
+        visible={locationPickerVisible}
+        onClose={() => setLocationPickerVisible(false)}
+        onConfirm={handleLocationConfirm}
+        initialLatitude={userCoords.lat}
+        initialLongitude={userCoords.lng}
+      />
 
       {/* ── Bottom nav – liquid glass ── */}
       <View style={styles.bottomNavOuter}>
